@@ -576,7 +576,7 @@ export default function HomePage() {
       <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200" to="/admin">Админ</Link>
       </nav>
       <div className="flex gap-6 mb-2"><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href="#"><span className="material-symbols-outlined">photo_camera</span> Instagram</a><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href={getTelegramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined">send</span> Telegram</a></div><p className="text-outline font-body-md text-body-md text-sm">
-              © 2024 Belkson Kids. Все права защищены.
+              © {new Date().getFullYear()} Belkson Kids. Все права защищены.
           </p>
       </footer>
       {/* Navigation Drawer Overlay */}

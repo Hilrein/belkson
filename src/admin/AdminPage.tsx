@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
 import { defaultProductImage } from '../store/catalog'
+import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
 type SlideMode = 'add' | 'edit'
 
@@ -16,6 +17,10 @@ type FormState = {
   status: ProductStatus
   isNew: boolean
   isFavorite: boolean
+  /** Final image value: https URL or data:image/... */
+  image: string
+  /** Draft URL field (may not be applied until blur / apply) */
+  imageUrlDraft: string
 }
 
 const emptyForm: FormState = {
@@ -27,6 +32,8 @@ const emptyForm: FormState = {
   status: 'В наличии',
   isNew: true,
   isFavorite: false,
+  image: '',
+  imageUrlDraft: '',
 }
 
 function Icon({ name, className = '' }: { name: string; className?: string }) {
@@ -79,6 +86,11 @@ export default function AdminPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [currencyOpen, setCurrencyOpen] = useState(false)
   const [draftCurrency, setDraftCurrency] = useState<CurrencyCode>('RUB')
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [imageBusy, setImageBusy] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const tw = (window as unknown as { tailwind?: { config: unknown } }).tailwind
@@ -106,12 +118,12 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    const locked = slideOpen || currencyOpen || navOpen
+    const locked = slideOpen || currencyOpen || navOpen || deleteOpen
     document.body.style.overflow = locked ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
-  }, [slideOpen, currencyOpen, navOpen])
+  }, [slideOpen, currencyOpen, navOpen, deleteOpen])
 
   // Close mobile nav on desktop resize
   useEffect(() => {
@@ -126,12 +138,15 @@ export default function AdminPage() {
     setSlideMode('add')
     setEditingId(null)
     setForm(emptyForm)
+    setImageError(null)
+    setImageBusy(false)
     setSlideOpen(true)
   }
 
   const openEdit = (product: Product) => {
     setSlideMode('edit')
     setEditingId(product.id)
+    const img = product.image || ''
     setForm({
       name: product.name,
       sku: product.sku,
@@ -141,18 +156,88 @@ export default function AdminPage() {
       status: product.status,
       isNew: product.isNew,
       isFavorite: product.isFavorite,
+      image: img,
+      imageUrlDraft: img.startsWith('data:') ? '' : img,
     })
+    setImageError(null)
+    setImageBusy(false)
     setSlideOpen(true)
   }
 
   const closeSlide = () => {
     setSlideOpen(false)
     setEditingId(null)
+    setDeleteOpen(false)
+    setImageError(null)
+    setImageBusy(false)
+  }
+
+  const applyImageUrl = () => {
+    const url = form.imageUrlDraft.trim()
+    if (!url) {
+      setImageError('Вставьте ссылку на изображение')
+      return
+    }
+    if (!isLikelyImageUrl(url)) {
+      setImageError('Нужна ссылка http(s)://… или data:image/…')
+      return
+    }
+    setForm((f) => ({ ...f, image: url, imageUrlDraft: url }))
+    setImageError(null)
+  }
+
+  const onPickFile = async (file: File | null) => {
+    if (!file) return
+    setImageBusy(true)
+    setImageError(null)
+    try {
+      const dataUrl = await fileToCompressedDataUrl(file)
+      setForm((f) => ({ ...f, image: dataUrl, imageUrlDraft: '' }))
+    } catch (e) {
+      setImageError(e instanceof Error ? e.message : 'Ошибка загрузки файла')
+    } finally {
+      setImageBusy(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const clearImage = () => {
+    setForm((f) => ({ ...f, image: '', imageUrlDraft: '' }))
+    setImageError(null)
+  }
+
+  const onDropFile = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const file = e.dataTransfer.files?.[0]
+    if (file) void onPickFile(file)
+  }
+
+  const confirmDelete = async () => {
+    if (editingId == null) return
+    setDeleting(true)
+    try {
+      await deleteProduct(editingId)
+      setDeleteOpen(false)
+      closeSlide()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Ошибка удаления')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const saveProduct = async () => {
     setSaving(true)
     try {
+      // Apply URL draft if user typed a link but didn't press «Применить»
+      let image = form.image.trim()
+      const draft = form.imageUrlDraft.trim()
+      if (!image && draft && isLikelyImageUrl(draft)) {
+        image = draft
+      }
+      if (!image) image = defaultProductImage()
+
       const priceRub = Math.max(0, Number(form.price) || 0)
       const payload = {
         name: form.name.trim() || 'Без названия',
@@ -161,7 +246,7 @@ export default function AdminPage() {
         category: form.category,
         color: form.color.trim() || '—',
         status: form.status,
-        image: defaultProductImage(),
+        image,
         isNew: form.isNew,
         isFavorite: form.isFavorite,
       }
@@ -170,7 +255,6 @@ export default function AdminPage() {
         const existing = products.find((p) => p.id === editingId)
         await updateProduct(editingId, {
           ...payload,
-          image: existing?.image || payload.image,
           badge: existing?.badge,
         })
       } else {
@@ -551,10 +635,115 @@ export default function AdminPage() {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
-          <div className="w-full h-28 sm:h-32 rounded-md border border-dashed border-gray-300 bg-surface flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer">
-            <Icon name="image" className="text-lg mb-1" />
-            <span className="text-body-sm font-body-sm">Загрузить фото</span>
+          {/* Photo: URL / file / drag-drop */}
+          <div className="space-y-3">
+            <label className="block text-label-md font-label-md text-on-surface">
+              Фото товара
+            </label>
+
+            <div
+              className={`relative w-full rounded-md border border-dashed border-gray-300 bg-surface overflow-hidden transition-colors ${
+                imageBusy ? 'opacity-70' : 'hover:bg-surface-variant/60'
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+              }}
+              onDrop={onDropFile}
+            >
+              {form.image ? (
+                <div className="relative aspect-[4/3] w-full bg-surface-variant">
+                  <img
+                    src={form.image}
+                    alt="Превью"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={() =>
+                      setImageError(
+                        'Не удалось загрузить превью. Проверьте ссылку.',
+                      )
+                    }
+                  />
+                  <div className="absolute inset-x-0 bottom-0 p-2 flex flex-wrap gap-2 bg-gradient-to-t from-black/50 to-transparent">
+                    <button
+                      type="button"
+                      className="text-xs font-medium bg-white/95 text-on-surface px-2.5 py-1.5 rounded-md"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={imageBusy}
+                    >
+                      Заменить с ПК
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs font-medium bg-white/95 text-red-700 px-2.5 py-1.5 rounded-md"
+                      onClick={clearImage}
+                      disabled={imageBusy}
+                    >
+                      Убрать
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full h-32 sm:h-36 flex flex-col items-center justify-center text-on-surface-variant cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageBusy}
+                >
+                  <Icon name="image" className="text-2xl mb-1" />
+                  <span className="text-body-sm font-body-sm">
+                    {imageBusy
+                      ? 'Обработка…'
+                      : 'Перетащите фото или нажмите для выбора'}
+                  </span>
+                  <span className="text-xs text-on-surface-variant/80 mt-1">
+                    JPG, PNG, WebP · до 8 МБ
+                  </span>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Или вставьте ссылку на фото
+              </label>
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 min-w-0 p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                  type="url"
+                  placeholder="https://example.com/photo.jpg"
+                  value={form.imageUrlDraft}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, imageUrlDraft: e.target.value }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      applyImageUrl()
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="shrink-0 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors"
+                  onClick={applyImageUrl}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+
+            {imageError && (
+              <p className="text-xs text-red-600">{imageError}</p>
+            )}
           </div>
+
           <div className="space-y-4">
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">
@@ -675,16 +864,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 className="text-sm text-error hover:underline text-left"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      await deleteProduct(editingId)
-                      closeSlide()
-                    } catch (e) {
-                      alert(e instanceof Error ? e.message : 'Ошибка удаления')
-                    }
-                  })()
-                }}
+                onClick={() => setDeleteOpen(true)}
               >
                 Удалить товар
               </button>
@@ -712,75 +892,148 @@ export default function AdminPage() {
 
       {/* Currency modal */}
       <div
-        className={`fixed inset-0 bg-black/20 z-[60] transition-opacity ${
+        className={`fixed inset-0 z-[80] flex items-center justify-center p-4 ${
           currencyOpen ? '' : 'hidden'
         }`}
-        onClick={() => setCurrencyOpen(false)}
         aria-hidden={!currencyOpen}
-      />
-      <div
-        className={`fixed z-[70] inset-x-3 sm:inset-x-auto top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-auto sm:w-full max-w-md bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg flex-col max-h-[min(90dvh,36rem)] ${
-          currencyOpen ? 'flex' : 'hidden'
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="currency-modal-title"
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
-          <h2
-            id="currency-modal-title"
-            className="text-base sm:text-headline-md font-headline-md text-on-surface pr-2"
-          >
-            Изменение валюты сайта
-          </h2>
-          <button
-            type="button"
-            className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0"
-            onClick={() => setCurrencyOpen(false)}
-            aria-label="Закрыть"
-          >
-            <Icon name="close" className="text-sm" />
-          </button>
-        </div>
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
-          <p className="text-body-sm text-on-surface-variant">
-            Выберите основную валюту. Это изменение применится ко всем ценам в
-            админ-панели и на основном сайте.
-          </p>
-          <div className="space-y-3">
-            {CURRENCIES.map((c) => (
-              <label
-                key={c.code}
-                className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-md hover:bg-surface"
-              >
-                <input
-                  className="w-4 h-4 text-primary-container focus:ring-primary-container border-gray-300"
-                  name="site-currency"
-                  type="radio"
-                  value={c.code}
-                  checked={draftCurrency === c.code}
-                  onChange={() => setDraftCurrency(c.code)}
-                />
-                <span className="text-body-md text-on-surface">{c.label}</span>
-              </label>
-            ))}
+        <div
+          className="absolute inset-0 bg-black/20"
+          onClick={() => setCurrencyOpen(false)}
+        />
+        <div
+          className="relative z-10 w-full max-w-md max-h-[min(90dvh,36rem)] bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="currency-modal-title"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+            <h2
+              id="currency-modal-title"
+              className="text-base sm:text-xl font-semibold text-on-surface pr-2"
+            >
+              Изменение валюты сайта
+            </h2>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0"
+              onClick={() => setCurrencyOpen(false)}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" className="text-sm" />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
+            <p className="text-sm text-on-surface-variant">
+              Выберите основную валюту. Это изменение применится ко всем ценам
+              в админ-панели и на основном сайте.
+            </p>
+            <div className="space-y-3">
+              {CURRENCIES.map((c) => (
+                <label
+                  key={c.code}
+                  className="flex items-center gap-3 cursor-pointer group p-2 -mx-2 rounded-md hover:bg-surface"
+                >
+                  <input
+                    className="w-4 h-4 text-primary-container focus:ring-primary-container border-gray-300"
+                    name="site-currency"
+                    type="radio"
+                    value={c.code}
+                    checked={draftCurrency === c.code}
+                    onChange={() => setDraftCurrency(c.code)}
+                  />
+                  <span className="text-base text-on-surface">{c.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto"
+              onClick={() => setCurrencyOpen(false)}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="bg-[#ce7ed5] text-white px-4 py-2.5 sm:py-2 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] text-sm font-semibold w-full sm:w-auto"
+              onClick={() => void applyCurrency()}
+            >
+              Применить изменения
+            </button>
           </div>
         </div>
-        <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
-          <button
-            type="button"
-            className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-button font-button text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto"
-            onClick={() => setCurrencyOpen(false)}
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            className="bg-[#ce7ed5] text-white px-4 py-2.5 sm:py-2 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] text-button font-button w-full sm:w-auto"
-            onClick={applyCurrency}
-          >
-            Применить изменения
-          </button>
+      </div>
+
+      {/* Delete confirmation modal — centered via flex (no left-1/2 conflict) */}
+      <div
+        className={`fixed inset-0 z-[90] flex items-center justify-center p-4 ${
+          deleteOpen ? '' : 'hidden'
+        }`}
+        aria-hidden={!deleteOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/30"
+          onClick={() => !deleting && setDeleteOpen(false)}
+        />
+        <div
+          className="relative z-10 w-full max-w-md bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+            <h2
+              id="delete-modal-title"
+              className="text-base sm:text-xl font-semibold text-on-surface pr-2"
+            >
+              Удалить товар?
+            </h2>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" className="text-sm" />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 space-y-3">
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Товар будет удалён из каталога навсегда. Его больше не будет
+              видно на сайте и в админ-панели.
+            </p>
+            {form.name.trim() && (
+              <p className="text-base text-on-surface font-medium rounded-md bg-surface border border-gray-200 px-3 py-2">
+                {form.name.trim()}
+              </p>
+            )}
+            <p className="text-sm text-on-surface-variant">
+              Это действие нельзя отменить.
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors w-full sm:w-auto disabled:opacity-60"
+              onClick={() => void confirmDelete()}
+              disabled={deleting}
+            >
+              {deleting ? 'Удаление…' : 'Удалить'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
