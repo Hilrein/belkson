@@ -123,19 +123,27 @@ export default function HomePage() {
       </a>
       </div>
       {/* Desktop Nav */}
-      <nav className="hidden lg:flex items-center gap-6"><a className="text-primary font-normal border-b-2 border-primary pb-1" href="/">Главная</a>
-      <div className="relative group h-full flex items-center"><button className="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">Категории<span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span></button>
-      <div className="absolute top-[100%] left-0 mt-2 w-[700px] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 p-8 flex gap-8 z-50">
-      <div className="flex-1 flex flex-col justify-center gap-4 py-2">
+      <nav className="hidden lg:flex items-center gap-6">
+      <a className="text-primary font-normal border-b-2 border-primary pb-1" href="/">Главная</a>
+
+      {/* Categories mega menu — centered under trigger, hover bridge via pt-2 */}
+      <div className="relative group flex items-center">
+      <button type="button" className="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">
+        Категории
+        <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+      </button>
+      <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
+      <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 flex gap-8">
+      <div className="flex-1 flex flex-col justify-center gap-4 py-2 min-w-0">
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Новинки</a>
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Топ распродаж</a>
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Прочее</a>
       <hr className="my-2 border-[#ce7ed5]/30" />
-      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="{{DATA:SCREEN:SCREEN_65}}">Девочки</a>
+      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Девочки</a>
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Мальчики</a>
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Малыши</a>
       </div>
-      <div className="w-[300px] relative rounded-3xl overflow-hidden group/promo shrink-0 bg-surface-container-low aspect-[4/5]">
+      <div className="w-[240px] xl:w-[280px] relative rounded-3xl overflow-hidden group/promo shrink-0 bg-surface-container-low aspect-[4/5]">
       <img alt="Promo" className="w-full h-full object-cover group-hover/promo:scale-105 transition-transform duration-700 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap" />
       <div className="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/20 to-transparent flex flex-col justify-end p-6">
       <h4 className="text-primary font-headline-md text-xl mb-1">Весенняя коллекция</h4>
@@ -144,39 +152,44 @@ export default function HomePage() {
       </div>
       </div>
       </div>
-      <div className="relative group h-full flex items-center">
-      <button className="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">
-              Выкуп с официальных сайтов
-              <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+      </div>
+
+      {/* Resale mega menu */}
+      <div className="relative group flex items-center">
+      <button type="button" className="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">
+        Выкуп с официальных сайтов
+        <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
       </button>
-      <div className="absolute top-[100%] right-0 mt-2 w-[700px] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 p-10 flex gap-8 z-50">
-      <div className="flex-1">
+      <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
+      <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8">
+      <div className="flex-1 min-w-0">
       <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">Zara</h3>
       <ul className="flex flex-col gap-2">
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
       </ul>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
       <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">H&amp;M</h3>
       <ul className="flex flex-col gap-2">
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">USA</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">USA</a></li>
       </ul>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
       <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">Next</h3>
       <ul className="flex flex-col gap-2">
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
-      <li className=""><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+      <li><a className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
       </ul>
+      </div>
       </div>
       </div>
       </div>
@@ -185,14 +198,11 @@ export default function HomePage() {
       {/* Expanding Search Bar */}
       <div className="relative flex items-center justify-end" id="search-wrapper">
       <input ref={searchRef} className={searchInputClass} id="header-search-input" placeholder="Поиск..." type="text" />
-      <button className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative z-10 bg-surface" onClick={toggleSearch}>
+      <button type="button" className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative z-10 bg-surface" onClick={toggleSearch}>
       <span className="material-symbols-outlined">search</span>
       </button>
       </div>
-      <button className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 hidden md:flex">
-      <span className="material-symbols-outlined">person</span>
-      </button>
-      <button className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative" onClick={toggleCart}>
+      <button type="button" className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative" onClick={toggleCart}>
       <span className="material-symbols-outlined">shopping_bag</span>
       {totalCount > 0 && (
       <span className="absolute top-1 right-1 bg-primary text-on-primary text-[10px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center font-bold">
