@@ -1,0 +1,66 @@
+/** Shared catalog types + display helpers. Product data lives in Neon via /api. */
+
+export type ProductStatus = 'В наличии' | 'Мало' | 'Нет в наличии'
+export type CurrencyCode = 'RUB' | 'EUR' | 'USD'
+
+export type CatalogProduct = {
+  id: number
+  name: string
+  sku: string
+  /** Price amount in RUB (base currency for storage) */
+  priceRub: number
+  category: string
+  color: string
+  status: ProductStatus
+  image: string
+  /** Show in «Новинки» */
+  isNew: boolean
+  /** Show in «Наши любимчики» */
+  isFavorite: boolean
+  badge?: string
+}
+
+export const CATEGORIES = [
+  'Младенцы',
+  'Малыши',
+  'Дети',
+  'Девочки',
+  'Мальчики',
+] as const
+
+export const CURRENCIES: {
+  code: CurrencyCode
+  label: string
+  symbol: string
+}[] = [
+  { code: 'RUB', label: 'Российский рубль (₽)', symbol: '₽' },
+  { code: 'EUR', label: 'Евро (€)', symbol: '€' },
+  { code: 'USD', label: 'Доллар США ($)', symbol: '$' },
+]
+
+/** Rough rates: 1 unit of currency → RUB */
+const TO_RUB: Record<CurrencyCode, number> = {
+  RUB: 1,
+  EUR: 98,
+  USD: 90,
+}
+
+/** Placeholder when product has no image yet */
+const PLACEHOLDER =
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNTAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgcng9IjEyIiBmaWxsPSIjZThlYWVkIi8+PHBhdGggZD0iTTE3MCAyMjAgbDMwIDQwIGwyMC0xNSBsNDAgNTUgSDE0MHoiIGZpbGw9IiNiZGMxYzYiLz48Y2lyY2xlIGN4PSIyNTAiIGN5PSIyMTAiIHI9IjE4IiBmaWxsPSIjYmRjMWM2Ii8+PC9zdmc+'
+
+export function formatPrice(priceRub: number, currency: CurrencyCode): string {
+  const amount = priceRub / TO_RUB[currency]
+  const symbol = CURRENCIES.find((c) => c.code === currency)?.symbol ?? '₽'
+
+  if (currency === 'RUB') {
+    const rounded = Math.round(amount)
+    return `${rounded.toLocaleString('ru-RU')} ${symbol}`
+  }
+
+  return `${symbol}${amount.toFixed(2)}`
+}
+
+export function defaultProductImage() {
+  return PLACEHOLDER
+}
