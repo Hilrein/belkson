@@ -87,21 +87,19 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     [currency],
   )
 
-  const newArrivals = useMemo(() => {
-    const tagged = products.filter(
-      (p) => p.isNew && p.status !== 'Нет в наличии',
-    )
-    if (tagged.length) return tagged
-    return products.filter((p) => p.status !== 'Нет в наличии').slice(0, 4)
-  }, [products])
+  // Only explicitly tagged products — no "fill with any items" fallback
+  // (that made «Новинки» also appear under «Любимчики» when favorites were empty).
+  const newArrivals = useMemo(
+    () =>
+      products.filter((p) => p.isNew && p.status !== 'Нет в наличии'),
+    [products],
+  )
 
-  const favorites = useMemo(() => {
-    const tagged = products.filter(
-      (p) => p.isFavorite && p.status !== 'Нет в наличии',
-    )
-    if (tagged.length) return tagged
-    return products.filter((p) => p.status !== 'Нет в наличии').slice(0, 4)
-  }, [products])
+  const favorites = useMemo(
+    () =>
+      products.filter((p) => p.isFavorite && p.status !== 'Нет в наличии'),
+    [products],
+  )
 
   const inStock = useMemo(
     () => products.filter((p) => p.status !== 'Нет в наличии'),

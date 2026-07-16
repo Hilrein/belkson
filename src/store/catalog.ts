@@ -21,12 +21,28 @@ export type CatalogProduct = {
 }
 
 export const CATEGORIES = [
-  'Младенцы',
   'Малыши',
-  'Дети',
   'Девочки',
   'Мальчики',
 ] as const
+
+/** Normalize category for compare / URL (trim, collapse spaces, casefold). */
+export function normalizeCategory(value: string | null | undefined): string {
+  return String(value ?? '')
+    .replace(/\u00a0/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('ru-RU')
+}
+
+export function categoriesMatch(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  const na = normalizeCategory(a)
+  const nb = normalizeCategory(b)
+  return na.length > 0 && na === nb
+}
 
 export const CURRENCIES: {
   code: CurrencyCode

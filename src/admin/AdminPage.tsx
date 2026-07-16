@@ -243,7 +243,9 @@ export default function AdminPage() {
         name: form.name.trim() || 'Без названия',
         sku: form.sku.trim() || `BLK-${Date.now().toString().slice(-6)}`,
         priceRub,
-        category: form.category,
+        category:
+          form.category.replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
+          CATEGORIES[0],
         color: form.color.trim() || '—',
         status: form.status,
         image,
@@ -797,6 +799,11 @@ export default function AdminPage() {
                   setForm((f) => ({ ...f, category: e.target.value }))
                 }
               >
+                {/* Legacy category still on the product but removed from list */}
+                {form.category &&
+                  !(CATEGORIES as readonly string[]).includes(form.category) && (
+                    <option value={form.category}>{form.category}</option>
+                  )}
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c}

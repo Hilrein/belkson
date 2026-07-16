@@ -52,7 +52,7 @@ function mapProduct(row: DbProduct) {
     name: row.name,
     sku: row.sku,
     priceRub: Number(row.price_rub),
-    category: row.category,
+    category: String(row.category ?? '').trim() || 'Малыши',
     color: row.color,
     status: row.status as 'В наличии' | 'Мало' | 'Нет в наличии',
     image: row.image,
@@ -134,7 +134,11 @@ app.post('/products', async (c) => {
   const sku =
     String(body.sku ?? '').trim() || `BLK-${Date.now().toString().slice(-6)}`
   const priceRub = Math.max(0, Math.round(Number(body.priceRub) || 0))
-  const category = String(body.category ?? 'Дети')
+  const category =
+    String(body.category ?? 'Малыши')
+      .replace(/\u00a0/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ') || 'Малыши'
   const color = String(body.color ?? '—').trim() || '—'
   const status = String(body.status ?? 'В наличии')
   const image = await normalizeProductImage(String(body.image ?? ''))
@@ -173,7 +177,10 @@ app.put('/products/:id', async (c) => {
       ? Math.max(0, Math.round(Number(body.priceRub) || 0))
       : Number(cur.price_rub)
   const category =
-    body.category !== undefined ? String(body.category) : cur.category
+    body.category !== undefined
+      ? String(body.category).replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
+        cur.category
+      : cur.category
   const color =
     body.color !== undefined
       ? String(body.color).trim() || '—'
