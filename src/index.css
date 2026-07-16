@@ -9,6 +9,10 @@
  * 3) No backdrop-blur / transition-all on the bar.
  * Horizontal overflow is clipped on #root / .page-shell instead.
  */
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   margin: 0;

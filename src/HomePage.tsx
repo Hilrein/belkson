@@ -151,9 +151,9 @@ export default function HomePage() {
       <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
       <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 flex gap-8">
       <div className="flex-1 flex flex-col justify-center gap-4 py-2 min-w-0">
-      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Новинки</a>
-      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Топ распродаж</a>
-      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Прочее</a>
+      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#novinki">Новинки</a>
+      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#lyubimchiki">Топ распродаж</a>
+      <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#prochee">Прочее</a>
       <hr className="my-2 border-[#ce7ed5]/30" />
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Девочки</a>
       <a className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Мальчики</a>
@@ -288,7 +288,7 @@ export default function HomePage() {
       </div>
       </section>
       {/* Новинки (New Arrivals Carousel) */}
-      <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
+      <section id="novinki" className="scroll-mt-[calc(3.5rem+env(safe-area-inset-top,0px))] max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
       <div className="flex justify-between items-end mb-10">
       <div>
       <h2 className="font-headline-md text-headline-md text-primary mb-2">Новинки</h2>
@@ -344,7 +344,7 @@ export default function HomePage() {
       </div>
       </section>
       {/* Our Favorites */}
-      <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim">
+      <section id="lyubimchiki" className="scroll-mt-[calc(3.5rem+env(safe-area-inset-top,0px))] max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim">
       <div className="flex justify-between items-end mb-10">
       <div>
       <h2 className="font-headline-md text-headline-md text-primary mb-2">Наши любимчики</h2>
@@ -396,7 +396,7 @@ export default function HomePage() {
               </button>
       </section>
       {/* Feature blocks - catalog style: photo + text, no overlay chrome */}
-      <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-14 md:py-20">
+      <section id="prochee" className="scroll-mt-[calc(3.5rem+env(safe-area-inset-top,0px))] max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-14 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 items-stretch">
           {/* Collection: image on top, copy below (real shop layout) */}
           <article className="md:col-span-8 flex flex-col rounded-2xl overflow-hidden bg-surface-container-lowest border border-surface-dim">
@@ -622,9 +622,9 @@ export default function HomePage() {
       <a className="text-on-surface font-body-lg font-medium text-xl hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>Главная</a><hr className="border-t border-[#EAE6EE] my-2" />
       <div className="flex flex-col gap-5">
       <h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Категории</h3>
-      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>Новинки</a>
-      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>Топ распродаж</a>
-      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>Прочее</a>
+      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#novinki" onClick={toggleNavDrawer}>Новинки</a>
+      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#lyubimchiki" onClick={toggleNavDrawer}>Топ распродаж</a>
+      <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#prochee" onClick={toggleNavDrawer}>Прочее</a>
       <hr className="border-t border-[#EAE6EE] my-2" />
       <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="{{DATA:SCREEN:SCREEN_83}}" onClick={toggleNavDrawer}>Девочки</a>
       <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="{{DATA:SCREEN:SCREEN_83}}" onClick={toggleNavDrawer}>Мальчики</a>
