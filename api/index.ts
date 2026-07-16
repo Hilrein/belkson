@@ -24,7 +24,8 @@ export const config = {
 
 export default async function handler(req: NodeReq, res: NodeRes) {
   try {
-    const { default: app } = await import('../server/app')
+    // Path must stay relative so includeFiles: server/** ships with the function.
+    const { default: app } = await import('../server/app.js')
 
     const host = String(
       req.headers['x-forwarded-host'] || req.headers.host || 'localhost',
