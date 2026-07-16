@@ -1,23 +1,32 @@
 /**
- * Vercel serverless entry (Node runtime — needed for Neon + optional sharp).
- * Routes: /api/*
+ * Vercel Node.js serverless entry for /api/*
+ *
+ * Use @hono/node-server request listener (Node req/res), not hono/vercel
+ * Web Fetch handler — the latter often crashes as FUNCTION_INVOCATION_FAILED
+ * on non-Edge Vite projects.
  */
-import { handle } from 'hono/vercel'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import { getRequestListener } from '@hono/node-server'
 import app from '../server/app'
 
 export const config = {
-  runtime: 'nodejs',
+  api: {
+    bodyParser: false,
+  },
   maxDuration: 60,
-  memory: 1024,
 }
 
-const handler = handle(app)
+const listener = getRequestListener(app.fetch)
 
-// Support both default export and method exports (Vercel / Next-style).
-export default handler
-export const GET = handler
-export const POST = handler
-export const PUT = handler
-export const DELETE = handler
-export const PATCH = handler
-export const OPTIONS = handler
+export default function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+): void {
+  // Vercel may pass a path without /api prefix depending on rewrite;
+  // Hono app uses basePath('/api'), so ensure URL starts with /api.
+  const url = req.url ?? '/'
+  if (!url.startsWith('/api')) {
+    req.url = url === '/' ? '/api' : `/api${url.startsWith('/') ? '' : '/'}${url}`
+  }
+  void listener(req, res)
+}
