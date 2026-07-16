@@ -1,9 +1,9 @@
 /**
  * Vercel Node.js serverless entry for /api/*
  *
- * Static top-level imports of ESM packages (hono, @neondatabase, …) crash this
- * project's Vercel function as FUNCTION_INVOCATION_FAILED. Load the Hono app
- * dynamically inside the handler instead.
+ * Do not statically import hono/neon at top level — that crashes this project's
+ * Vercel functions (FUNCTION_INVOCATION_FAILED). Dynamic-import the app core
+ * (same folder so NFT packages the module).
  */
 type NodeReq = {
   method?: string
@@ -24,8 +24,8 @@ export const config = {
 
 export default async function handler(req: NodeReq, res: NodeRes) {
   try {
-    // Path must stay relative so includeFiles: server/** ships with the function.
-    const { default: app } = await import('../server/app.js')
+    // Same-directory module → included in the function bundle
+    const { default: app } = await import('./app-core')
 
     const host = String(
       req.headers['x-forwarded-host'] || req.headers.host || 'localhost',
