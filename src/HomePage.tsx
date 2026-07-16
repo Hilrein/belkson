@@ -4,6 +4,7 @@ import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
 import type { CatalogProduct } from './store/catalog'
 import { openTelegramOrder, getTelegramProfileUrl } from './lib/telegramOrder'
+import { getInstagramProfileUrl } from './lib/instagram'
 import { LoadingScreen } from './components/LoadingScreen'
 
 /**
@@ -602,7 +603,7 @@ export default function HomePage() {
       <a className="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Политика конфиденциальности</a>
       <Link className="text-on-surface-variant hover:text-primary transition-colors duration-200" to="/admin">Админ</Link>
       </nav>
-      <div className="flex gap-6 mb-2"><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href="#"><span className="material-symbols-outlined">photo_camera</span> Instagram</a><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href={getTelegramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined">send</span> Telegram</a></div><p className="text-outline font-body-md text-body-md text-sm">
+      <div className="flex gap-6 mb-2"><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href={getInstagramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined">photo_camera</span> Instagram</a><a className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href={getTelegramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined">send</span> Telegram</a></div><p className="text-outline font-body-md text-body-md text-sm">
               © {new Date().getFullYear()} Belkson Kids. Все права защищены.
           </p>
       </footer>
@@ -637,7 +638,7 @@ export default function HomePage() {
       <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>H&amp;M</a>
       <a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onClick={toggleNavDrawer}>Next</a>
       </div>
-      <hr className="border-t border-[#EAE6EE] my-2" /><div className="flex flex-col gap-5"><h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Соцсети</h3><a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href="#"><span className="material-symbols-outlined text-primary">photo_camera</span> Instagram</a><a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href={getTelegramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined text-primary">send</span> Telegram</a></div></div>
+      <hr className="border-t border-[#EAE6EE] my-2" /><div className="flex flex-col gap-5"><h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Соцсети</h3><a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href={getInstagramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined text-primary">photo_camera</span> Instagram</a><a className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href={getTelegramProfileUrl()} target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined text-primary">send</span> Telegram</a></div></div>
       </div>
       </div>
       {/* Full Screen Shopping Bag Overlay */}
