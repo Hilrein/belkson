@@ -4,13 +4,14 @@ import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
 import type { CatalogProduct } from './store/catalog'
 import { openTelegramOrder, getTelegramProfileUrl } from './lib/telegramOrder'
+import { LoadingScreen } from './components/LoadingScreen'
 
 /**
  * Pixel-faithful port of /static/index.html + script.js
  * Styling comes from Tailwind CDN (same config as static) + style.css utilities.
  */
 export default function HomePage() {
-  const { newArrivals, favorites, format } = useCatalog()
+  const { newArrivals, favorites, format, loading } = useCatalog()
   const {
     items: cartItems,
     totalCount,
@@ -21,6 +22,20 @@ export default function HomePage() {
   } = useCart()
   const [navOpen, setNavOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [splashVisible, setSplashVisible] = useState(true)
+  const [splashFading, setSplashFading] = useState(false)
+
+  useEffect(() => {
+    if (loading) {
+      setSplashVisible(true)
+      setSplashFading(false)
+      return
+    }
+    // Catalog ready — fade splash out
+    setSplashFading(true)
+    const t = window.setTimeout(() => setSplashVisible(false), 450)
+    return () => window.clearTimeout(t)
+  }, [loading])
 
   const handleAddToCart = useCallback(
     (product: CatalogProduct, e?: MouseEvent) => {
@@ -109,9 +124,10 @@ export default function HomePage() {
 
   return (
     <>
-      {/* TopAppBar */}
-      <header className="bg-surface/90 backdrop-blur-md dark:bg-surface-dim/90 shadow-sm w-full sticky top-0 z-40 transition-all duration-300">
-      <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-2 max-w-[1200px] mx-auto">
+      {splashVisible && <LoadingScreen fading={splashFading} />}
+      {/* TopAppBar — fixed + solid fill (stable on mobile scroll; no blur/transform) */}
+      <header className="site-header bg-surface shadow-sm">
+      <div className="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto h-14">
       <div className="flex items-center gap-4">
       {/* Desktop & Mobile Menu Button */}
       <button className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150" onClick={toggleNavDrawer}>
@@ -213,6 +229,7 @@ export default function HomePage() {
       </div>
       </div>
       </header>
+      <div className="site-header-spacer" aria-hidden="true" />
       <main>
       {/* Hero Carousel */}
       <section className="relative w-full overflow-hidden h-[600px] md:h-[700px] bg-surface-container-low">

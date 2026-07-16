@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { getSql, mapProduct, type DbProduct } from './db'
+import { normalizeProductImage } from './image'
 
 const app = new Hono().basePath('/api')
 
@@ -43,7 +44,7 @@ app.post('/products', async (c) => {
   const category = String(body.category ?? 'Дети')
   const color = String(body.color ?? '—').trim() || '—'
   const status = String(body.status ?? 'В наличии')
-  const image = String(body.image ?? '')
+  const image = await normalizeProductImage(String(body.image ?? ''))
   const isNew = Boolean(body.isNew)
   const isFavorite = Boolean(body.isFavorite)
   const badge = body.badge ? String(body.badge) : null
@@ -86,7 +87,10 @@ app.put('/products/:id', async (c) => {
       ? String(body.color).trim() || '—'
       : cur.color
   const status = body.status !== undefined ? String(body.status) : cur.status
-  const image = body.image !== undefined ? String(body.image) : cur.image
+  const image =
+    body.image !== undefined
+      ? await normalizeProductImage(String(body.image))
+      : cur.image
   const isNew = body.isNew !== undefined ? Boolean(body.isNew) : cur.is_new
   const isFavorite =
     body.isFavorite !== undefined ? Boolean(body.isFavorite) : cur.is_favorite

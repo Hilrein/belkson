@@ -1,5 +1,65 @@
 /* Belkson — custom styles (copied from /static/style.css) */
 
+/*
+ * Mobile navbar: use position:fixed pinned to the viewport.
+ * Critical for iOS/WebKit stability:
+ * 1) Never set overflow-x/y on html or body — that creates a scrollport and
+ *    fixed elements "scroll away" or jitter a few px on scroll.
+ * 2) No transform/translateZ/will-change on the header (same class of bugs).
+ * 3) No backdrop-blur / transition-all on the bar.
+ * Horizontal overflow is clipped on #root / .page-shell instead.
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  /* Keep default overflow:visible so fixed stays viewport-relative */
+}
+
+/*
+ * Do not put overflow on #root — the fixed header is a descendant of #root,
+ * and overflow on an ancestor re-parents fixed positioning in WebKit/iOS.
+ * Horizontal overflow is limited via max-width on the shell only.
+ */
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+}
+
+/* Clip wide sections without touching the fixed header's containing block */
+main {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Stable fixed navbar */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Solid fill — matches theme surface / background */
+  background-color: #fbf8fc;
+  /* Safe area for notched phones */
+  padding-top: env(safe-area-inset-top, 0px);
+  /* Never animate layout on the header */
+  transition: none !important;
+}
+
+/* Reserves space equal to fixed header so content doesn't jump under it */
+.site-header-spacer {
+  height: calc(3.5rem + env(safe-area-inset-top, 0px));
+  width: 100%;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 .material-symbols-outlined {
   font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
   user-select: none;
@@ -44,4 +104,14 @@
 .admin-shell a {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Loading spinner (works with Tailwind CDN or without) */
+@keyframes belkson-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: belkson-spin 0.75s linear infinite;
 }

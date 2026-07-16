@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:api": "tsx server/dev.ts",
     "db:seed": "tsx server/seed.ts",
+    "db:recompress": "tsx server/recompress.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -17,7 +18,8 @@
     "hono": "^4.12.30",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.1",
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -25,6 +27,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/sharp": "^0.31.1",
     "@vitejs/plugin-react": "^6.0.3",
     "dotenv": "^17.4.2",
     "eslint": "^10.6.0",

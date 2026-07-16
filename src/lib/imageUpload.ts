@@ -1,7 +1,7 @@
 /** Client-side image helpers for product photos. */
 
-const MAX_EDGE = 1200
-const JPEG_QUALITY = 0.82
+const MAX_EDGE = 1000
+const QUALITY = 0.8
 const MAX_FILE_MB = 8
 
 export function isLikelyImageUrl(url: string): boolean {
@@ -16,9 +16,17 @@ export function isLikelyImageUrl(url: string): boolean {
   }
 }
 
+function supportsWebpExport(canvas: HTMLCanvasElement): boolean {
+  try {
+    return canvas.toDataURL('image/webp').startsWith('data:image/webp')
+  } catch {
+    return false
+  }
+}
+
 /**
- * Read a local image file, resize if needed, return a JPEG data URL.
- * Keeps payload small enough for Neon TEXT + serverless body limits.
+ * Read a local image file, resize, export as WebP (fallback JPEG).
+ * Backend re-encodes with sharp for final WebP storage.
  */
 export function fileToCompressedDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -51,7 +59,11 @@ export function fileToCompressedDataUrl(file: File): Promise<string> {
             return
           }
           ctx.drawImage(img, 0, 0, w, h)
-          resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY))
+          if (supportsWebpExport(canvas)) {
+            resolve(canvas.toDataURL('image/webp', QUALITY))
+          } else {
+            resolve(canvas.toDataURL('image/jpeg', QUALITY))
+          }
         } catch (e) {
           reject(e instanceof Error ? e : new Error('Ошибка обработки фото'))
         }
