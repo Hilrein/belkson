@@ -2,15 +2,27 @@ import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
 
 let sql: NeonQueryFunction<false, false> | null = null
 
-export function getSql() {
-  const url = process.env.DATABASE_URL
-  if (!url) {
+function resolveDatabaseUrl(): string {
+  const raw = process.env.DATABASE_URL?.trim()
+  if (!raw) {
     throw new Error(
-      'DATABASE_URL is not set. Add it to .env (local) or Vercel env vars.',
+      'DATABASE_URL is not set. Add it to .env (local) or Vercel Project → Settings → Environment Variables.',
     )
   }
+  // Allow .env that splits "?sslmode=require" onto its own line as sslmode=require
+  const sslmode = process.env.sslmode?.trim()
+  if (sslmode && !/[?&]sslmode=/.test(raw)) {
+    return `${raw}${raw.includes('?') ? '&' : '?'}sslmode=${sslmode}`
+  }
+  if (!/[?&]sslmode=/.test(raw)) {
+    return `${raw}${raw.includes('?') ? '&' : '?'}sslmode=require`
+  }
+  return raw
+}
+
+export function getSql() {
   if (!sql) {
-    sql = neon(url)
+    sql = neon(resolveDatabaseUrl())
   }
   return sql
 }

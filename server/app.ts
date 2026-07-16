@@ -1,9 +1,14 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { getSql, mapProduct, type DbProduct } from './db'
-import { normalizeProductImage } from './image'
 
 const app = new Hono().basePath('/api')
+
+async function normalizeProductImage(image: string | undefined | null) {
+  // Dynamic import keeps sharp off the cold-start path for GET /catalog
+  const { normalizeProductImage: normalize } = await import('./image')
+  return normalize(image)
+}
 
 app.use(
   '*',

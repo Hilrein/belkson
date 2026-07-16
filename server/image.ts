@@ -1,5 +1,3 @@
-import sharp from 'sharp'
-
 const MAX_EDGE = 1000
 const WEBP_QUALITY = 78
 
@@ -7,6 +5,9 @@ const WEBP_QUALITY = 78
  * Normalize product images for storage/delivery:
  * - http(s) URLs left as-is (CDN / external hosts)
  * - data:image/* → resized WebP data URL (much smaller than PNG/JPEG base64)
+ *
+ * sharp is loaded dynamically so /api/catalog does not pull native binaries
+ * at module init (static `import sharp` often crashes Vercel cold starts).
  */
 export async function normalizeProductImage(
   image: string | undefined | null,
@@ -26,8 +27,8 @@ export async function normalizeProductImage(
   if (!match?.[1]) return raw
 
   try {
+    const { default: sharp } = await import('sharp')
     const input = Buffer.from(match[1], 'base64')
-    // Already small WebP — still re-encode lightly for consistency
     const out = await sharp(input)
       .rotate()
       .resize(MAX_EDGE, MAX_EDGE, {

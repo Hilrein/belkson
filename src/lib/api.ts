@@ -12,14 +12,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   })
 
   if (!res.ok) {
-    let message = res.statusText
+    let message = ''
     try {
       const body = (await res.json()) as { error?: string }
       if (body.error) message = body.error
     } catch {
-      /* ignore */
+      /* non-JSON body (e.g. Vercel FUNCTION_INVOCATION_FAILED) */
     }
-    throw new Error(message || `HTTP ${res.status}`)
+    if (!message) {
+      message =
+        res.status === 500
+          ? 'HTTP 500 — API упал (часто нет DATABASE_URL на Vercel или сбой serverless). Смотрите логи функции.'
+          : res.statusText || `HTTP ${res.status}`
+    }
+    throw new Error(message)
   }
 
   return res.json() as Promise<T>
