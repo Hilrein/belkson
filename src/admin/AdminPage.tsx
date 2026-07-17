@@ -253,11 +253,13 @@ export default function AdminPage() {
         isFavorite: form.isFavorite,
       }
 
+      // Badge NEW only with isNew; empty string clears badge on update
+      const badge = form.isNew ? 'NEW' : ''
+
       if (slideMode === 'edit' && editingId != null) {
-        const existing = products.find((p) => p.id === editingId)
         await updateProduct(editingId, {
           ...payload,
-          badge: existing?.badge,
+          badge,
         })
       } else {
         await addProduct({

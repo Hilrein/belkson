@@ -186,7 +186,7 @@ export default function HomePage() {
         className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         src={product.image}
       />
-      {(product.badge === 'NEW' || product.isNew) && (
+      {product.isNew && (
       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-primary text-xs px-3 py-1.5 rounded-full font-label-sm font-bold tracking-wide z-10">
                               NEW
                           </div>

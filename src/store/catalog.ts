@@ -17,6 +17,7 @@ export type CatalogProduct = {
   isNew: boolean
   /** Show in «Наши любимчики» */
   isFavorite: boolean
+  /** Optional label; NEW is only shown when isNew is true */
   badge?: string
 }
 

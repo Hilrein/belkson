@@ -66,7 +66,10 @@ function mapProduct(row: DbProduct) {
     image: row.image,
     isNew: Boolean(row.is_new),
     isFavorite: Boolean(row.is_favorite),
-    badge: row.badge ?? undefined,
+    badge:
+      row.badge === 'NEW' && !row.is_new
+        ? undefined
+        : (row.badge ?? undefined),
   }
 }
 
@@ -191,12 +194,15 @@ async function buildApp() {
     const isNew = body.isNew !== undefined ? Boolean(body.isNew) : cur.is_new
     const isFavorite =
       body.isFavorite !== undefined ? Boolean(body.isFavorite) : cur.is_favorite
-    const badge =
+    let badge: string | null =
       body.badge !== undefined
         ? body.badge
           ? String(body.badge)
           : null
         : cur.badge
+    // Keep NEW plaque in sync with isNew flag
+    if (body.isNew === false) badge = null
+    else if (body.isNew === true && !badge) badge = 'NEW'
 
     const rows = (await sql`
       UPDATE products SET

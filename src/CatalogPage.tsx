@@ -70,7 +70,7 @@ export default function CatalogPage() {
   const filtered = useMemo(() => {
     let list = products.filter((p) => p.status !== 'Нет в наличии')
     if (activeFilter === FILTER_NEW) {
-      list = list.filter((p) => p.isNew || p.badge === 'NEW')
+      list = list.filter((p) => p.isNew)
     } else if (activeFilter === FILTER_FAVORITE) {
       list = list.filter((p) => p.isFavorite)
     } else if (activeFilter !== FILTER_ALL) {
@@ -293,7 +293,7 @@ export default function CatalogPage() {
                     alt={product.name}
                     src={product.image}
                   />
-                  {(product.badge === 'NEW' || product.isNew) && (
+                  {product.isNew && (
                     <span className="absolute top-3 left-3 text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1">
                       New
                     </span>
