@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Админ Панель Belkson</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "tertiary": "#506600",
+                "primary-container": "#ce7ed5",
+                "surface-container": "#eeeeee",
+                "surface-tint": "#8a4193",
+                "on-primary-fixed": "#36003f",
+                "surface-dim": "#dadada",
+                "on-secondary-fixed": "#1b1b1b",
+                "primary-fixed-dim": "#faabff",
+                "on-error": "#ffffff",
+                "on-tertiary-fixed": "#161f00",
+                "surface-container-low": "#f3f3f3",
+                "inverse-on-surface": "#f1f1f1",
+                "inverse-primary": "#faabff",
+                "on-primary-container": "#580e63",
+                "surface-variant": "#e2e2e2",
+                "surface": "#f9f9f9",
+                "secondary": "#5e5e5e",
+                "secondary-fixed-dim": "#c6c6c6",
+                "outline": "#81737f",
+                "on-surface": "#1a1c1c",
+                "surface-container-lowest": "#ffffff",
+                "error-container": "#ffdad6",
+                "on-surface-variant": "#4f434e",
+                "surface-bright": "#f9f9f9",
+                "inverse-surface": "#2f3131",
+                "outline-variant": "#d2c2cf",
+                "on-tertiary": "#ffffff",
+                "secondary-fixed": "#e2e2e2",
+                "on-error-container": "#93000a",
+                "on-secondary": "#ffffff",
+                "tertiary-container": "#89a633",
+                "on-primary": "#ffffff",
+                "primary": "#8a4193",
+                "secondary-container": "#e2e2e2",
+                "error": "#ba1a1a",
+                "surface-container-highest": "#e2e2e2",
+                "on-tertiary-fixed-variant": "#3b4d00",
+                "on-secondary-fixed-variant": "#474747",
+                "background": "#f9f9f9",
+                "surface-container-high": "#e8e8e8",
+                "tertiary-fixed": "#cfef73",
+                "on-tertiary-container": "#2a3800",
+                "on-secondary-container": "#646464",
+                "on-primary-fixed-variant": "#6f2879",
+                "tertiary-fixed-dim": "#b3d25a",
+                "on-background": "#1a1c1c",
+                "primary-fixed": "#ffd6fd"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.25rem",
+                "xl": "0.25rem",
+                "full": "0.25rem"
+        },
+        "spacing": {
+                "unit": "4px",
+                "lg": "24px",
+                "xxl": "64px",
+                "gutter": "24px",
+                "xs": "4px",
+                "md": "16px",
+                "sm": "8px",
+                "xl": "40px",
+                "container-max": "1200px"
+        },
+        "fontFamily": {
+                "headline-md": [
+                        "Inter"
+                ],
+                "button": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "display-lg": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "button": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-md": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9f9; /* surface */
+            color: #1a1c1c; /* on-surface */
+        }
+        
+        /* Slide-over panel animation */
+        #slide-over {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        #slide-over.open {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden bg-background">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-gray-200 flex flex-col py-8 px-4 z-20">
+<div class="mb-10 flex items-center gap-3 px-4">
+<div>
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface">Belkson</h2>
+<p class="text-label-md font-label-md text-on-surface-variant">Панель администратора</p>
+</div>
+</div>
+<ul class="flex flex-col gap-2 flex-grow">
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-button font-button">Панель управления</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-primary-container bg-surface transition-all border border-gray-200" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-button font-button">Товары</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="text-button font-button">Выкуп с сайтов</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-button font-button">Настройки</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="text-button font-button">Инфо-страницы</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto flex flex-col gap-2 border-t border-gray-200 pt-4">
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="text-button font-button">Поддержка</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-md text-on-surface hover:bg-surface-variant transition-all" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-button font-button">Выйти</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 flex flex-col h-full bg-surface">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-lg h-16 bg-surface-container-lowest border-b border-gray-200 z-10 sticky top-0">
+<!-- Left Side / Search -->
+<div class="flex items-center gap-4 w-1/3">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container placeholder-on-surface-variant text-on-surface" placeholder="Поиск товаров, заказов..." type="text"/>
+</div>
+</div>
+<!-- Right Side Actions -->
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-md overflow-hidden bg-surface-variant">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="A small, professional avatar image of an admin user." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2XUFtWbqS0l8q7oG6XIp9jY9ZHVAqSpbSJZ2_yjrf-HYJgRWP6IWn08gbUDB_q4sLbL1bPTbIA6BiDhhQk9GSybIKM4JtJ6eU_r83llyv_i7-qY0cWB0Zk4jY4BiflXUFlrdcEteIMkeiXqUjNx3FwEku3Ji-dps2KAsU-FlYpF3QSOCx3fErWaY6KgvHzirmG3raG54AIrgEt2PWQzM2-wizh2T_LXPRj1XDX7r-sjCAyK7du65ecRbEVxJn7e4gfVazV9AJx-tm"/>
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-lg space-y-8">
+<!-- Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface mb-2">Управление товарами</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Управление запасами, ценами и деталями коллекции Belkson.</p>
+</div>
+<button class="flex items-center gap-2 bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5]" onclick="openSlideOver('add')">
+<span class="material-symbols-outlined text-sm">add</span>
+<span class="text-button font-button">Добавить товар</span>
+</button>
+</div>
+<!-- Bento Grid - Rates & Buyout -->
+<!-- Product List -->
+<section>
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-headline-md font-headline-md text-on-surface">Недавние товары</h3>
+<div class="flex gap-2"><div class="relative inline-block">
+<select class="appearance-none bg-surface border border-gray-200 rounded-md px-3 py-1.5 pr-8 text-body-sm font-medium text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer">
+<option selected="" value="RUB">RUB (₽)</option>
+<option value="EUR">EUR (€)</option>
+<option value="USD">USD ($)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+<button class="p-2 bg-surface border border-gray-200 rounded-md text-on-surface hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+</button>
+<button class="px-3 py-1.5 bg-surface border border-gray-200 rounded-md text-body-sm font-medium text-on-surface hover:bg-surface-variant transition-colors" onclick="openCurrencyModal()">
+  Изменить валюту для всего сайта
+</button></div>
+</div>
+<div class="bg-surface-container-lowest border border-gray-200 rounded-md overflow-hidden">
+<table class="w-full text-left border-collapse text-sm">
+<thead>
+<tr class="bg-surface border-b border-gray-200">
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">ID</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">Фото</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">Название</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">Категория</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">Цена</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant">Статус</th>
+<th class="p-3 text-label-md font-label-md text-on-surface-variant text-right">Действия</th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm text-on-surface">
+<tr class="border-b border-gray-200 hover:bg-surface transition-colors">
+<td class="p-3 text-on-surface-variant">1</td>
+<td class="p-3">
+<div class="w-10 h-10 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
+<img class="w-full h-full object-cover" data-alt="A cute toddler's organic cotton ribbed long-sleeve onesie." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc8Vc2rCmJhzCe10-VDbZTWPtSVRdZKsu8eI8SZaHpYOTSEZ1p_j5tzqmxoJtr0ErcCtMWbSiSMn1ciRJEV4Y8z8H5JIBk1a5DexOzlAHFw2wD7vutViog7mw56-yOYM6Ax24am5o8x5nUUTRv9OJu69yXHY1freFzAsvhD0qr3g9EfgHQteWsAxQenrE-MtYr2nmCz66Y1_XAB1fZ3wOwoTr0CXj_651auliFLt3C4gdZ8_qCYgsEP1zrAaqJSMWmu3v-5Mg8kkgz"/>
+</div>
+</td>
+<td class="p-3 font-medium">Органическое боди в рубчик</td>
+<td class="p-3">Младенцы</td>
+<td class="p-3">2 450 ₽</td>
+<td class="p-3">
+<span class="bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">В наличии</span>
+</td>
+<td class="p-3 text-right">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-1" onclick="openSlideOver('edit', {name: 'Органическое боди в рубчик', sku: 'BLK-001-SG', price: '28.00', category: 'Младенцы'})">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+</button>
+</td>
+</tr>
+<tr class="border-b border-gray-200 hover:bg-surface transition-colors">
+<td class="p-3 text-on-surface-variant">2</td>
+<td class="p-3">
+<div class="w-10 h-10 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
+<img class="w-full h-full object-cover" data-alt="A stylish children's chunky knit sweater." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0Q6wOpqO282icDrv7OYvgv8poezPnpOlmqteK6ijj1IeZRmVDOnxjMAoizthvRXj34R2idLlGtGi1l6UtgVVI3Wacq5BdGrXbvZlSXcRzsL6Z0R75LtGfA5kz8zmCSPLU835BhAGGwmCG81fZaBX4GEQhKQvsDO0u1qxlvSy9yi5SU3R7NRyvo8B0SZ0gXoYnOOwfnMslSbISKNvOZgV4eoSyIqIWua5uHXrAbg0rNrIyz9L5JfTq228OXw-FFJuWdOy_NB9Mx3XI"/>
+</div>
+</td>
+<td class="p-3 font-medium">Объемный вязаный свитер</td>
+<td class="p-3">Малыши</td>
+<td class="p-3">3 950 ₽</td>
+<td class="p-3">
+<span class="bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">Мало</span>
+</td>
+<td class="p-3 text-right">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-1" onclick="openSlideOver('edit', {name: 'Объемный вязаный свитер', sku: 'BLK-042-LV', price: '45.00', category: 'Малыши'})">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- Slide-over Panel for Adding/Editing Products -->
+<div class="fixed inset-0 bg-black/20 z-40 hidden" id="slide-over-backdrop" onclick="toggleSlideOver()"></div>
+<div class="fixed top-0 right-0 h-full w-full max-w-md bg-surface-container-lowest z-50 flex flex-col border-l border-gray-200" id="slide-over">
+<div class="flex justify-between items-center p-4 border-b border-gray-200 bg-surface">
+<h2 class="text-headline-md font-headline-md text-on-surface" id="slide-over-title">Добавить товар</h2>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface-variant" onclick="toggleSlideOver()">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Image Upload Area -->
+<div class="w-full h-32 rounded-md border border-dashed border-gray-300 bg-surface flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-lg mb-1">image</span>
+<span class="text-body-sm font-body-sm">Загрузить фото</span>
+</div>
+<!-- Form Fields -->
+<div class="space-y-4">
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">Название</label>
+<input class="w-full p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container" id="form-name" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">Артикул</label>
+<input class="w-full p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container" id="form-sku" type="text"/>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">Цена</label>
+<input class="w-full p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container" id="form-price" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+<div>
+<label class="block text-label-md font-label-md text-on-surface mb-1">Категория</label>
+<select class="w-full p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container" id="form-category">
+<option>Младенцы</option>
+<option>Малыши</option>
+<option>Дети</option>
+</select>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-gray-200 bg-surface flex justify-end gap-3">
+<button class="px-4 py-2 rounded-md border border-gray-200 text-button font-button text-on-surface hover:bg-surface-variant transition-colors" onclick="toggleSlideOver()">Отмена</button>
+<button class="bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] text-button font-button">Сохранить</button>
+</div>
+</div>
+<script>
+        function toggleSlideOver() {
+            const panel = document.getElementById('slide-over');
+            const backdrop = document.getElementById('slide-over-backdrop');
+            
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                backdrop.classList.add('hidden');
+            } else {
+                panel.classList.add('open');
+                backdrop.classList.remove('hidden');
+            }
+        }
+
+        function openSlideOver(mode, data = {}) {
+            const title = document.getElementById('slide-over-title');
+            const nameInput = document.getElementById('form-name');
+            const skuInput = document.getElementById('form-sku');
+            const priceInput = document.getElementById('form-price');
+            const categorySelect = document.getElementById('form-category');
+
+            if (mode === 'edit') {
+                title.textContent = 'Редактировать товар';
+                nameInput.value = data.name || '';
+                skuInput.value = data.sku || '';
+                priceInput.value = data.price || '';
+                if(data.category) {
+                     for(let i=0; i<categorySelect.options.length; i++) {
+                         if(categorySelect.options[i].text === data.category) {
+                             categorySelect.selectedIndex = i;
+                             break;
+                         }
+                     }
+                }
+            } else {
+                title.textContent = 'Добавить товар';
+                nameInput.value = '';
+                skuInput.value = '';
+                priceInput.value = '';
+                categorySelect.selectedIndex = 0;
+            }
+            
+            toggleSlideOver();
+        }
+    </script>
+<div class="fixed inset-0 bg-black/20 z-50 hidden transition-opacity" id="currency-modal-backdrop"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg z-50 hidden flex-col" id="currency-modal"><div class="flex justify-between items-center p-4 border-b border-gray-200 bg-surface"><h2 class="text-headline-md font-headline-md text-on-surface">Изменение валюты сайта</h2><button class="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded-md hover:bg-surface-variant" onclick="closeCurrencyModal()"><span class="material-symbols-outlined text-sm">close</span></button></div><div class="p-6 space-y-6"><p class="text-body-sm text-on-surface-variant">Выберите основную валюту. Это изменение применится ко всем ценам в админ-панели и на основном сайте.</p><div class="space-y-3"><label class="flex items-center gap-3 cursor-pointer group"><input checked="" class="w-4 h-4 text-primary-container focus:ring-primary-container border-gray-300" name="site-currency" type="radio" value="RUB"/><span class="text-body-md text-on-surface">Российский рубль (₽)</span></label><label class="flex items-center gap-3 cursor-pointer group"><input class="w-4 h-4 text-primary-container focus:ring-primary-container border-gray-300" name="site-currency" type="radio" value="EUR"/><span class="text-body-md text-on-surface">Евро (€)</span></label><label class="flex items-center gap-3 cursor-pointer group"><input class="w-4 h-4 text-primary-container focus:ring-primary-container border-gray-300" name="site-currency" type="radio" value="USD"/><span class="text-body-md text-on-surface">Доллар США ($)</span></label></div></div><div class="p-4 border-t border-gray-200 bg-surface flex justify-end gap-3"><button class="px-4 py-2 rounded-md border border-gray-200 text-button font-button text-on-surface hover:bg-surface-variant transition-colors" onclick="closeCurrencyModal()">Отмена</button><button class="bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] text-button font-button" onclick="closeCurrencyModal()">Применить изменения</button></div></div><script>function openCurrencyModal() { document.getElementById('currency-modal-backdrop').classList.remove('hidden'); document.getElementById('currency-modal').classList.remove('hidden'); document.getElementById('currency-modal').classList.add('flex'); } function closeCurrencyModal() { document.getElementById('currency-modal-backdrop').classList.add('hidden'); document.getElementById('currency-modal').classList.add('hidden'); document.getElementById('currency-modal').classList.remove('flex'); }</script></body></html>

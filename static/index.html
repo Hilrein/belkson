@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Belkson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="script.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-background text-on-background font-body-md overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface/90 backdrop-blur-md dark:bg-surface-dim/90 shadow-sm w-full sticky top-0 z-40 transition-all duration-300">
+<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-2 max-w-[1200px] mx-auto">
+<div class="flex items-center gap-4">
+<!-- Desktop & Mobile Menu Button -->
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150" onclick="toggleNavDrawer()">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<a class="flex items-center gap-2 group" href="/">
+<img alt="Belkson Logo" class="shrink-0 object-contain w-8 h-8 group-hover:opacity-80 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRIGpaO5cyb72DuJFWmg7fxWR7x5H7FjUvJxjSPmGdAW8shR6cA3TIXynNwyAPvO5vV1K-Dwevw6XOSfPt-cMfFBA_bKImJDdmHNDekxBlxycmkG4ypq8lKktpdqH9KVy_aPMeS4PYPlbzeVFYIXqMy9wKri37ZUUZmdsSSAsP6dsweDFkmpKG6zV383BMuZn4iHw_31fDfw_t_7tEgUtcz0AXKxKaNuNl17EIb3e0jmXY9f7XZfKF0b6qwVyPoCZD7XkI9f7HOE2q"/>
+<span class="font-display-lg-mobile text-primary font-bold text-xl tracking-tight hidden sm:block">Belkson</span>
+</a>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden lg:flex items-center gap-6"><a class="text-primary font-normal border-b-2 border-primary pb-1" href="/">Главная</a>
+<div class="relative group h-full flex items-center"><button class="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">Категории<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span></button>
+<div class="absolute top-[100%] left-0 mt-2 w-[700px] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 p-8 flex gap-8 z-50">
+<div class="flex-1 flex flex-col justify-center gap-4 py-2">
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Новинки</a>
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Топ распродаж</a>
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Прочее</a>
+<hr class="my-2 border-[#ce7ed5]/30"/>
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="{{DATA:SCREEN:SCREEN_65}}">Девочки</a>
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Мальчики</a>
+<a class="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium" href="#">Малыши</a>
+</div>
+<div class="w-[300px] relative rounded-3xl overflow-hidden group/promo shrink-0 bg-surface-container-low aspect-[4/5]">
+<img alt="Promo" class="w-full h-full object-cover group-hover/promo:scale-105 transition-transform duration-700 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/20 to-transparent flex flex-col justify-end p-6">
+<h4 class="text-primary font-headline-md text-xl mb-1">Весенняя коллекция</h4>
+<a class="text-on-surface-variant text-sm font-medium flex items-center gap-1 hover:text-[#ce7ed5] transition-colors" href="#">Смотреть <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
+</div>
+</div>
+</div>
+</div>
+<div class="relative group h-full flex items-center">
+<button class="text-on-surface-variant font-normal hover:text-primary transition-colors duration-200 flex items-center gap-1 py-4">
+        Выкуп с официальных сайтов
+        <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+<div class="absolute top-[100%] right-0 mt-2 w-[700px] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 p-10 flex gap-8 z-50">
+<div class="flex-1">
+<h3 class="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">Zara</h3>
+<ul class="flex flex-col gap-2">
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
+</ul>
+</div>
+<div class="flex-1">
+<h3 class="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">H&amp;M</h3>
+<ul class="flex flex-col gap-2">
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Poland</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">USA</a></li>
+</ul>
+</div>
+<div class="flex-1">
+<h3 class="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">Next</h3>
+<ul class="flex flex-col gap-2">
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">UK</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Kazakhstan</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Germany</a></li>
+<li class=""><a class="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal" href="#">Spain</a></li>
+</ul>
+</div>
+</div>
+</div>
+</nav>
+<div class="flex items-center gap-2 text-primary dark:text-primary-fixed-dim">
+<!-- Expanding Search Bar -->
+<div class="relative flex items-center justify-end" id="search-wrapper">
+<input class="absolute right-12 w-0 opacity-0 transition-all duration-300 ease-out bg-surface-container-low border border-outline-variant rounded-full py-2 px-4 focus:ring-2 focus:ring-primary-container focus:border-primary-container text-on-surface outline-none origin-right z-0" id="header-search-input" placeholder="Поиск..." type="text"/>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative z-10 bg-surface" onclick="toggleSearch()">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 hidden md:flex">
+<span class="material-symbols-outlined">person</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative" onclick="toggleCart()">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="absolute top-1 right-1 bg-primary text-on-primary text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">3</span>
+</button>
+</div>
+</div>
+</header>
+<main>
+<!-- Hero Carousel -->
+<section class="relative w-full overflow-hidden h-[600px] md:h-[700px] bg-surface-container-low">
+<div class="carousel-track h-full w-full" id="hero-carousel" style="transform: translateX(0%);">
+<!-- Slide 1 -->
+<div class="w-full h-full flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A joyful, softly lit photograph of two young children..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent flex items-end">
+<div class="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-12 md:pb-24">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-4 drop-shadow-sm">Весенняя нежность</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">Откройте для себя нашу новую коллекцию невероятно уютных тканей для активных игр, созданных для маленьких исследователей.</p>
+<button class="bg-primary text-on-primary font-label-sm text-label-sm px-8 py-4 rounded-full shadow-[0_4px_10px_rgba(138,65,147,0.3)] border-b-[3px] border-on-primary-fixed-variant hover:bg-on-primary-fixed-variant transition-colors active:scale-[0.98] active:border-b-0 active:translate-y-[3px]">
+                            Купить новинки
+                        </button>
+</div>
+</div>
+</div>
+<!-- Slide 2 -->
+<div class="w-full h-full flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A close-up, high-quality photograph focusing on the texture of a soft, knitted children's sweater..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8XYOqM6k1V0yN9OxYE3KD3vUisD4kg3HENS3WhujMMEi1vweZXTfbqxf_gMVmXS3BxO3xhuNShDRdDGpgd_dC2YWaMLWhh9DaJoQymdWpGNX-7E3zC5JpTWwLPoqWwsZD46MK841lM3bvdLReNjLgKBzZOZDuQj6x8yCoihcD7f3TOr6gE1i-HO9NlZA9-TQfrglWzkecr7PxoNuovqPLQCtN8W5d1rQk7XGWDqLQwJiargBAigg616CwuYyRyCXzdpUihQVawbcF"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface/80 to-transparent flex items-end">
+<div class="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-12 md:pb-24">
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-4 drop-shadow-sm">Создано для комфорта</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">Премиальные материалы, которые ощущаются как объятия весь день напролет.</p>
+<button class="bg-primary text-on-primary font-label-sm text-label-sm px-8 py-4 rounded-full shadow-[0_4px_10px_rgba(138,65,147,0.3)] border-b-[3px] border-on-primary-fixed-variant hover:bg-on-primary-fixed-variant transition-colors active:scale-[0.98] active:border-b-0 active:translate-y-[3px]">
+                            Исследовать материалы
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Carousel Indicators -->
+<div class="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+<button class="w-3 h-3 rounded-full transition-all duration-300 bg-primary"></button>
+<button class="w-3 h-3 rounded-full hover:bg-outline transition-all duration-300 bg-outline-variant"></button>
+</div>
+</section>
+<!-- Category Pills -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 overflow-x-auto hide-scroll">
+<div class="flex gap-4 min-w-max">
+<button class="bg-surface-variant text-on-surface font-label-sm text-label-sm px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                Вся одежда
+            </button>
+<button class="bg-primary-container text-on-primary-container font-label-sm text-label-sm px-6 py-3 rounded-full shadow-sm">
+                Топы и футболки
+            </button>
+<button class="bg-surface-variant text-on-surface font-label-sm text-label-sm px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                Брюки и легинсы
+            </button>
+<button class="bg-surface-variant text-on-surface font-label-sm text-label-sm px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                Платья
+            </button>
+<button class="bg-surface-variant text-on-surface font-label-sm text-label-sm px-6 py-3 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                Верхняя одежда
+            </button>
+</div>
+</section>
+<!-- Новинки (New Arrivals Carousel) -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary mb-2">Новинки</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Свежие поступления в нашем премиальном каталоге.</p>
+</div>
+<div class="hidden md:flex gap-3">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-colors text-primary" onclick="scrollNewArrivals(-1)">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-colors text-primary" onclick="scrollNewArrivals(1)">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto hide-scroll flex gap-6 pb-6 snap-x snap-mandatory" id="new-arrivals-container" style="scroll-behavior: smooth;">
+<!-- Product 1 -->
+<div class="min-w-[280px] md:min-w-[320px] snap-start flex-shrink-0 group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-[3/4] mb-4 bg-surface-container-low shadow-sm group-hover:shadow-md transition-shadow">
+<img alt="Стеганый жилет" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjgiIGZpbGw9IiNlOGVhZWQiLz48cGF0aCBkPSJNMTcwIDEzMCBsMzAgNDAgbDIwLTE1IGw0MCA1NSBIMTQweiIgZmlsbD0iI2JkYzFjNiIvPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjEyMCIgcj0iMTgiIGZpbGw9IiNiZGMxYzYiLz48L3N2Zz4="/>
+<div class="absolute top-4 left-4 bg-white/90 backdrop-blur text-primary text-xs px-3 py-1.5 rounded-full font-label-sm font-bold tracking-wide">
+                        NEW
+                    </div>
+</div>
+<div class="flex flex-col gap-1 px-1">
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Стеганый жилет премиум</h3>
+<p class="text-on-surface-variant text-sm">Кремовый</p>
+<span class="font-body-lg text-body-lg text-primary font-bold mt-1">$48</span>
+</div>
+</div>
+<!-- Product 2 -->
+<div class="min-w-[280px] md:min-w-[320px] snap-start flex-shrink-0 group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-[3/4] mb-4 bg-surface-container-low shadow-sm group-hover:shadow-md transition-shadow">
+<img alt="Вязаный свитер" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjgiIGZpbGw9IiNlOGVhZWQiLz48cGF0aCBkPSJNMTcwIDEzMCBsMzAgNDAgbDIwLTE1IGw0MCA1NSBIMTQweiIgZmlsbD0iI2JkYzFjNiIvPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjEyMCIgcj0iMTgiIGZpbGw9IiNiZGMxYzYiLz48L3N2Zz4="/>
+</div>
+<div class="flex flex-col gap-1 px-1">
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Уютный вязаный свитер</h3>
+<p class="text-on-surface-variant text-sm">Сиреневый</p>
+<span class="font-body-lg text-body-lg text-primary font-bold mt-1">$55</span>
+</div>
+</div>
+<!-- Product 3 -->
+<div class="min-w-[280px] md:min-w-[320px] snap-start flex-shrink-0 group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-[3/4] mb-4 bg-surface-container-low shadow-sm group-hover:shadow-md transition-shadow">
+<img alt="Джинсовый комбинезон" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjgiIGZpbGw9IiNlOGVhZWQiLz48cGF0aCBkPSJNMTcwIDEzMCBsMzAgNDAgbDIwLTE1IGw0MCA1NSBIMTQweiIgZmlsbD0iI2JkYzFjNiIvPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjEyMCIgcj0iMTgiIGZpbGw9IiNiZGMxYzYiLz48L3N2Zz4="/>
+</div>
+<div class="flex flex-col gap-1 px-1">
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Комбинезон с вышивкой</h3>
+<p class="text-on-surface-variant text-sm">Деним</p>
+<span class="font-body-lg text-body-lg text-primary font-bold mt-1">$62</span>
+</div>
+</div>
+<!-- Product 4 -->
+<div class="min-w-[280px] md:min-w-[320px] snap-start flex-shrink-0 group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-[3/4] mb-4 bg-surface-container-low shadow-sm group-hover:shadow-md transition-shadow">
+<img alt="Летнее платье" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgcng9IjgiIGZpbGw9IiNlOGVhZWQiLz48cGF0aCBkPSJNMTcwIDEzMCBsMzAgNDAgbDIwLTE1IGw0MCA1NSBIMTQweiIgZmlsbD0iI2JkYzFjNiIvPjxjaXJjbGUgY3g9IjI1MCIgY3k9IjEyMCIgcj0iMTgiIGZpbGw9IiNiZGMxYzYiLz48L3N2Zz4="/>
+</div>
+<div class="flex flex-col gap-1 px-1">
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold">Летнее платье А-силуэта</h3>
+<p class="text-on-surface-variant text-sm">Цветочный принт</p>
+<span class="font-body-lg text-body-lg text-primary font-bold mt-1">$45</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Our Favorites -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="font-headline-md text-headline-md text-primary mb-2">Наши любимчики</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Вещи, которые все обожают прямо сейчас.</p>
+</div>
+<button class="hidden md:flex items-center gap-2 text-primary font-label-sm text-label-sm hover:text-on-primary-container transition-colors">
+                Показать все <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Product Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
+<div class="relative rounded-2xl overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean, bright product shot of a child's soft lavender knit sweater..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfv4oMjxyYS1DCA0YxWS2N71QfIgU5Avzl-5KTPT1FD-7YzoFunPLUXWXPHgsHbl9EU71mGtTD7L1ltySCFGLDVrIR01VJK5OmU31yKty2nf5_zOO1QHVujSfh60wakVkvabEqyTsrh8FhBfWXmpimbsl8UP72d-V4TAgqWoju79MdiHXEHmV6Ex221PNigxC_2Ms5CA5WuaVIDlWatBJTRXkS3itTO5NJxKxcvLA9MrgHctYvvCWjeTpni8TF-zUatYgkHaszOo3t"/>
+<button class="absolute top-3 right-3 w-10 h-10 bg-surface/80 backdrop-blur-sm rounded-full flex items-center justify-center text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">Свитер "Облако"</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Лаванда</p>
+</div>
+<span class="font-body-lg text-body-lg text-primary font-bold">$45</span>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
+<div class="relative rounded-2xl overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A bright product shot of a pair of children's soft cotton play pants..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnyOc5CNUPOACXBBBVFYzYMBskhIy6URaArtjaup4JCMc-HjQuIgXz1CnJb4Wpd2PvMzWKpSuI1eU0WMCuQXnaAwNX-wcwyqI1ApElaUE29at6wKSn7ydx6S3EMAzZZPTMZNZa7oYTRC3DR-AtXyF4GMEm1-t-qbULnk3rpztdtVQ5pWA1VnYhgAaFCDb4koEt_B8K4_fGCqRf02m-RHjL_2oOKRmh_WCypV15FKz13ZfRFExyEagVA6Qr2h365RbDEu5RfJNi_A5k"/>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">Брюки для игр</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Мята</p>
+</div>
+<span class="font-body-lg text-body-lg text-primary font-bold">$32</span>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
+<div class="relative rounded-2xl overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A clean product shot of a child's simple, soft cotton t-shirt..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL2T_inshNeC8llourlRv_WiIXOHyCH_Qmvpx2Jw3CIIddVs7QZY0dF5F_X-LRG9VcQ-5hDAMMcuDIUIi2uZZsSgKfjsB-mw8mWzBgBvxUySeWdq7IZuwwMAa-478pH2xu5szGoEK1HKcyz7tlQcE4V9R1pD--7pJQPGIXpiCGcTwZyE1ikT9DatUDa97eapGX7DHlh2bl_1U-DVzZjkIwH8UUHd5rvfIHwz5k4RaUozlMKoVRN5uMIQCPRpgVbKszpb-lub6sOxAy"/>
+<div class="absolute bottom-3 left-3 bg-secondary-container text-on-secondary-container text-xs px-3 py-1.5 rounded-full font-label-sm font-bold">
+                        Хит продаж
+                    </div>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">Футболка "Солнышко"</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Желтый</p>
+</div>
+<span class="font-body-lg text-body-lg text-primary font-bold">$18</span>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
+<div class="relative rounded-2xl overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A product shot of a small, squishy-looking child's beanie hat..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApMbmiZE2Jspob7k_YUIrYnnrfNdfY1f8xkYwbMInsKHOiFQscZIb3mPtSz5aPaJc2Xba1V3yyjyFWsat-oAkbmieAYSy3B8pBjtxLbcpekIYT1l5SHhi2L2RzCqfmvHOnFlJh-wb6MfdDvkWgv_zJ2-J9BhNjXZ1UXkRPQCUfTN3TJMOC_JHukP0Q2QDtyEhEJuQl6dA3EftcdySKdvSlDEmFlIFu35lZ1by48IaXrMWSRCc88U9PREmiwd2sBpCix2sgP9bvysQl"/>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface font-semibold mb-1">Шапка с помпоном</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Слива</p>
+</div>
+<span class="font-body-lg text-body-lg text-primary font-bold">$22</span>
+</div>
+</div>
+</div>
+<button class="md:hidden w-full mt-8 bg-surface-variant text-on-surface font-label-sm text-label-sm py-4 rounded-full border border-outline-variant hover:bg-surface-container-high transition-colors">
+            Показать все любимчики
+        </button>
+</section>
+<!-- Bento Grid Feature -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+<!-- Large Feature -->
+<div class="md:col-span-2 md:row-span-2 rounded-3xl overflow-hidden relative group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A candid, high-quality photo of a young girl wearing a cozy lavender jacket..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCcIoQstGiOoJsMha05qt-pi349QXUPBjNWLU-2s49dciEvoFl57vggXvK6J6EH9iyk6QZ2cfwKYheAz5kBYR0AOtjWwR4v_UsxNqxwQsJa7sFCbRMloAb-Yx04owsdwUXHC8VD8ug1TJEyOlcuOAdgkhRrRLGSbAaZjwME82bZDf-BKuNjuqV7PiJRg9MCi3H8yJCe-4owZdsYLAX-YB8Bz6I4gBzcHKiAE5CRzPxertAFZesXtzXVzA1sMm2LuDZYvbUW9ZpGAQu"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/30 to-transparent flex flex-col justify-end p-8 md:p-12">
+<span class="bg-primary text-on-primary text-xs px-4 py-1.5 rounded-full font-label-sm w-max mb-4 shadow-sm">Новая коллекция</span>
+<h3 class="font-display-lg-mobile md:font-headline-md text-display-lg-mobile md:text-headline-md text-primary mb-3">Коллекция для переменки</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8 max-w-md">Одежда, созданная для больших приключений из экологичных и прочных тканей.</p>
+<button class="bg-surface text-primary font-label-sm text-label-sm px-8 py-4 rounded-full w-max shadow-md hover:bg-surface-variant transition-colors">
+                        Смотреть коллекцию
+                    </button>
+</div>
+</div>
+<!-- Small Feature Top -->
+<div class="rounded-3xl bg-surface-container-low p-8 flex flex-col justify-center items-center text-center shadow-[0_10px_30px_-15px_rgba(138,65,147,0.05)] border border-surface-dim">
+<div class="w-16 h-16 bg-primary-container/50 rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined text-3xl">eco</span>
+</div>
+<h4 class="font-headline-md text-headline-md font-bold text-primary mb-3">С заботой о планете</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Наши ткани производятся органическим путем и очень мягкие для чувствительной кожи.</p>
+</div>
+<!-- Small Feature Bottom -->
+<div class="rounded-3xl overflow-hidden relative group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A tightly cropped, highly detailed photo showing tiny baby socks..." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzfXQLCjEcOYa9JWefnJxVNtMvLW77hvpFU-BmxSFAJblnOkg2kDVj_ipKEcO19Gp6j7rjf7okmqUwjlf9JBeE44txITjk8ge7lKAVPCWjvMhYz_xHzqHbWeOWZBvYTmomsPaeXXrmt_5PbSQ8LjavhTyA3GXovY9RaVwRhZM2pLTrJVSQCT-7vcWsQKesLEN-0h3zXilKIgvkwCBKS5bXQoxOAC6OQ2QoXttUxQV4bPS9dRDamgduZScmoYtxUg1DPSdhpUTa7O1B"/>
+<div class="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors"></div>
+<div class="absolute inset-0 flex flex-col justify-center items-center text-white p-6 text-center">
+<h4 class="font-headline-md text-headline-md font-bold mb-4 drop-shadow-md">Базовые вещи для малышей</h4>
+<a class="font-label-sm text-label-sm bg-white/20 backdrop-blur-sm hover:bg-white/30 px-6 py-2 rounded-full transition-colors" href="#">Купить сейчас</a>
+</div>
+</div>
+</div>
+</section>
+<!-- Variant 1: Modern Bento Grid -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 bg-[#fdf7ff]">
+<h2 class="font-headline-md text-headline-md text-primary mb-12 text-center">Вариант 1: Порядок и условия выкупа</h2>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+<div class="bg-white p-8 rounded-3xl md:col-span-4 flex flex-col gap-4">
+<span class="material-symbols-outlined text-4xl text-[#ce7ed5] font-light">search</span>
+<h3 class="font-body-lg text-body-lg font-bold text-on-surface">Выбор товара</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&amp;M или Next.</p>
+</div>
+<div class="bg-white p-8 rounded-3xl md:col-span-8 flex flex-col gap-4">
+<span class="material-symbols-outlined text-4xl text-[#ce7ed5] font-light">edit_document</span>
+<h3 class="font-body-lg text-body-lg font-bold text-on-surface">Оформление заказа</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Присылаете нам ссылки на выбранные товары в Telegram или Instagram.</p>
+</div>
+<div class="bg-white p-8 rounded-3xl md:col-span-6 flex flex-col gap-4">
+<span class="material-symbols-outlined text-4xl text-[#ce7ed5] font-light">calculate</span>
+<h3 class="font-body-lg text-body-lg font-bold text-on-surface">Расчет стоимости</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.</p>
+</div>
+<div class="bg-white p-8 rounded-3xl md:col-span-6 flex flex-col gap-4">
+<span class="material-symbols-outlined text-4xl text-[#ce7ed5] font-light">payment</span>
+<h3 class="font-body-lg text-body-lg font-bold text-on-surface">Оплата</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Вы производите оплату удобным способом.</p>
+</div>
+<div class="bg-white p-8 rounded-3xl md:col-span-8 md:col-start-3 flex flex-col gap-4 text-center items-center">
+<span class="material-symbols-outlined text-4xl text-[#ce7ed5] font-light">local_shipping</span>
+<h3 class="font-body-lg text-body-lg font-bold text-on-surface">Доставка</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg">Мы выкупаем товар и доставляем его вам в кратчайшие сроки.</p>
+</div>
+</div>
+</section>
+<!-- Variant 2: Editorial Minimalist -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim">
+<h2 class="font-headline-md text-headline-md text-primary mb-12 text-center">Вариант 2: Порядок и условия выкупа</h2>
+<div class="max-w-4xl mx-auto flex flex-col">
+<div class="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
+<h3 class="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Выбор товара</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&amp;M или Next.</p>
+</div>
+<div class="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start bg-surface-container-low/50 px-6 -mx-6 rounded-2xl">
+<h3 class="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Оформление заказа</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Присылаете нам ссылки на выбранные товары в Telegram или Instagram.</p>
+</div>
+<div class="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
+<h3 class="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Расчет стоимости</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.</p>
+</div>
+<div class="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start bg-surface-container-low/50 px-6 -mx-6 rounded-2xl">
+<h3 class="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Оплата</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Вы производите оплату удобным способом.</p>
+</div>
+<div class="py-8 border-t border-b border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
+<h3 class="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Доставка</h3>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">Мы выкупаем товар и доставляем его вам в кратчайшие сроки.</p>
+</div>
+</div>
+</section>
+<!-- Variant 3: Visual Narrative -->
+<section class="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim overflow-hidden font-[EB_Garamond,Plus_Jakarta_Sans,sans-serif]">
+<h2 class="font-headline-md text-headline-md text-primary mb-16 text-center">Вариант 3: Порядок и условия выкупа</h2>
+<div class="relative">
+<div class="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
+<div class="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory px-4 md:px-0">
+<div class="flex-1 min-w-[200px] snap-start group">
+<div class="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl font-light">search</span>
+</div>
+<h3 class="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Выбор товара</h3>
+<p class="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&amp;M или Next.</p>
+</div>
+<div class="flex-1 min-w-[200px] snap-start group">
+<div class="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl font-light">edit_document</span>
+</div>
+<h3 class="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Оформление заказа</h3>
+<p class="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Присылаете нам ссылки на выбранные товары в Telegram или Instagram.</p>
+</div>
+<div class="flex-1 min-w-[200px] snap-start group">
+<div class="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl font-light">calculate</span>
+</div>
+<h3 class="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Расчет стоимости</h3>
+<p class="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.</p>
+</div>
+<div class="flex-1 min-w-[200px] snap-start group">
+<div class="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl font-light">payment</span>
+</div>
+<h3 class="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Оплата</h3>
+<p class="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Вы производите оплату удобным способом.</p>
+</div>
+<div class="flex-1 min-w-[200px] snap-start group">
+<div class="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl font-light">local_shipping</span>
+</div>
+<h3 class="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Доставка</h3>
+<p class="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Мы выкупаем товар и доставляем его вам в кратчайшие сроки.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-container-highest w-full px-margin-desktop py-16 flex flex-col items-center gap-6 max-w-[1200px] mx-auto border-t border-surface-dim mt-8">
+<h2 class="font-display-lg-mobile text-primary mb-2 font-bold tracking-tight">Belkson</h2>
+<nav class="flex flex-wrap justify-center gap-8 mb-6 font-body-md text-body-md">
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">О нас</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Таблица размеров</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Доставка и возврат</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Контакты</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Политика конфиденциальности</a>
+</nav>
+<div class="flex gap-6 mb-2"><a class="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href="#"><span class="material-symbols-outlined">photo_camera</span> Instagram</a><a class="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium" href="#"><span class="material-symbols-outlined">send</span> Telegram</a></div><p class="text-outline font-body-md text-body-md text-sm">
+        © 2024 Belkson Kids. Все права защищены.
+    </p>
+</footer>
+<!-- Navigation Drawer Overlay -->
+<div aria-hidden="true" class="fixed inset-0 z-50 pointer-events-none flex justify-start" id="nav-overlay">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 ease-in-out" id="nav-backdrop" onclick="toggleNavDrawer()"></div>
+<!-- Sliding Panel -->
+<div class="relative w-full max-w-[350px] h-full bg-surface shadow-2xl flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out" id="nav-panel">
+<div class="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
+<h2 class="font-headline-md text-primary font-bold">Меню</h2>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors" onclick="toggleNavDrawer()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+<a class="text-on-surface font-body-lg font-medium text-xl hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Главная</a><hr class="border-t border-[#EAE6EE] my-2"/>
+<div class="flex flex-col gap-5">
+<h3 class="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Категории</h3>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Новинки</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Топ распродаж</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Прочее</a>
+<hr class="border-t border-[#EAE6EE] my-2"/>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="{{DATA:SCREEN:SCREEN_83}}" onclick="toggleNavDrawer()">Девочки</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="{{DATA:SCREEN:SCREEN_83}}" onclick="toggleNavDrawer()">Мальчики</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Малыши</a>
+</div>
+<hr class="border-t border-[#EAE6EE] my-2"/>
+<div class="flex flex-col gap-5">
+<h3 class="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Выкуп с официальных сайтов</h3>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Zara</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">H&amp;M</a>
+<a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors" href="#" onclick="toggleNavDrawer()">Next</a>
+</div>
+<hr class="border-t border-[#EAE6EE] my-2"/><div class="flex flex-col gap-5"><h3 class="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">Соцсети</h3><a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href="#"><span class="material-symbols-outlined text-primary">photo_camera</span> Instagram</a><a class="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3" href="#"><span class="material-symbols-outlined text-primary">send</span> Telegram</a></div></div>
+</div>
+</div>
+<!-- Full Screen Shopping Bag Overlay -->
+<div aria-hidden="true" class="fixed inset-0 z-50 pointer-events-none flex justify-end" id="cart-overlay">
+<!-- Backdrop -->
+<div class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 ease-in-out" id="cart-backdrop" onclick="toggleCart()"></div>
+<!-- Sliding Panel -->
+<div class="relative w-full max-w-md h-full bg-surface shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out" id="cart-panel">
+<!-- Header -->
+<div class="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
+<h2 class="font-headline-md text-primary font-bold flex items-center gap-2">
+<span class="material-symbols-outlined">shopping_bag</span>
+                Ваша корзина
+            </h2>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors" onclick="toggleCart()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Cart Contents (Empty State Example) -->
+<div class="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-4">
+<div class="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/50 mb-4">
+<span class="material-symbols-outlined text-5xl">shopping_cart</span>
+</div>
+<h3 class="font-headline-md text-on-surface">Пока здесь пусто</h3>
+<p class="font-body-md text-on-surface-variant max-w-[250px]">Добавьте товары из нашего каталога, чтобы сделать заказ.</p>
+<button class="mt-4 px-8 py-3 bg-primary-container text-on-primary-container rounded-full font-label-sm hover:bg-primary hover:text-white transition-colors" onclick="toggleCart()">
+                Перейти в каталог
+            </button>
+</div>
+<!-- Footer / Checkout -->
+<div class="p-6 border-t border-surface-dim bg-surface-container-lowest">
+<div class="flex justify-between items-center mb-6 font-headline-md text-on-surface">
+<span class="">Итого</span>
+<span class="font-bold">$0.00</span>
+</div>
+<button class="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant transition-colors opacity-50 cursor-not-allowed">
+                Оформить заказ
+            </button>
+</div>
+</div>
+</div>
+</body>
+</html>

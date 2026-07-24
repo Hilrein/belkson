@@ -1,0 +1,21 @@
+/* Belkson — custom styles */
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  user-select: none;
+}
+
+/* Hide scrollbars (carousels / horizontal lists) */
+.hide-scroll {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.hide-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+
+/* Smooth horizontal scroll for product rows */
+#new-arrivals-container {
+  scroll-behavior: smooth;
+}
