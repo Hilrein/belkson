@@ -220,48 +220,6 @@ async function buildApp() {
   app.get('/hm/catalog', handleHMCatalog)
   app.get('/api/hm/catalog', handleHMCatalog)
 
-  async function handleNextCatalog(c: any) {
-    try {
-      const region = c.req.query('region') || 'uk'
-      const category = c.req.query('category') || 'all'
-      const subcategory = c.req.query('subcategory') || 'all'
-      const size = c.req.query('size') || 'all'
-      const priceMinRub = c.req.query('priceMin') || c.req.query('priceMinRub') ? Number(c.req.query('priceMin') || c.req.query('priceMinRub')) : undefined
-      const priceMaxRub = c.req.query('priceMax') || c.req.query('priceMaxRub') ? Number(c.req.query('priceMax') || c.req.query('priceMaxRub')) : undefined
-      const sortBy = c.req.query('sortBy') || 'featured'
-      const search = c.req.query('search') || ''
-      const page = c.req.query('page') ? Number(c.req.query('page')) : 1
-      const pageSize = c.req.query('pageSize') ? Number(c.req.query('pageSize')) : 24
-
-      const { scrapeNextCatalog } = await import('../server/nextParser.js')
-      const result = await scrapeNextCatalog({
-        region: region as any,
-        category,
-        subcategory,
-        size,
-        priceMinRub,
-        priceMaxRub,
-        sortBy: sortBy as any,
-        search,
-        page,
-        pageSize,
-      })
-
-      return c.json(result)
-    } catch (err) {
-      console.error('Error in /next/catalog route:', err)
-      return c.json(
-        {
-          error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Next',
-        },
-        502
-      )
-    }
-  }
-
-  app.get('/next/catalog', handleNextCatalog)
-  app.get('/api/next/catalog', handleNextCatalog)
-
   async function handleExternalShop(c: any) {
     const shop = c.req.param('shop').toLowerCase()
     const country = c.req.param('country')?.toLowerCase()

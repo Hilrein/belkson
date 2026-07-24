@@ -1,7 +1,6 @@
 import type { RegionId, StoreId, SortOption } from '../types/shop'
 import { zaraCatalogService } from '../services/zaraCatalogService'
 import { hmCatalogService } from '../services/hmCatalogService'
-import { nextCatalogService } from '../services/nextCatalogService'
 import { ZARA_SUBCATEGORIES } from '../types/zaraTaxonomy'
 
 export interface ShopCategoryTab {
@@ -57,15 +56,6 @@ export const HM_SUBCATEGORIES: ShopSubcategoryItem[] = [
   { id: 'baby_boy', label: 'Малыши (4-24M)', parentCategories: ['baby_boy', 'mini'] },
 ]
 
-export const NEXT_SUBCATEGORIES: ShopSubcategoryItem[] = [
-  { id: 'all', label: 'Все товары', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'mini'] },
-  { id: 'older_girls', label: 'Older Girls (3–16 лет)', parentCategories: ['girl'] },
-  { id: 'younger_girls', label: 'Younger Girls (3M–6 лет)', parentCategories: ['girl'] },
-  { id: 'older_boys', label: 'Older Boys (3–16 лет)', parentCategories: ['boy'] },
-  { id: 'younger_boys', label: 'Younger Boys (3M–6 лет)', parentCategories: ['boy'] },
-  { id: 'baby', label: 'Baby (0–3 года)', parentCategories: ['baby_girl', 'baby_boy', 'mini'] },
-]
-
 export const SHOP_CONFIGS: Record<string, ShopConfig> = {
   zara: {
     id: 'zara',
@@ -84,15 +74,6 @@ export const SHOP_CONFIGS: Record<string, ShopConfig> = {
     mainCategories: DEFAULT_SHOP_CATEGORIES,
     subcategories: HM_SUBCATEGORIES,
     fetchCatalog: (params) => hmCatalogService.fetchHMCatalog(params as any),
-  },
-  next: {
-    id: 'next',
-    name: 'Next Kids',
-    brandTitle: 'Next Kids',
-    description: 'Британский стиль и качество от Next. Заказы напрямую из магазинов Великобритании, Европы и Казахстана.',
-    mainCategories: DEFAULT_SHOP_CATEGORIES,
-    subcategories: NEXT_SUBCATEGORIES,
-    fetchCatalog: (params) => nextCatalogService.fetchNextCatalog(params as any),
   },
 }
 
