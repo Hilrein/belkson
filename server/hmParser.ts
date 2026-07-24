@@ -39,49 +39,71 @@ export interface HMParserResult {
 // Maps category and subcategory to exact live H&M HTML page paths
 function resolveHMCategoryPath(category?: string, subcategory?: string): string {
   if (category === 'boy') {
-    if (subcategory === '9-14y') return 'kids/boys/clothing/view-all.html'
-    return 'kids/boys/clothing/view-all.html'
+    if (subcategory === '9-14y') return 'kids/boys/clothing/view-all'
+    return 'kids/boys/clothing/view-all'
   }
   if (category === 'baby' || category === 'baby_girl' || category === 'baby_boy' || category === 'mini') {
-    return 'kids/baby/clothing/view-all.html'
+    return 'kids/baby/clothing/view-all'
   }
   // Default to Girl
-  return 'kids/girls/clothing/view-all.html'
+  return 'kids/girls/clothing/view-all'
 }
 
 /**
  * REAL LIVE PARSER FOR H&M KIDS (0 MOCK / FALLBACK DATA).
  * Extracts real products, prices, flatlay images (DescriptiveStillLife), and color swatches
  * directly from H&M's server-rendered __NEXT_DATA__ SSR payload.
- * Includes complete browser Sec-Fetch headers to prevent 403 Forbidden errors when deployed on Vercel.
+ * Targets H&M's component endpoint (_jcr_content/main/productlisting.display.html) to bypass Akamai 403 blocks on Vercel.
  */
 export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserResult> {
   const regKey = (params.region || 'uk').toLowerCase()
   const regionConfig = HM_REGIONS[regKey] || HM_REGIONS.uk
-  const catPath = resolveHMCategoryPath(params.category, params.subcategory)
+  const catBasePath = resolveHMCategoryPath(params.category, params.subcategory)
 
-  const fetchUrl = `https://www2.hm.com/${regionConfig.path}/${catPath}`
+  // Primary URL: H&M's direct SSR component endpoint (bypasses Akamai WAF page blocks)
+  const primaryUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}/_jcr_content/main/productlisting.display.html`
+  const fallbackUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}.products.html`
+  const directUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}.html`
 
-  console.log(`[H&M Live Scraper] Fetching real H&M SSR page: ${fetchUrl} for region: ${regKey}`)
+  const urlsToTry = [primaryUrl, fallbackUrl, directUrl]
+  let res: Response | null = null
+  let lastErrorStr = ''
+  let finalFetchUrl = ''
 
-  const res = await fetch(fetchUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': `${regionConfig.locale},en;q=0.9`,
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Cache-Control': 'no-cache',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'none',
-      'Sec-Fetch-User': '?1',
-      'Upgrade-Insecure-Requests': '1',
-    },
-  })
+  for (const url of urlsToTry) {
+    try {
+      console.log(`[H&M Live Scraper] Fetching H&M SSR endpoint: ${url} for region: ${regKey}`)
+      const attemptRes = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': `${regionConfig.locale},en;q=0.9`,
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Referer': 'https://www2.hm.com/',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+        },
+      })
 
-  if (!res.ok) {
+      if (attemptRes.ok) {
+        res = attemptRes
+        finalFetchUrl = url
+        break
+      } else {
+        lastErrorStr = `HTTP ${attemptRes.status} (${attemptRes.statusText})`
+      }
+    } catch (err) {
+      lastErrorStr = err instanceof Error ? err.message : String(err)
+    }
+  }
+
+  if (!res || !res.ok) {
     throw new Error(
-      `[H&M Live Scraper Error] H&M server returned HTTP ${res.status} (${res.statusText || 'Access Denied'}) for URL: ${fetchUrl}`
+      `[H&M Live Scraper Error] H&M server returned ${lastErrorStr || 'Access Denied'} for URLs: ${primaryUrl}`
     )
   }
 
