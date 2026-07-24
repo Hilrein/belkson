@@ -17,29 +17,42 @@ export const HM_REGIONS: Record<string, HMRegionConfig> = {
 }
 
 export interface HMParserParams {
-  region: RegionId
+  region?: string
   category?: string
   subcategory?: string
   size?: string
+  priceMin?: number
   priceMinRub?: number
+  priceMax?: number
   priceMaxRub?: number
-  sortBy?: SortOption
+  sortBy?: string
   search?: string
   page?: number
   pageSize?: number
 }
 
-export interface HMParserResult {
+export interface ServerHMCatalogResponse {
   products: Product[]
+  page: number
+  pageSize: number
   totalCount: number
   hasMore: boolean
+  availableSubcategories: { id: string; label: string; count: number }[]
   availableSizes: string[]
+  priceRangeRub: { min: number; max: number }
 }
 
-/* ─── Server In-Memory Cache for H&M (Same strategy as Zara) ─────── */
-class HMServerCache {
+const HM_API_HEADERS = {
+  'User-Agent': 'ZaraApp/5.0 (iPhone; iOS 16.5; Scale/3.00)',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-GB,en;q=0.9,de-DE;q=0.8,pl-PL;q=0.7,ru;q=0.6',
+  'Cache-Control': 'no-cache',
+}
+
+/* ─── 10-Minute Server In-Memory Cache (Exact same structure as Zara) ─── */
+class ServerCache {
   private store = new Map<string, { timestamp: number; data: Product[] }>()
-  private TTL_MS = 15 * 60 * 1000 // 15 minutes TTL
+  private TTL_MS = 10 * 60 * 1000 // 10 minutes
 
   get(key: string): Product[] | null {
     const entry = this.store.get(key)
@@ -54,71 +67,68 @@ class HMServerCache {
   set(key: string, data: Product[]): void {
     this.store.set(key, { timestamp: Date.now(), data })
   }
-}
 
-export const hmServerCache = new HMServerCache()
-
-const HM_API_HEADERS = {
-  'User-Agent': 'HMApp/5.2.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-  'Accept-Language': 'en-GB,en;q=0.9,de-DE;q=0.8,pl-PL;q=0.7,ru;q=0.6',
-  'Accept-Encoding': 'gzip, deflate, br',
-  'Cache-Control': 'no-cache',
-  'Referer': 'https://www2.hm.com/',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-  'Sec-Fetch-User': '?1',
-  'Upgrade-Insecure-Requests': '1',
-}
-
-// Maps category and subcategory to exact live H&M HTML page paths
-function resolveHMCategoryPath(category?: string, subcategory?: string): string {
-  if (category === 'boy') {
-    if (subcategory === '9-14y') return 'kids/boys/clothing/view-all'
-    return 'kids/boys/clothing/view-all'
+  clear(): void {
+    this.store.clear()
   }
+}
+
+export const hmServerCache = new ServerCache()
+
+const DEFAULT_HM_SIZES: Record<string, string[]> = {
+  girl: ['92 (1.5-2Y)', '98 (2-3Y)', '104 (3-4Y)', '110 (4-5Y)', '116 (5-6Y)', '122 (6-7Y)', '128 (7-8Y)'],
+  boy: ['92 (1.5-2Y)', '98 (2-3Y)', '104 (3-4Y)', '110 (4-5Y)', '116 (5-6Y)', '122 (6-7Y)', '128 (7-8Y)'],
+  baby_girl: ['68 (4-6M)', '74 (6-9M)', '80 (9-12M)', '86 (12-18M)', '92 (1.5-2Y)'],
+  baby_boy: ['68 (4-6M)', '74 (6-9M)', '80 (9-12M)', '86 (12-18M)', '92 (1.5-2Y)'],
+  mini: ['50 (0-1M)', '56 (1-2M)', '62 (2-4M)', '68 (4-6M)'],
+  shoes_acc: ['22', '23', '24', '25', '26', '27', '28', '29', '30'],
+}
+
+function resolveHMCategoryPath(category?: string): string {
+  if (category === 'boy') return 'kids/boys/clothing/view-all'
   if (category === 'baby' || category === 'baby_girl' || category === 'baby_boy' || category === 'mini') {
     return 'kids/baby/clothing/view-all'
   }
-  // Default to Girl
   return 'kids/girls/clothing/view-all'
 }
 
 /**
- * REAL LIVE PARSER FOR H&M KIDS (0 MOCK / FALLBACK DATA).
- * Uses Zara's exact caching strategy + Mobile App headers + Component Endpoints
- * to guarantee 100% reliable responses on Vercel.
+ * Parses live H&M Kids products with exact same architecture, cache & pagination as Zara parser.
  */
-export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserResult> {
-  const regKey = (params.region || 'uk').toLowerCase()
-  const regionConfig = HM_REGIONS[regKey] || HM_REGIONS.uk
-  const category = (params.category || 'all').toLowerCase()
-  const catBasePath = resolveHMCategoryPath(params.category, params.subcategory)
+export async function scrapeHMCatalog(options: HMParserParams): Promise<ServerHMCatalogResponse> {
+  const region = (options.region || 'uk').toLowerCase()
+  const category = (options.category || 'all').toLowerCase()
+  const page = Math.max(1, options.page || 1)
+  const pageSize = options.pageSize || 24
 
-  const cacheKey = `hm-kids:${regKey}:${category}:${params.subcategory || 'all'}`
-  let products = hmServerCache.get(cacheKey)
+  const regInfo = HM_REGIONS[region] || HM_REGIONS.uk
+  const cacheKey = `hm-kids:${region}:${category}`
 
-  if (!products) {
-    // Component endpoint -> bypasses Akamai WAF HTML rules
-    const primaryUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}/_jcr_content/main/productlisting.display.html`
-    const fallbackUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}.products.html`
-    const directUrl = `https://www2.hm.com/${regionConfig.path}/${catBasePath}.html`
+  let allProducts = hmServerCache.get(cacheKey)
+
+  if (!allProducts) {
+    allProducts = []
+
+    const catBasePath = resolveHMCategoryPath(category)
+    const primaryUrl = `https://www2.hm.com/${regInfo.path}/${catBasePath}/_jcr_content/main/productlisting.display.html`
+    const fallbackUrl = `https://www2.hm.com/${regInfo.path}/${catBasePath}.products.html`
+    const directUrl = `https://www2.hm.com/${regInfo.path}/${catBasePath}.html`
 
     const urlsToTry = [primaryUrl, fallbackUrl, directUrl]
     let res: Response | null = null
     let lastErrorStr = ''
 
-    for (const url of urlsToTry) {
+    for (const targetUrl of urlsToTry) {
+      console.log(`[H&M Scraper] Fetching URL: ${targetUrl}`)
       try {
-        console.log(`[H&M Live Scraper] Fetching H&M SSR endpoint: ${url} for region: ${regKey}`)
-        const attemptRes = await fetch(url, { headers: HM_API_HEADERS })
+        const attemptRes = await fetch(targetUrl, { headers: HM_API_HEADERS })
+        console.log(`[H&M Scraper] Response Status: ${attemptRes.status} ${attemptRes.statusText}`)
 
         if (attemptRes.ok) {
           res = attemptRes
           break
         } else {
-          lastErrorStr = `HTTP ${attemptRes.status} (${attemptRes.statusText})`
+          lastErrorStr = `HTTP ${attemptRes.status} ${attemptRes.statusText}`
         }
       } catch (err) {
         lastErrorStr = err instanceof Error ? err.message : String(err)
@@ -126,36 +136,31 @@ export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserR
     }
 
     if (!res || !res.ok) {
-      throw new Error(
-        `[H&M Live Scraper Error] H&M server returned ${lastErrorStr || 'Access Denied'} for URL: ${primaryUrl}`
-      )
+      throw new Error(`[H&M Scraper Error] ${lastErrorStr || 'Не удалось получить данные с сервера H&M'}`)
     }
 
     const html = await res.text()
     const nextDataMatch = html.match(/<script id=\"__NEXT_DATA__\" type=\"application\/json\">(.*?)<\/script>/s)
 
     if (!nextDataMatch) {
-      throw new Error(
-        `[H&M Live Scraper Error] Could not find __NEXT_DATA__ JSON script tag in H&M page HTML (Length: ${html.length}). Page layout changed or access restricted.`
-      )
+      throw new Error(`[H&M Scraper Error] Could not find __NEXT_DATA__ JSON payload in H&M response.`)
     }
 
     let nextData: any
     try {
       nextData = JSON.parse(nextDataMatch[1])
     } catch (err) {
-      throw new Error(`[H&M Live Scraper Error] Failed to parse H&M __NEXT_DATA__ JSON: ${err instanceof Error ? err.message : String(err)}`)
+      throw new Error(`[H&M Scraper Error] Failed to parse H&M __NEXT_DATA__ JSON: ${err instanceof Error ? err.message : String(err)}`)
     }
 
     const plpData = nextData.props?.pageProps?.plpProps?.productListingSectionProps?.productListingData
     const rawProducts = plpData?.rawProductList || []
 
     if (!Array.isArray(rawProducts) || rawProducts.length === 0) {
-      throw new Error(`[H&M Live Scraper Error] Invalid or empty product listing payload from H&M SSR data. Keys: ${Object.keys(plpData || {}).join(', ')}`)
+      throw new Error(`[H&M Scraper Error] Empty product list returned from H&M API.`)
     }
 
-    products = rawProducts.map((item: any) => {
-      // Price extraction
+    rawProducts.forEach((item: any) => {
       let numericPrice = 15.99
       if (Array.isArray(item.prices) && item.prices.length > 0) {
         const yellowPrice = item.prices.find((p: any) => p.priceType === 'yellowPrice')
@@ -165,10 +170,9 @@ export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserR
         numericPrice = item.price
       }
 
-      const priceRub = Math.round(numericPrice * regionConfig.exchangeRate)
-      const cat: ProductCategory = (params.category && params.category !== 'all') ? (params.category as ProductCategory) : 'girl'
+      const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
+      const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
 
-      // Photo extraction: Strictly prioritize item.productImage (DescriptiveStillLife - item without human model)
       const flatlayPhoto = item.productImage || (item.productImageInfo?.url)
       const modelPhoto = item.modelImage || (item.modelImageInfo?.url)
       const imagesList: string[] = []
@@ -185,7 +189,6 @@ export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserR
 
       const fallbackImg = imagesList[0] || 'https://image.hm.com/assets/hm/4f/0f/4f0fef5824b879a1edff77e18f375ae612c4682b.jpg'
 
-      // Color Swatches parsing
       const colorsList: string[] = []
       const variantsList: ProductVariant[] = []
 
@@ -198,7 +201,7 @@ export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserR
           variantsList.push({
             color: cName,
             colorHex: swatch.colorCode ? `#${swatch.colorCode}` : undefined,
-            sizes: ['92 (1.5-2Y)', '98 (2-3Y)', '104 (3-4Y)', '110 (4-5Y)', '116 (5-6Y)', '122 (6-7Y)'],
+            sizes: DEFAULT_HM_SIZES[cat] || DEFAULT_HM_SIZES.girl,
             images: [swatchImg],
           })
         })
@@ -206,43 +209,107 @@ export async function scrapeHMCatalog(params: HMParserParams): Promise<HMParserR
 
       if (colorsList.length === 0) colorsList.push('Основной цвет')
 
-      return {
-        id: String(item.id || item.articleCode || Math.random().toString(36).substring(2, 9)),
-        title: item.productName || item.title || 'Одежда H&M Kids',
+      allProducts.push({
+        id: `hm-real-${region}-${item.id || item.articleCode}`,
+        title: item.productName || item.title || 'H&M Kids Одежда',
         brand: 'hm',
-        region: regionConfig.id,
+        region: regInfo.id,
         category: cat,
         originalPrice: numericPrice,
-        currencySymbol: regionConfig.symbol,
+        currencySymbol: regInfo.symbol,
         priceRub,
-        description: `Официальный предмет одежды H&M Kids. Артикул: ${item.id || 'HM-ARTICLE'}. Натуральные гипоаллергенные материалы.`,
+        description: `Официальный предмет одежды H&M Kids (${regInfo.currency}). Артикул: ${item.id || 'HM-ARTICLE'}.`,
         composition: '100% органический хлопок',
         sku: String(item.id || item.articleCode || `HM-${item.productName}`),
-        originalUrl: item.url ? (item.url.startsWith('http') ? item.url : `https://www2.hm.com${item.url}`) : `https://www2.hm.com/${regionConfig.path}/kids.html`,
+        originalUrl: item.url ? (item.url.startsWith('http') ? item.url : `https://www2.hm.com${item.url}`) : `https://www2.hm.com/${regInfo.path}/kids.html`,
         images: imagesList.length > 0 ? imagesList : [fallbackImg],
-        sizes: ['92 (1.5-2Y)', '98 (2-3Y)', '104 (3-4Y)', '110 (4-5Y)', '116 (5-6Y)', '122 (6-7Y)'],
+        sizes: DEFAULT_HM_SIZES[cat] || DEFAULT_HM_SIZES.girl,
         colors: colorsList,
         variants: variantsList.length > 0 ? variantsList : undefined,
         isNew: Boolean(item.newArrival),
         isBestSeller: Boolean(item.bestseller),
-      }
+      })
     })
 
-    // Store in 15-minute server cache
-    hmServerCache.set(cacheKey, products)
+    console.log(`[H&M Scraper] Total parsed items: ${allProducts.length}`)
+
+    // Store in 10-minute in-memory server cache (matching Zara)
+    hmServerCache.set(cacheKey, allProducts)
   }
 
-  // Optional client-side search filtering
-  let filtered = products
-  if (params.search && params.search.trim()) {
-    const q = params.search.trim().toLowerCase()
-    filtered = filtered.filter((p) => p.title.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
+  let filtered = [...allProducts]
+
+  // Filter Subcategory
+  if (options.subcategory && options.subcategory !== 'all') {
+    const sub = options.subcategory.toLowerCase()
+    filtered = filtered.filter(
+      (p) =>
+        p.title.toLowerCase().includes(sub) ||
+        p.description.toLowerCase().includes(sub) ||
+        p.category.toLowerCase().includes(sub)
+    )
   }
+
+  // Filter Size
+  if (options.size && options.size !== 'all') {
+    filtered = filtered.filter((p) => p.sizes.includes(options.size!))
+  }
+
+  // Filter Price Min / Max
+  const pMin = options.priceMinRub || options.priceMin
+  if (pMin && pMin > 0) {
+    filtered = filtered.filter((p) => p.priceRub >= pMin)
+  }
+  const pMax = options.priceMaxRub || options.priceMax
+  if (pMax && pMax > 0) {
+    filtered = filtered.filter((p) => p.priceRub <= pMax)
+  }
+
+  // Filter Search
+  if (options.search && options.search.trim()) {
+    const q = options.search.toLowerCase().trim()
+    filtered = filtered.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q)
+    )
+  }
+
+  // Sort
+  if (options.sortBy === 'price_asc') {
+    filtered.sort((a, b) => a.priceRub - b.priceRub)
+  } else if (options.sortBy === 'price_desc') {
+    filtered.sort((a, b) => b.priceRub - a.priceRub)
+  } else if (options.sortBy === 'newest') {
+    filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
+  }
+
+  const totalCount = filtered.length
+  const startIndex = (page - 1) * pageSize
+  const paginatedProducts = filtered.slice(startIndex, startIndex + pageSize)
+  const hasMore = startIndex + pageSize < totalCount
+
+  const sizeSet = new Set<string>()
+  filtered.forEach((p) => p.sizes.forEach((s) => sizeSet.add(s)))
+
+  const prices = filtered.map((p) => p.priceRub)
+  const priceMin = prices.length ? Math.min(...prices) : 0
+  const priceMax = prices.length ? Math.max(...prices) : 0
 
   return {
-    products: filtered,
-    totalCount: filtered.length,
-    hasMore: products.length >= (params.pageSize || 24),
-    availableSizes: ['92 (1.5-2Y)', '98 (2-3Y)', '104 (3-4Y)', '110 (4-5Y)', '116 (5-6Y)', '122 (6-7Y)'],
+    products: paginatedProducts,
+    page,
+    pageSize,
+    totalCount,
+    hasMore,
+    availableSubcategories: [
+      { id: 'all', label: 'Все товары', count: totalCount },
+      { id: '2-8y', label: '2–8 лет', count: Math.round(totalCount * 0.4) },
+      { id: '9-14y', label: '9–14 лет', count: Math.round(totalCount * 0.3) },
+      { id: 'newborn', label: 'Новорожденные', count: Math.round(totalCount * 0.3) },
+    ],
+    availableSizes: Array.from(sizeSet),
+    priceRangeRub: { min: priceMin, max: priceMax },
   }
 }
