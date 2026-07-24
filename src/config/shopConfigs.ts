@@ -1,5 +1,6 @@
 import type { RegionId, StoreId, SortOption } from '../types/shop'
 import { zaraCatalogService } from '../services/zaraCatalogService'
+import { hmCatalogService } from '../services/hmCatalogService'
 import { ZARA_SUBCATEGORIES } from '../types/zaraTaxonomy'
 
 export interface ShopCategoryTab {
@@ -46,6 +47,15 @@ export const DEFAULT_SHOP_CATEGORIES: ShopCategoryTab[] = [
   { id: 'shoes_acc', label: 'Обувь & Аксессуары' },
 ]
 
+export const HM_SUBCATEGORIES: ShopSubcategoryItem[] = [
+  { id: 'all', label: 'Все товары', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'mini'] },
+  { id: '2-8y', label: '2–8 лет', parentCategories: ['girl', 'boy'] },
+  { id: '9-14y', label: '9–14 лет', parentCategories: ['girl', 'boy'] },
+  { id: 'newborn', label: 'Новорожденные (0-9M)', parentCategories: ['baby_girl', 'baby_boy', 'mini'] },
+  { id: 'baby_girl', label: 'Малышки (4-24M)', parentCategories: ['baby_girl', 'mini'] },
+  { id: 'baby_boy', label: 'Малыши (4-24M)', parentCategories: ['baby_boy', 'mini'] },
+]
+
 export const SHOP_CONFIGS: Record<string, ShopConfig> = {
   zara: {
     id: 'zara',
@@ -60,10 +70,10 @@ export const SHOP_CONFIGS: Record<string, ShopConfig> = {
     id: 'hm',
     name: 'H&M Kids',
     brandTitle: 'H&M Kids',
-    description: 'Официальные коллекции H&M из Европы. Качественная детская одежда с доставкой.',
+    description: 'Официальные коллекции H&M из Европы и США. Прямой выкуп оригинальной детской одежды.',
     mainCategories: DEFAULT_SHOP_CATEGORIES,
-    subcategories: [],
-    fetchCatalog: (params) => zaraCatalogService.fetchZaraKidsCatalog(params as any),
+    subcategories: HM_SUBCATEGORIES,
+    fetchCatalog: (params) => hmCatalogService.fetchHMCatalog(params as any),
   },
   next: {
     id: 'next',

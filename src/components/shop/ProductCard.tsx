@@ -173,9 +173,9 @@ export function ProductCard({
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="mt-1 text-[10px] tracking-[0.12em] uppercase font-semibold text-primary hover:underline flex items-center gap-1"
-            title="Открыть оригинальную страницу товара на Zara"
+            title="Открыть оригинальную страницу товара на сайте магазина"
           >
-            <span>Показать в Zara</span>
+            <span>Показать в магазине</span>
             <span className="material-symbols-outlined text-[12px]">open_in_new</span>
           </a>
         )}
