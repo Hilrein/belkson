@@ -5,6 +5,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
+import { scrapeZara, scrapeHM, scrapeNext, scrapeZaraKidsCatalog } from '../server/parsers.js'
 
 /* ─── DB ─────────────────────────────────────────────────────────── */
 
@@ -101,7 +102,7 @@ async function normalizeProductImage(
 
 /* ─── Routes ─────────────────────────────────────────────────────── */
 
-const app = new Hono().basePath('/api')
+const app = new Hono()
 
 app.use(
   '*',
@@ -112,9 +113,11 @@ app.use(
   }),
 )
 
-app.get('/health', (c) => c.json({ ok: true }))
+// Health check endpoints
+app.get('/health', (c) => c.json({ ok: true, status: 'ok' }))
+app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 
-app.get('/catalog', async (c) => {
+async function handleCatalogRequest(c: any) {
   const client = getSql()
   const [products, settings] = await Promise.all([
     client`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
@@ -127,9 +130,79 @@ app.get('/catalog', async (c) => {
     products: products.map(mapProduct),
     currency: settings[0]?.value ?? 'RUB',
   })
-})
+}
 
-app.post('/products', async (c) => {
+app.get('/catalog', handleCatalogRequest)
+app.get('/api/catalog', handleCatalogRequest)
+
+/**
+ * Real Zara Kids catalog proxy route
+ */
+async function handleZaraCatalogRequest(c: any) {
+  try {
+    const region = c.req.query('region') || 'spain'
+    const category = c.req.query('category') || 'all'
+    const subcategory = c.req.query('subcategory') || 'all'
+    const size = c.req.query('size') || 'all'
+    const priceMin = c.req.query('priceMin') ? Number(c.req.query('priceMin')) : undefined
+    const priceMax = c.req.query('priceMax') ? Number(c.req.query('priceMax')) : undefined
+    const sortBy = c.req.query('sortBy') || 'featured'
+    const search = c.req.query('search') || ''
+    const page = c.req.query('page') ? Number(c.req.query('page')) : 1
+    const pageSize = c.req.query('pageSize') ? Number(c.req.query('pageSize')) : 24
+
+    const result = await scrapeZaraKidsCatalog({
+      region,
+      category,
+      subcategory,
+      size,
+      priceMin,
+      priceMax,
+      sortBy,
+      search,
+      page,
+      pageSize,
+    })
+
+    return c.json(result)
+  } catch (err) {
+    console.error('Error in /zara/catalog route:', err)
+    return c.json(
+      {
+        error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Zara',
+      },
+      502
+    )
+  }
+}
+
+app.get('/zara/catalog', handleZaraCatalogRequest)
+app.get('/api/zara/catalog', handleZaraCatalogRequest)
+
+async function handleExternalShopRequest(c: any) {
+  const shop = c.req.param('shop').toLowerCase()
+  const country = c.req.param('country')?.toLowerCase()
+  let data
+  switch (shop) {
+    case 'zara':
+      data = await scrapeZara(country)
+      break
+    case 'hm':
+      data = await scrapeHM(country)
+      break
+    case 'next':
+      data = await scrapeNext(country)
+      break
+    default:
+      return c.json({ error: 'Shop not found' }, 404)
+  }
+  return c.json({ products: data })
+}
+
+app.get('/external/:shop/:country?', handleExternalShopRequest)
+app.get('/api/external/:shop/:country?', handleExternalShopRequest)
+
+async function handleCreateProduct(c: any) {
   const body = await c.req.json()
   const client = getSql()
 
@@ -158,9 +231,12 @@ app.post('/products', async (c) => {
   `) as DbProduct[]
 
   return c.json(mapProduct(rows[0]), 201)
-})
+}
 
-app.put('/products/:id', async (c) => {
+app.post('/products', handleCreateProduct)
+app.post('/api/products', handleCreateProduct)
+
+async function handleUpdateProduct(c: any) {
   const id = Number(c.req.param('id'))
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
 
@@ -223,9 +299,12 @@ app.put('/products/:id', async (c) => {
   `) as DbProduct[]
 
   return c.json(mapProduct(rows[0]))
-})
+}
 
-app.delete('/products/:id', async (c) => {
+app.put('/products/:id', handleUpdateProduct)
+app.put('/api/products/:id', handleUpdateProduct)
+
+async function handleDeleteProduct(c: any) {
   const id = Number(c.req.param('id'))
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
 
@@ -236,9 +315,12 @@ app.delete('/products/:id', async (c) => {
 
   if (!rows[0]) return c.json({ error: 'Not found' }, 404)
   return c.json({ ok: true, id })
-})
+}
 
-app.put('/settings/currency', async (c) => {
+app.delete('/products/:id', handleDeleteProduct)
+app.delete('/api/products/:id', handleDeleteProduct)
+
+async function handleUpdateCurrency(c: any) {
   const body = await c.req.json()
   const currency = String(body.currency ?? 'RUB')
   if (!['RUB', 'EUR', 'USD'].includes(currency)) {
@@ -253,7 +335,10 @@ app.put('/settings/currency', async (c) => {
   `
 
   return c.json({ currency })
-})
+}
+
+app.put('/settings/currency', handleUpdateCurrency)
+app.put('/api/settings/currency', handleUpdateCurrency)
 
 app.onError((err, c) => {
   console.error(err)

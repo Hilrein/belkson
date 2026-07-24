@@ -24,7 +24,6 @@ function belksonApiPlugin(): Plugin {
           next()
           return
         }
-        // Keep full path for Hono basePath('/api')
         listener(req, res)
       })
     },
@@ -34,4 +33,14 @@ function belksonApiPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), belksonApiPlugin()],
+  server: {
+    cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

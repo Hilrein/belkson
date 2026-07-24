@@ -6,6 +6,8 @@
  * - Dynamic `import()` of local sibling modules → module not found in /var/task
  * - Dynamic `import()` of npm packages + all logic in THIS file → works
  */
+import { scrapeZara, scrapeHM, scrapeNext, scrapeZaraKidsCatalog } from '../server/parsers.js'
+
 type NodeReq = {
   method?: string
   url?: string
@@ -105,7 +107,7 @@ async function buildApp() {
   const { neon } = await import('@neondatabase/serverless')
 
   const sql = neon(resolveDatabaseUrl())
-  const app = new Hono().basePath('/api')
+  const app = new Hono()
 
   app.use(
     '*',
@@ -116,9 +118,10 @@ async function buildApp() {
     }),
   )
 
-  app.get('/health', (c) => c.json({ ok: true }))
+  app.get('/health', (c) => c.json({ ok: true, status: 'ok' }))
+  app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 
-  app.get('/catalog', async (c) => {
+  async function handleCatalog(c: any) {
     const [products, settings] = await Promise.all([
       sql`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
       sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
@@ -129,128 +132,74 @@ async function buildApp() {
       products: products.map(mapProduct),
       currency: settings[0]?.value ?? 'RUB',
     })
-  })
+  }
 
-  app.post('/products', async (c) => {
-    const body = await c.req.json()
-    const name = String(body.name ?? '').trim() || 'Без названия'
-    const sku =
-      String(body.sku ?? '').trim() || `BLK-${Date.now().toString().slice(-6)}`
-    const priceRub = Math.max(0, Math.round(Number(body.priceRub) || 0))
-    const category =
-      String(body.category ?? 'Малыши')
-        .replace(/\u00a0/g, ' ')
-        .trim()
-        .replace(/\s+/g, ' ') || 'Малыши'
-    const color = String(body.color ?? '—').trim() || '—'
-    const status = String(body.status ?? 'В наличии')
-    const image = await normalizeProductImage(String(body.image ?? ''))
-    const isNew = Boolean(body.isNew)
-    const isFavorite = Boolean(body.isFavorite)
-    const badge = body.badge ? String(body.badge) : null
+  app.get('/catalog', handleCatalog)
+  app.get('/api/catalog', handleCatalog)
 
-    const rows = (await sql`
-      INSERT INTO products
-        (name, sku, price_rub, category, color, status, image, is_new, is_favorite, badge)
-      VALUES
-        (${name}, ${sku}, ${priceRub}, ${category}, ${color}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
-      RETURNING *
-    `) as DbProduct[]
+  async function handleZaraCatalog(c: any) {
+    try {
+      const region = c.req.query('region') || 'spain'
+      const category = c.req.query('category') || 'all'
+      const subcategory = c.req.query('subcategory') || 'all'
+      const size = c.req.query('size') || 'all'
+      const priceMin = c.req.query('priceMin') ? Number(c.req.query('priceMin')) : undefined
+      const priceMax = c.req.query('priceMax') ? Number(c.req.query('priceMax')) : undefined
+      const sortBy = c.req.query('sortBy') || 'featured'
+      const search = c.req.query('search') || ''
+      const page = c.req.query('page') ? Number(c.req.query('page')) : 1
+      const pageSize = c.req.query('pageSize') ? Number(c.req.query('pageSize')) : 24
 
-    return c.json(mapProduct(rows[0]), 201)
-  })
+      const result = await scrapeZaraKidsCatalog({
+        region,
+        category,
+        subcategory,
+        size,
+        priceMin,
+        priceMax,
+        sortBy,
+        search,
+        page,
+        pageSize,
+      })
 
-  app.put('/products/:id', async (c) => {
-    const id = Number(c.req.param('id'))
-    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
-
-    const body = await c.req.json()
-    const existing = (await sql`
-      SELECT * FROM products WHERE id = ${id} LIMIT 1
-    `) as DbProduct[]
-    if (!existing[0]) return c.json({ error: 'Not found' }, 404)
-
-    const cur = existing[0]
-    const name = body.name !== undefined ? String(body.name).trim() : cur.name
-    const sku = body.sku !== undefined ? String(body.sku).trim() : cur.sku
-    const priceRub =
-      body.priceRub !== undefined
-        ? Math.max(0, Math.round(Number(body.priceRub) || 0))
-        : Number(cur.price_rub)
-    const category =
-      body.category !== undefined
-        ? String(body.category).replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
-          cur.category
-        : cur.category
-    const color =
-      body.color !== undefined
-        ? String(body.color).trim() || '—'
-        : cur.color
-    const status = body.status !== undefined ? String(body.status) : cur.status
-    const image =
-      body.image !== undefined
-        ? await normalizeProductImage(String(body.image))
-        : cur.image
-    const isNew = body.isNew !== undefined ? Boolean(body.isNew) : cur.is_new
-    const isFavorite =
-      body.isFavorite !== undefined ? Boolean(body.isFavorite) : cur.is_favorite
-    let badge: string | null =
-      body.badge !== undefined
-        ? body.badge
-          ? String(body.badge)
-          : null
-        : cur.badge
-    // Keep NEW plaque in sync with isNew flag
-    if (body.isNew === false) badge = null
-    else if (body.isNew === true && !badge) badge = 'NEW'
-
-    const rows = (await sql`
-      UPDATE products SET
-        name = ${name},
-        sku = ${sku},
-        price_rub = ${priceRub},
-        category = ${category},
-        color = ${color},
-        status = ${status},
-        image = ${image},
-        is_new = ${isNew},
-        is_favorite = ${isFavorite},
-        badge = ${badge},
-        updated_at = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `) as DbProduct[]
-
-    return c.json(mapProduct(rows[0]))
-  })
-
-  app.delete('/products/:id', async (c) => {
-    const id = Number(c.req.param('id'))
-    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
-
-    const rows = (await sql`
-      DELETE FROM products WHERE id = ${id} RETURNING id
-    `) as { id: number }[]
-
-    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
-    return c.json({ ok: true, id })
-  })
-
-  app.put('/settings/currency', async (c) => {
-    const body = await c.req.json()
-    const currency = String(body.currency ?? 'RUB')
-    if (!['RUB', 'EUR', 'USD'].includes(currency)) {
-      return c.json({ error: 'Invalid currency' }, 400)
+      return c.json(result)
+    } catch (err) {
+      console.error('Error in /zara/catalog route:', err)
+      return c.json(
+        {
+          error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Zara',
+        },
+        502
+      )
     }
+  }
 
-    await sql`
-      INSERT INTO site_settings (key, value)
-      VALUES ('currency', ${currency})
-      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-    `
+  app.get('/zara/catalog', handleZaraCatalog)
+  app.get('/api/zara/catalog', handleZaraCatalog)
 
-    return c.json({ currency })
-  })
+  async function handleExternalShop(c: any) {
+    const shop = c.req.param('shop').toLowerCase()
+    const country = c.req.param('country')?.toLowerCase()
+    let data
+    switch (shop) {
+      case 'zara':
+        data = await scrapeZara(country)
+        break
+      case 'hm':
+        data = await scrapeHM(country)
+        break
+      case 'next':
+        data = await scrapeNext(country)
+        break
+      default:
+        return c.json({ error: 'Shop not found' }, 404)
+    }
+    return c.json({ products: data })
+  }
+
+  app.get('/external/:shop/:country?', handleExternalShop)
+  app.get('/api/external/:shop/:country?', handleExternalShop)
 
   app.onError((err, c) => {
     console.error(err)

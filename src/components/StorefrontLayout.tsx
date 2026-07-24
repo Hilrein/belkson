@@ -262,54 +262,63 @@ export default function StorefrontLayout() {
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
                 <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
+                    <Link
+                      to="/shop/zara"
+                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
+                    >
                       Zara
-                    </h3>
+                    </Link>
                     <ul className="flex flex-col gap-2">
                       {['Spain', 'UK', 'Poland', 'Germany', 'Kazakhstan'].map(
                         (c) => (
                           <li key={c}>
-                            <a
+                            <Link
                               className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                              href="#"
+                              to={`/shop/zara/${c.toLowerCase()}`}
                             >
                               {c}
-                            </a>
+                            </Link>
                           </li>
                         ),
                       )}
                     </ul>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
+                    <Link
+                      to="/shop/hm"
+                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
+                    >
                       H&amp;M
-                    </h3>
+                    </Link>
                     <ul className="flex flex-col gap-2">
                       {['UK', 'Germany', 'Poland', 'USA'].map((c) => (
                         <li key={c}>
-                          <a
+                          <Link
                             className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                            href="#"
+                            to={`/shop/hm/${c.toLowerCase()}`}
                           >
                             {c}
-                          </a>
+                          </Link>
                         </li>
                       ))}
                     </ul>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
+                    <Link
+                      to="/shop/next"
+                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
+                    >
                       Next
-                    </h3>
+                    </Link>
                     <ul className="flex flex-col gap-2">
                       {['UK', 'Kazakhstan', 'Germany', 'Spain'].map((c) => (
                         <li key={c}>
-                          <a
+                          <Link
                             className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                            href="#"
+                            to={`/shop/next/${c.toLowerCase()}`}
                           >
                             {c}
-                          </a>
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -518,27 +527,27 @@ export default function StorefrontLayout() {
               <h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">
                 Выкуп с официальных сайтов
               </h3>
-              <a
+              <Link
                 className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                href="#"
+                to="/shop/zara"
                 onClick={toggleNavDrawer}
               >
                 Zara
-              </a>
-              <a
+              </Link>
+              <Link
                 className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                href="#"
+                to="/shop/hm"
                 onClick={toggleNavDrawer}
               >
                 H&amp;M
-              </a>
-              <a
+              </Link>
+              <Link
                 className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                href="#"
+                to="/shop/next"
                 onClick={toggleNavDrawer}
               >
                 Next
-              </a>
+              </Link>
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
             <div className="flex flex-col gap-5">
