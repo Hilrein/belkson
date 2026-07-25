@@ -1,4 +1,4 @@
-import type { Product, ProductCategory, ProductVariant, RegionId, SortOption } from '../src/types/shop'
+import type { Product, ProductCategory, ProductVariant, RegionId } from '../src/types/shop'
 
 export interface NextRegionConfig {
   id: RegionId
@@ -42,291 +42,255 @@ export interface ServerNextCatalogResponse {
   availableSubcategories: { id: string; label: string; count: number }[]
   availableSizes: string[]
   priceRangeRub: { min: number; max: number }
+  /** False means at least one source page failed; never use it to remove DB rows. */
+  isComplete: boolean
 }
 
-const NEXT_API_HEADERS = {
+const NEXT_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
   'Accept-Language': 'ru-KZ,ru;q=0.9,en-US;q=0.8',
-  'Accept-Encoding': 'gzip, deflate, br',
   'Cache-Control': 'no-cache',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-  'Sec-Fetch-User': '?1',
-  'Upgrade-Insecure-Requests': '1',
 }
 
-/* ─── 10-Minute Server In-Memory Cache (Exact same structure as Zara & H&M) ─── */
 class ServerCache {
   private store = new Map<string, { timestamp: number; data: Product[] }>()
-  private TTL_MS = 10 * 60 * 1000 // 10 minutes
+  private readonly ttlMs = 10 * 60 * 1000
 
   get(key: string): Product[] | null {
     const entry = this.store.get(key)
-    if (!entry) return null
-    if (Date.now() - entry.timestamp > this.TTL_MS) {
-      this.store.delete(key)
-      return null
-    }
+    if (!entry || Date.now() - entry.timestamp > this.ttlMs) return null
     return entry.data
   }
 
-  set(key: string, data: Product[]): void {
-    this.store.set(key, { timestamp: Date.now(), data })
-  }
-
-  clear(): void {
-    this.store.clear()
-  }
+  set(key: string, data: Product[]): void { this.store.set(key, { timestamp: Date.now(), data }) }
+  clear(): void { this.store.clear() }
 }
 
 export const nextServerCache = new ServerCache()
 
-function resolveNextSearchQueryTerms(category?: string, subcategory?: string): string[] {
-  if (category === 'boy') {
-    if (subcategory === 'older_boys') return ['older boys clothing', 'older boys trousers', 'older boys tops']
-    if (subcategory === 'younger_boys') return ['younger boys clothing', 'younger boys t-shirts', 'younger boys shoes']
-    return ['boys clothing', 'boys trousers', 'boys tops', 'boys shoes', 'boys jackets']
-  }
+type NextSummary = Record<string, unknown>
+type KidsSource = { path: string; category: ProductCategory }
 
-  if (category === 'baby' || category === 'baby_girl' || category === 'baby_boy' || category === 'mini') {
-    return ['baby clothing', 'baby dresses', 'baby rompers', 'baby bodysuits', 'baby shoes']
-  }
-
-  if (category === 'shoes_acc') {
-    return ['kids shoes', 'girls shoes', 'boys shoes', 'kids boots', 'kids trainers']
-  }
-
-  if (category === 'girl') {
-    if (subcategory === 'older_girls') return ['older girls clothing', 'older girls dresses', 'older girls tops']
-    if (subcategory === 'younger_girls') return ['younger girls clothing', 'younger girls dresses', 'younger girls shoes']
-    return ['girls clothing', 'girls dresses', 'girls tops', 'girls shoes', 'girls trousers']
-  }
-
-  // Default 'all': Query across main kids categories
-  return ['girls clothing', 'boys clothing', 'baby clothing', 'kids shoes', 'kids dresses', 'kids trousers']
+/** Only children sections — never Next's general search or adult departments. */
+function getKidsSources(category: string): KidsSource[] {
+  if (category === 'girl') return [{ path: 'shop/girls', category: 'girl' }]
+  if (category === 'boy') return [{ path: 'shop/boys', category: 'boy' }]
+  if (category === 'baby_girl') return [{ path: 'shop/baby', category: 'baby_girl' }]
+  if (category === 'baby_boy') return [{ path: 'shop/baby', category: 'baby_boy' }]
+  if (category === 'mini') return [{ path: 'shop/baby', category: 'mini' }]
+  if (category === 'shoes_acc') return [{ path: 'shop/girls', category: 'shoes_acc' }, { path: 'shop/boys', category: 'shoes_acc' }]
+  return [
+    { path: 'shop/girls', category: 'girl' },
+    { path: 'shop/boys', category: 'boy' },
+    { path: 'shop/baby', category: 'mini' },
+  ]
 }
 
-/**
- * 100% REAL LIVE PARSER FOR NEXT KIDS (AUTOMATICALLY FETCHES ALL PRODUCTS ACROSS CATEGORIES & PAGES).
- * Concurrently queries multiple search terms and pages from NextDirect, extracting all real summaryData items without mock data.
- */
+function extractBalancedObject(source: string, from: number): string | null {
+  const start = source.indexOf('{', from)
+  if (start < 0) return null
+  let depth = 0
+  let quote = ''
+  let escaped = false
+  for (let index = start; index < source.length; index++) {
+    const char = source[index]
+    if (quote) {
+      if (escaped) escaped = false
+      else if (char === '\\') escaped = true
+      else if (char === quote) quote = ''
+      continue
+    }
+    if (char === '"' || char === "'") { quote = char; continue }
+    if (char === '{') depth++
+    if (char === '}' && --depth === 0) return source.slice(start, index + 1)
+  }
+  return null
+}
+
+/** Reads every product card; a Next page frequently stores many cards in one script. */
+export function extractNextSummaryData(html: string): NextSummary[] {
+  const summaries: NextSummary[] = []
+  const scripts = Array.from(html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi), (match) => match[1])
+  for (const script of scripts) {
+    const marker = /(?:["']summaryData["']|\bsummaryData\b)\s*[:=]/g
+    while (marker.exec(script)) {
+      const json = extractBalancedObject(script, marker.lastIndex)
+      if (!json) continue
+      try {
+        const parsed = JSON.parse(json) as NextSummary
+        const summary = parsed.summaryData && typeof parsed.summaryData === 'object' ? parsed.summaryData as NextSummary : parsed
+        if (Array.isArray(summary.colourways)) summaries.push(summary)
+      } catch {
+        // A malformed card must not discard the other cards in the response.
+      }
+    }
+  }
+  return summaries
+}
+
+function parsePrice(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value !== 'string') return null
+  const raw = value.replace(/[^\d,.-]/g, '')
+  if (!raw) return null
+  const normalized = raw.includes(',') && raw.includes('.') ? raw.replace(/,/g, '') : raw.replace(',', '.')
+  const price = Number.parseFloat(normalized)
+  return Number.isFinite(price) ? price : null
+}
+
+function strings(value: unknown): string[] {
+  if (typeof value === 'string' && value.trim()) return [value.trim()]
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (typeof item === 'string') return [item.trim()]
+    if (!item || typeof item !== 'object') return []
+    const option = item as Record<string, unknown>
+    return strings(option.name ?? option.label ?? option.s)
+  })
+}
+
+function toProduct(summary: NextSummary, region: string, info: NextRegionConfig, category: ProductCategory): Product | null {
+  const colourways = Array.isArray(summary.colourways) ? summary.colourways as NextSummary[] : []
+  const main = colourways[0] || {}
+  const code = String(summary.id ?? main.id ?? '').trim()
+  const originalPrice = parsePrice(main.sp ?? main.mp ?? main.p ?? summary.price)
+  if (!code || originalPrice === null) return null
+  let title = String(main.t ?? summary.productName ?? summary.name ?? 'Next Kids').trim()
+  if (title.includes(' - ')) title = title.split(' - ').slice(1).join(' - ') || title
+  const variants: ProductVariant[] = colourways.map((colourway) => {
+    const variantCode = String(colourway.id ?? code)
+    return {
+      color: String(colourway.c ?? colourway.colour ?? 'Основной цвет'),
+      sizes: Array.from(new Set([...strings(colourway.sizes), ...strings(colourway.sizeOptions), ...strings(colourway.s)])),
+      images: [
+        `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${variantCode}.jpg`,
+        `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${variantCode}.jpg`,
+      ],
+    }
+  })
+  const sizes = Array.from(new Set([...strings(summary.sizes), ...variants.flatMap((variant) => variant.sizes)]))
+  const colors = Array.from(new Set(variants.map((variant) => variant.color).filter(Boolean)))
+  const productPath = String(main.url ?? summary.url ?? `style/${code}`).replace(/^\//, '')
+  return {
+    id: `next-real-${region}-${code}`,
+    title,
+    brand: 'next',
+    region: info.id,
+    category,
+    originalPrice,
+    currencySymbol: info.symbol,
+    priceRub: Math.round(originalPrice * info.exchangeRate),
+    description: `Товар детской коллекции Next (${info.currency}). Артикул: ${code}.`,
+    sku: `NEXT-${code}`,
+    originalUrl: `https://${info.domain}/${info.path}/${productPath}`,
+    images: [
+      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${code}.jpg`,
+      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${code}.jpg`,
+    ],
+    sizes,
+    colors: colors.length ? colors : ['Основной цвет'],
+    variants,
+    isNew: Boolean(summary.showNewIn ?? main.showNewIn),
+    isBestSeller: Boolean(summary.colourwaysHasRating ?? main.rating),
+  }
+}
+
+function mergeProduct(existing: Product, next: Product): Product {
+  return {
+    ...existing,
+    colors: Array.from(new Set([...existing.colors, ...next.colors])),
+    sizes: Array.from(new Set([...existing.sizes, ...next.sizes])),
+    variants: [...(existing.variants || []), ...(next.variants || [])].filter((variant, index, list) => list.findIndex((candidate) => candidate.color === variant.color) === index),
+  }
+}
+
+async function fetchKidsSource(info: NextRegionConfig, source: KidsSource): Promise<{ summaries: NextSummary[]; complete: boolean }> {
+  const summaries: NextSummary[] = []
+  let complete = true
+  // Two catalogue pages keep the Vercel task bounded; future pagination can be
+  // added without ever querying adult/search endpoints.
+  for (const sourcePage of [1, 2]) {
+    const url = new URL(`https://${info.domain}/${info.path}/${source.path}`)
+    if (sourcePage > 1) url.searchParams.set('p', String(sourcePage))
+    try {
+      const response = await fetch(url, { headers: { ...NEXT_HEADERS, 'Accept-Language': info.locale } })
+      const html = await response.text()
+      if (!response.ok) {
+        complete = false
+        console.warn(`[Next Scraper] ${source.path} page ${sourcePage} returned ${response.status}`)
+        continue
+      }
+      summaries.push(...extractNextSummaryData(html))
+    } catch (error) {
+      complete = false
+      console.warn(`[Next Scraper] ${source.path} page ${sourcePage} failed:`, error)
+    }
+  }
+  return { summaries, complete }
+}
+
 export async function scrapeNextCatalog(options: NextParserParams): Promise<ServerNextCatalogResponse> {
   const region = (options.region || 'kazakhstan').toLowerCase()
   const category = (options.category || 'all').toLowerCase()
-  const page = Math.max(1, options.page || 1)
-  const pageSize = options.pageSize || 24
-
-  const regInfo = NEXT_REGIONS[region] || NEXT_REGIONS.kazakhstan
-  const queryTerms = resolveNextSearchQueryTerms(category, options.subcategory)
-  const cacheKey = `next-kids:${region}:${category}:${options.subcategory || 'all'}`
-
+  const page = Math.max(1, Number(options.page) || 1)
+  const requestedPageSize = Number(options.pageSize)
+  // pageSize=0 is reserved for the server-side Neon synchronizer.
+  const pageSize = requestedPageSize === 0 ? Number.MAX_SAFE_INTEGER : Math.min(100, Math.max(1, requestedPageSize || 24))
+  const info = NEXT_REGIONS[region] || NEXT_REGIONS.kazakhstan
+  const sources = getKidsSources(category)
+  const cacheKey = `next-kids:v3:${region}:${category}`
   let allProducts = nextServerCache.get(cacheKey)
+  let isComplete = Boolean(allProducts)
 
   if (!allProducts) {
-    allProducts = []
-
-    const pagesToFetch = [1, 2]
-    const fetchTasks: Promise<string>[] = []
-
-    queryTerms.forEach((q) => {
-      pagesToFetch.forEach((p) => {
-        const targetUrl = `https://${regInfo.domain}/${regInfo.path}/search?w=${encodeURIComponent(q)}&p=${p}`
-        fetchTasks.push(
-          fetch(targetUrl, { headers: NEXT_API_HEADERS })
-            .then((r) => (r.ok ? r.text() : ''))
-            .catch(() => '')
-        )
-      })
-    })
-
-    console.log(`[Next Scraper] Executing ${fetchTasks.length} concurrent PLP page fetches for region ${region}...`)
-
-    const htmlResults = await Promise.all(fetchTasks)
-    const seenSkus = new Set<string>()
-
-    htmlResults.forEach((html) => {
-      if (!html) return
-      const scripts = Array.from(html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi))
-
-      scripts.forEach((s) => {
-        const text = s[1].trim()
-        if (text.includes('productName') && text.includes('summaryData')) {
-          const idx = text.indexOf('summaryData')
-          if (idx !== -1) {
-            let braceCount = 0
-            const startIdx = text.indexOf('{', idx)
-            let endIdx = startIdx
-
-            if (startIdx !== -1) {
-              for (let i = startIdx; i < text.length; i++) {
-                if (text[i] === '{') braceCount++
-                if (text[i] === '}') braceCount--
-                if (braceCount === 0) {
-                  endIdx = i + 1
-                  break
-                }
-              }
-
-              try {
-                const jsonStr = text.substring(startIdx, endIdx)
-                const parsedWrapper = JSON.parse(jsonStr)
-                const sumData = parsedWrapper.summaryData || parsedWrapper
-
-                if (sumData && sumData.id && Array.isArray(sumData.colourways) && sumData.colourways.length > 0) {
-                  const itemCode = sumData.id
-                  if (seenSkus.has(itemCode)) return
-                  seenSkus.add(itemCode)
-
-                  const mainCol = sumData.colourways[0]
-
-                  let fullTitle = mainCol.t || sumData.productName || 'Одежда Next Kids'
-                  if (fullTitle.includes(' - ')) {
-                    fullTitle = fullTitle.split(' - ')[1] || fullTitle
-                  }
-
-                  // Extract numeric price in original currency
-                  const rawPriceStr = mainCol.sp || mainCol.mp || mainCol.p || '7 500'
-                  const matchDigits = rawPriceStr.match(/(\d[\d\s]*\d|\d+)/)
-                  const numericPrice = matchDigits ? parseInt(matchDigits[1].replace(/\s/g, ''), 10) : 7500
-                  const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
-                  const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
-
-                  // Flatlay images from Next CDN
-                  const flatlayImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${itemCode}.jpg`
-                  const sipImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${itemCode}.jpg`
-
-                  const colorsList: string[] = Array.from(
-                    new Set(
-                      sumData.colourways
-                        .map((c: any) => c.c)
-                        .filter((c: any) => typeof c === 'string' && c.trim().length > 0)
-                    )
-                  )
-
-                  if (colorsList.length === 0) colorsList.push('Основной цвет')
-
-                  const variantsList: ProductVariant[] = sumData.colourways.map((cw: any) => ({
-                    color: cw.c || 'Основной цвет',
-                    images: [
-                      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${cw.id || itemCode}.jpg`,
-                      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${cw.id || itemCode}.jpg`,
-                    ],
-                  }))
-
-                  allProducts.push({
-                    id: `next-real-${region}-${itemCode}`,
-                    title: fullTitle,
-                    brand: (sumData.brand || 'Next').toLowerCase() as any,
-                    region: regInfo.id,
-                    category: cat,
-                    originalPrice: numericPrice,
-                    currencySymbol: regInfo.symbol,
-                    priceRub,
-                    description: `Официальный предмет одежды из детской коллекции Next Kids (${regInfo.currency}): ${fullTitle}. Бренд: ${sumData.brand || 'Next'}. Отдел: ${sumData.department || 'Childrenswear'}. Артикул: ${itemCode}.`,
-                    sku: `NEXT-${itemCode}`,
-                    originalUrl: `https://${regInfo.domain}/${regInfo.path}/${mainCol.url || `style/${itemCode}`}`,
-                    images: [flatlayImg, sipImg],
-                    sizes: [],
-                    colors: colorsList,
-                    variants: variantsList,
-                    isNew: Boolean(sumData.showNewIn),
-                    isBestSeller: Boolean(sumData.colourwaysHasRating),
-                  })
-                }
-              } catch {
-                /* ignore parse fallback */
-              }
-            }
-          }
-        }
-      })
-    })
-
-    console.log(`[Next Scraper] Total parsed ALL 100% live items count: ${allProducts.length}`)
-
-    if (allProducts.length === 0) {
-      throw new Error(`[Next Scraper Error] Не удалось распарсить живые товары Next для региона ${region}`)
+    const bySku = new Map<string, Product>()
+    isComplete = true
+    for (const source of sources) {
+      const result = await fetchKidsSource(info, source)
+      isComplete &&= result.complete
+      for (const summary of result.summaries) {
+        const product = toProduct(summary, region, info, source.category)
+        if (!product) continue
+        const existing = bySku.get(product.sku)
+        bySku.set(product.sku, existing ? mergeProduct(existing, product) : product)
+      }
     }
-
-    // Save to 10-minute server cache
-    nextServerCache.set(cacheKey, allProducts)
+    allProducts = [...bySku.values()]
+    if (!allProducts.length) throw new Error(`[Next Scraper Error] Детские страницы Next не вернули распознаваемых товаров для ${region}.`)
+    if (isComplete) nextServerCache.set(cacheKey, allProducts)
   }
 
   let filtered = [...allProducts]
-
-  // Filter Subcategory
-  if (options.subcategory && options.subcategory !== 'all') {
-    const sub = options.subcategory.toLowerCase()
-    filtered = filtered.filter(
-      (p) =>
-        p.title.toLowerCase().includes(sub) ||
-        p.description.toLowerCase().includes(sub) ||
-        p.category.toLowerCase().includes(sub)
-    )
+  if (options.size && options.size !== 'all') filtered = filtered.filter((product) => product.sizes.includes(options.size!))
+  const min = options.priceMinRub ?? options.priceMin
+  const max = options.priceMaxRub ?? options.priceMax
+  if (min && min > 0) filtered = filtered.filter((product) => product.priceRub >= min)
+  if (max && max > 0) filtered = filtered.filter((product) => product.priceRub <= max)
+  if (options.search?.trim()) {
+    const query = options.search.toLocaleLowerCase()
+    filtered = filtered.filter((product) => `${product.title} ${product.description} ${product.sku}`.toLocaleLowerCase().includes(query))
   }
-
-  // Filter Size
-  if (options.size && options.size !== 'all') {
-    filtered = filtered.filter((p) => p.sizes.includes(options.size!))
-  }
-
-  // Filter Price Min / Max
-  const pMin = options.priceMinRub || options.priceMin
-  if (pMin && pMin > 0) {
-    filtered = filtered.filter((p) => p.priceRub >= pMin)
-  }
-  const pMax = options.priceMaxRub || options.priceMax
-  if (pMax && pMax > 0) {
-    filtered = filtered.filter((p) => p.priceRub <= pMax)
-  }
-
-  // Filter Search
-  if (options.search && options.search.trim()) {
-    const q = options.search.toLowerCase().trim()
-    filtered = filtered.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q)
-    )
-  }
-
-  // Sort
-  if (options.sortBy === 'price_asc') {
-    filtered.sort((a, b) => a.priceRub - b.priceRub)
-  } else if (options.sortBy === 'price_desc') {
-    filtered.sort((a, b) => b.priceRub - a.priceRub)
-  } else if (options.sortBy === 'newest') {
-    filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
-  }
-
-  const totalCount = filtered.length
-  const startIndex = (page - 1) * pageSize
-  const paginatedProducts = filtered.slice(startIndex, startIndex + pageSize)
-  const hasMore = startIndex + pageSize < totalCount
-
-  const sizeSet = new Set<string>()
-  filtered.forEach((p) => p.sizes.forEach((s) => sizeSet.add(s)))
-
-  const prices = filtered.map((p) => p.priceRub)
-  const priceMin = prices.length ? Math.min(...prices) : 0
-  const priceMax = prices.length ? Math.max(...prices) : 0
-
+  if (options.sortBy === 'price_asc') filtered.sort((a, b) => a.priceRub - b.priceRub)
+  if (options.sortBy === 'price_desc') filtered.sort((a, b) => b.priceRub - a.priceRub)
+  if (options.sortBy === 'newest') filtered.sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)))
+  const prices = filtered.map((product) => product.priceRub)
+  const start = (page - 1) * pageSize
+  const countCategory = (value: ProductCategory) => allProducts.filter((product) => product.category === value).length
   return {
-    products: paginatedProducts,
+    products: filtered.slice(start, start + pageSize),
     page,
     pageSize,
-    totalCount,
-    hasMore,
+    totalCount: filtered.length,
+    hasMore: start + pageSize < filtered.length,
     availableSubcategories: [
-      { id: 'all', label: 'Все товары', count: totalCount },
-      { id: 'older_girls', label: 'Older Girls (3–16 лет)', count: Math.round(totalCount * 0.3) },
-      { id: 'younger_girls', label: 'Younger Girls (3M–6 лет)', count: Math.round(totalCount * 0.3) },
-      { id: 'baby', label: 'Baby (0–3 года)', count: Math.round(totalCount * 0.4) },
+      { id: 'all', label: 'Все товары', count: filtered.length },
+      { id: 'older_girls', label: 'Older Girls (3–16 лет)', count: countCategory('girl') },
+      { id: 'younger_girls', label: 'Younger Girls (3M–6 лет)', count: countCategory('girl') },
+      { id: 'baby', label: 'Baby (0–3 года)', count: countCategory('mini') + countCategory('baby_girl') + countCategory('baby_boy') },
     ],
-    availableSizes: Array.from(sizeSet),
-    priceRangeRub: { min: priceMin, max: priceMax },
+    availableSizes: Array.from(new Set(filtered.flatMap((product) => product.sizes))).sort(),
+    priceRangeRub: { min: prices.length ? Math.min(...prices) : 0, max: prices.length ? Math.max(...prices) : 0 },
+    isComplete,
   }
 }

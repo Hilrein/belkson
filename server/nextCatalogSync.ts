@@ -1,5 +1,6 @@
 import type { NeonQueryFunction } from '@neondatabase/serverless'
 import type { Product, ProductCategory, ProductVariant, RegionId } from '../src/types/shop'
+import { scrapeNextCatalog } from './nextParser.js'
 
 type Sql = NeonQueryFunction<false, false>
 
@@ -38,10 +39,6 @@ export type NextCatalogFilters = {
 }
 
 export type NextSyncScope = { region?: string; category?: string }
-
-const RATES: Record<string, number> = { kazakhstan: 0.2, uk: 115, germany: 98, spain: 98, poland: 22 }
-const SYMBOLS: Record<string, string> = { kazakhstan: '₸', uk: '£', germany: '€', spain: '€', poland: 'zł' }
-const VALID_CATEGORIES = new Set<ProductCategory>(['all', 'girl', 'boy', 'baby_girl', 'baby_boy', 'mini', 'shoes_acc'])
 
 function stringList(value: unknown): string[] {
   if (!Array.isArray(value)) return []
@@ -118,74 +115,6 @@ export async function getNextCatalogFromDb(sql: Sql, filters: NextCatalogFilters
   }
 }
 
-function numberValue(value: unknown): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value.replace(/[^\d,.-]/g, '').replace(',', '.'))
-    if (Number.isFinite(parsed)) return parsed
-  }
-  return 0
-}
-
-function normalizeSourceProduct(value: unknown, region: string): Product | null {
-  if (!value || typeof value !== 'object') return null
-  const item = value as Record<string, unknown>
-  const sku = String(item.sku ?? item.id ?? item.productCode ?? '').trim()
-  const title = String(item.title ?? item.name ?? item.productName ?? '').trim()
-  if (!sku || !title) return null
-  const category = String(item.category ?? 'girl') as ProductCategory
-  if (!VALID_CATEGORIES.has(category) || category === 'all') return null
-  const originalPrice = numberValue(item.originalPrice ?? item.price ?? item.salePrice)
-  const priceRub = Math.round(numberValue(item.priceRub) || originalPrice * (RATES[region] || 1))
-  const rawVariants = Array.isArray(item.variants) ? item.variants : []
-  const productVariants: ProductVariant[] = rawVariants.map((variant) => {
-    const data = variant && typeof variant === 'object' ? variant as Record<string, unknown> : {}
-    return { color: String(data.color ?? 'Основной цвет'), sizes: stringList(data.sizes), images: stringList(data.images) }
-  })
-  return {
-    id: `next-source-${region}-${sku}`,
-    title,
-    brand: 'next',
-    region: region as RegionId,
-    category,
-    originalPrice,
-    currencySymbol: String(item.currencySymbol ?? SYMBOLS[region] ?? ''),
-    priceRub,
-    description: String(item.description ?? ''),
-    sku,
-    originalUrl: String(item.originalUrl ?? item.url ?? ''),
-    images: stringList(item.images),
-    sizes: stringList(item.sizes),
-    colors: stringList(item.colors),
-    variants: productVariants,
-    isNew: Boolean(item.isNew ?? item.showNewIn),
-    isBestSeller: Boolean(item.isBestSeller),
-  }
-}
-
-async function fetchPartnerCatalog(scope: Required<NextSyncScope>): Promise<{ products: Product[]; isComplete: boolean }> {
-  const source = process.env.NEXT_SOURCE_URL?.trim()
-  if (!source) throw new Error('NEXT_SOURCE_URL is not configured.')
-  const url = new URL(source)
-  url.searchParams.set('region', scope.region)
-  if (scope.category !== 'all') url.searchParams.set('category', scope.category)
-  const token = process.env.NEXT_SOURCE_TOKEN?.trim()
-  const headerName = process.env.NEXT_SOURCE_AUTH_HEADER?.trim() || 'Authorization'
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  if (token) headers[headerName] = headerName.toLowerCase() === 'authorization' ? `Bearer ${token}` : token
-  const response = await fetch(url, { headers })
-  if (!response.ok) throw new Error(`Partner source returned HTTP ${response.status}.`)
-  const payload: unknown = await response.json()
-  const wrapper = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload as Record<string, unknown> : null
-  const rawProducts = Array.isArray(payload) ? payload : (wrapper && Array.isArray(wrapper.products) ? wrapper.products : [])
-  if (!rawProducts.length) throw new Error('Partner source returned an empty or unsupported product payload.')
-  return {
-    products: rawProducts.map((item) => normalizeSourceProduct(item, scope.region)).filter((item): item is Product => Boolean(item)),
-    // Deletion is allowed only for an explicitly complete source snapshot.
-    isComplete: wrapper?.complete === true || wrapper?.isComplete === true,
-  }
-}
-
 export async function syncNextCatalog(sql: Sql, input: NextSyncScope = {}) {
   const scope = { region: (input.region || 'kazakhstan').toLowerCase(), category: (input.category || 'all').toLowerCase() }
   const runs = await sql`
@@ -193,7 +122,7 @@ export async function syncNextCatalog(sql: Sql, input: NextSyncScope = {}) {
   ` as SyncRunRow[]
   const runId = runs[0].id
   try {
-    const source = await fetchPartnerCatalog(scope)
+    const source = await scrapeNextCatalog({ region: scope.region, category: scope.category, page: 1, pageSize: 0 })
     const products = source.products
     let created = 0
     let updated = 0
