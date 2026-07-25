@@ -7,6 +7,7 @@ import { cors } from 'hono/cors'
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
 import { scrapeZara, scrapeHM, scrapeNext, scrapeZaraKidsCatalog } from '../server/parsers.js'
 import { scrapeHMCatalog } from '../server/hmParser.js'
+import { scrapeNextCatalog } from '../server/nextParser.js'
 
 /* ─── DB ─────────────────────────────────────────────────────────── */
 
@@ -220,6 +221,47 @@ async function handleHMCatalogRequest(c: any) {
 
 app.get('/hm/catalog', handleHMCatalogRequest)
 app.get('/api/hm/catalog', handleHMCatalogRequest)
+
+async function handleNextCatalogRequest(c: any) {
+  try {
+    const region = c.req.query('region') || 'kazakhstan'
+    const category = c.req.query('category') || 'all'
+    const subcategory = c.req.query('subcategory') || 'all'
+    const size = c.req.query('size') || 'all'
+    const priceMin = c.req.query('priceMin') || c.req.query('priceMinRub') ? Number(c.req.query('priceMin') || c.req.query('priceMinRub')) : undefined
+    const priceMax = c.req.query('priceMax') || c.req.query('priceMaxRub') ? Number(c.req.query('priceMax') || c.req.query('priceMaxRub')) : undefined
+    const sortBy = c.req.query('sortBy') || 'featured'
+    const search = c.req.query('search') || ''
+    const page = c.req.query('page') ? Number(c.req.query('page')) : 1
+    const pageSize = c.req.query('pageSize') ? Number(c.req.query('pageSize')) : 24
+
+    const result = await scrapeNextCatalog({
+      region,
+      category,
+      subcategory,
+      size,
+      priceMin,
+      priceMax,
+      sortBy,
+      search,
+      page,
+      pageSize,
+    })
+
+    return c.json(result)
+  } catch (err) {
+    console.error('Error in /next/catalog route:', err)
+    return c.json(
+      {
+        error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Next',
+      },
+      502
+    )
+  }
+}
+
+app.get('/next/catalog', handleNextCatalogRequest)
+app.get('/api/next/catalog', handleNextCatalogRequest)
 
 async function handleExternalShopRequest(c: any) {
   const shop = c.req.param('shop').toLowerCase()
