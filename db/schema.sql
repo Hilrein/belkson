@@ -29,3 +29,64 @@ ON CONFLICT (key) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_products_is_new ON products (is_new);
 CREATE INDEX IF NOT EXISTS idx_products_is_favorite ON products (is_favorite);
+
+-- Cached external Next catalogue. This is intentionally separate from the
+-- manually managed `products` catalogue above.
+CREATE TABLE IF NOT EXISTS next_catalog_products (
+  id                  BIGSERIAL PRIMARY KEY,
+  region              TEXT NOT NULL,
+  sku                 TEXT NOT NULL,
+  title               TEXT NOT NULL,
+  brand               TEXT NOT NULL DEFAULT 'next',
+  category            TEXT NOT NULL,
+  original_price      NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  currency_symbol     TEXT NOT NULL DEFAULT '',
+  price_rub           INTEGER NOT NULL CHECK (price_rub >= 0),
+  description         TEXT NOT NULL DEFAULT '',
+  original_url        TEXT NOT NULL DEFAULT '',
+  images              JSONB NOT NULL DEFAULT '[]'::jsonb,
+  sizes               JSONB NOT NULL DEFAULT '[]'::jsonb,
+  colors              JSONB NOT NULL DEFAULT '[]'::jsonb,
+  variants            JSONB NOT NULL DEFAULT '[]'::jsonb,
+  is_new              BOOLEAN NOT NULL DEFAULT FALSE,
+  is_best_seller      BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+  missing_syncs       INTEGER NOT NULL DEFAULT 0 CHECK (missing_syncs >= 0),
+  last_seen_sync_id   BIGINT,
+  last_seen_at        TIMESTAMPTZ,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (region, sku)
+);
+
+CREATE INDEX IF NOT EXISTS idx_next_catalog_active_region
+  ON next_catalog_products (region, is_active, category);
+
+CREATE TABLE IF NOT EXISTS next_sync_runs (
+  id                BIGSERIAL PRIMARY KEY,
+  region            TEXT NOT NULL,
+  category          TEXT NOT NULL DEFAULT 'all',
+  status            TEXT NOT NULL CHECK (status IN ('running', 'success', 'failed')),
+  source_count      INTEGER NOT NULL DEFAULT 0,
+  created_count     INTEGER NOT NULL DEFAULT 0,
+  updated_count     INTEGER NOT NULL DEFAULT 0,
+  hidden_count      INTEGER NOT NULL DEFAULT 0,
+  error             TEXT,
+  started_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at      TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_next_sync_runs_latest ON next_sync_runs (started_at DESC);
+
+CREATE TABLE IF NOT EXISTS next_sync_queue (
+  id                BIGSERIAL PRIMARY KEY,
+  region            TEXT NOT NULL,
+  category          TEXT NOT NULL DEFAULT 'all',
+  status            TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'resolved')),
+  attempts          INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_error        TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (region, category, status)
+);
