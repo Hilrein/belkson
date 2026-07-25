@@ -7,6 +7,7 @@
  * - Dynamic `import()` of npm packages + all logic in THIS file → works
  */
 import { scrapeZara, scrapeHM, scrapeNext, scrapeZaraKidsCatalog } from '../server/parsers.js'
+import { getNextCatalogFromDb, getNextSyncStatus, syncNextCatalog } from '../server/nextCatalogSync.js'
 
 type NodeReq = {
   method?: string
@@ -233,8 +234,7 @@ async function buildApp() {
       const page = c.req.query('page') ? Number(c.req.query('page')) : 1
       const pageSize = c.req.query('pageSize') ? Number(c.req.query('pageSize')) : 24
 
-      const { scrapeNextCatalog } = await import('../server/nextParser.js')
-      const result = await scrapeNextCatalog({
+      const result = await getNextCatalogFromDb(sql, {
         region,
         category,
         subcategory,
@@ -250,17 +250,46 @@ async function buildApp() {
       return c.json(result)
     } catch (err) {
       console.error('Error in /next/catalog route:', err)
-      return c.json(
-        {
-          error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Next',
-        },
-        502
-      )
+      return c.json({ error: err instanceof Error ? err.message : 'Не удалось загрузить каталог Next' }, 500)
     }
   }
 
   app.get('/next/catalog', handleNextCatalog)
   app.get('/api/next/catalog', handleNextCatalog)
+
+  function isInternalRequestAuthorized(c: any): boolean {
+    const secret = process.env.CRON_SECRET?.trim()
+    return Boolean(secret) && c.req.header('authorization') === `Bearer ${secret}`
+  }
+
+  async function handleNextSync(c: any) {
+    if (!isInternalRequestAuthorized(c)) return c.json({ error: 'Unauthorized' }, 401)
+    try {
+      const body = c.req.method === 'POST' ? await c.req.json().catch(() => ({})) : {}
+      const result = await syncNextCatalog(sql, {
+        region: String(body.region ?? c.req.param('region') ?? c.req.query('region') ?? 'kazakhstan'),
+        category: String(body.category ?? c.req.query('category') ?? 'all'),
+      })
+      return c.json({ ok: true, sync: result })
+    } catch (err) {
+      console.error('Error in Next sync:', err)
+      return c.json({ error: err instanceof Error ? err.message : 'Next sync failed' }, 502)
+    }
+  }
+
+  async function handleNextSyncStatus(c: any) {
+    if (!isInternalRequestAuthorized(c)) return c.json({ error: 'Unauthorized' }, 401)
+    return c.json(await getNextSyncStatus(sql))
+  }
+
+  app.post('/internal/next/sync', handleNextSync)
+  app.post('/api/internal/next/sync', handleNextSync)
+  app.get('/internal/next/sync', handleNextSync)
+  app.get('/api/internal/next/sync', handleNextSync)
+  app.get('/internal/next/sync/status', handleNextSyncStatus)
+  app.get('/api/internal/next/sync/status', handleNextSyncStatus)
+  app.get('/internal/next/sync/:region', handleNextSync)
+  app.get('/api/internal/next/sync/:region', handleNextSync)
 
   async function handleExternalShop(c: any) {
     const shop = c.req.param('shop').toLowerCase()

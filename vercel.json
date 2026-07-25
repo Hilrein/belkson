@@ -5,6 +5,13 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    { "path": "/api/internal/next/sync/kazakhstan", "schedule": "0 3 * * *" },
+    { "path": "/api/internal/next/sync/uk", "schedule": "0 4 * * *" },
+    { "path": "/api/internal/next/sync/germany", "schedule": "0 5 * * *" },
+    { "path": "/api/internal/next/sync/spain", "schedule": "0 6 * * *" },
+    { "path": "/api/internal/next/sync/poland", "schedule": "0 7 * * *" }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
