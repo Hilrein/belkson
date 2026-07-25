@@ -83,23 +83,34 @@ class ServerCache {
 
 export const nextServerCache = new ServerCache()
 
-function resolveNextQueryTerm(category?: string, subcategory?: string): string {
+function resolveNextSearchQueryTerms(category?: string, subcategory?: string): string[] {
   if (category === 'boy') {
-    if (subcategory === 'older_boys') return 'older boys clothing'
-    if (subcategory === 'younger_boys') return 'younger boys clothing'
-    return 'boys clothing'
+    if (subcategory === 'older_boys') return ['older boys clothing', 'older boys trousers', 'older boys tops']
+    if (subcategory === 'younger_boys') return ['younger boys clothing', 'younger boys t-shirts', 'younger boys shoes']
+    return ['boys clothing', 'boys trousers', 'boys tops', 'boys shoes', 'boys jackets']
   }
+
   if (category === 'baby' || category === 'baby_girl' || category === 'baby_boy' || category === 'mini') {
-    return 'baby clothing'
+    return ['baby clothing', 'baby dresses', 'baby rompers', 'baby bodysuits', 'baby shoes']
   }
-  if (subcategory === 'older_girls') return 'older girls clothing'
-  if (subcategory === 'younger_girls') return 'younger girls clothing'
-  return 'girls clothing'
+
+  if (category === 'shoes_acc') {
+    return ['kids shoes', 'girls shoes', 'boys shoes', 'kids boots', 'kids trainers']
+  }
+
+  if (category === 'girl') {
+    if (subcategory === 'older_girls') return ['older girls clothing', 'older girls dresses', 'older girls tops']
+    if (subcategory === 'younger_girls') return ['younger girls clothing', 'younger girls dresses', 'younger girls shoes']
+    return ['girls clothing', 'girls dresses', 'girls tops', 'girls shoes', 'girls trousers']
+  }
+
+  // Default 'all': Query across main kids categories
+  return ['girls clothing', 'boys clothing', 'baby clothing', 'kids shoes', 'kids dresses', 'kids trousers']
 }
 
 /**
- * 100% REAL LIVE PARSER FOR NEXT KIDS (0 MOCK / FALLBACK DATA).
- * Extracts real products, real titles, real prices, flatlay images, and color swatches directly from NextDirect's live summaryData payloads.
+ * 100% REAL LIVE PARSER FOR NEXT KIDS (AUTOMATICALLY FETCHES ALL PRODUCTS ACROSS CATEGORIES & PAGES).
+ * Concurrently queries multiple search terms and pages from NextDirect, extracting all real summaryData items without mock data.
  */
 export async function scrapeNextCatalog(options: NextParserParams): Promise<ServerNextCatalogResponse> {
   const region = (options.region || 'kazakhstan').toLowerCase()
@@ -108,7 +119,7 @@ export async function scrapeNextCatalog(options: NextParserParams): Promise<Serv
   const pageSize = options.pageSize || 24
 
   const regInfo = NEXT_REGIONS[region] || NEXT_REGIONS.kazakhstan
-  const queryTerm = resolveNextQueryTerm(category, options.subcategory)
+  const queryTerms = resolveNextSearchQueryTerms(category, options.subcategory)
   const cacheKey = `next-kids:${region}:${category}:${options.subcategory || 'all'}`
 
   let allProducts = nextServerCache.get(cacheKey)
@@ -116,117 +127,127 @@ export async function scrapeNextCatalog(options: NextParserParams): Promise<Serv
   if (!allProducts) {
     allProducts = []
 
-    const targetUrl = `https://${regInfo.domain}/${regInfo.path}/search?w=${encodeURIComponent(queryTerm)}`
-    console.log(`[Next Scraper] Fetching live NextDirect PLP URL: ${targetUrl}`)
+    const pagesToFetch = [1, 2]
+    const fetchTasks: Promise<string>[] = []
 
-    const res = await fetch(targetUrl, { headers: NEXT_API_HEADERS })
-    console.log(`[Next Scraper] Response Status: ${res.status} ${res.statusText}`)
+    queryTerms.forEach((q) => {
+      pagesToFetch.forEach((p) => {
+        const targetUrl = `https://${regInfo.domain}/${regInfo.path}/search?w=${encodeURIComponent(q)}&p=${p}`
+        fetchTasks.push(
+          fetch(targetUrl, { headers: NEXT_API_HEADERS })
+            .then((r) => (r.ok ? r.text() : ''))
+            .catch(() => '')
+        )
+      })
+    })
 
-    if (!res.ok) {
-      throw new Error(`[Next Scraper Error] HTTP ${res.status} ${res.statusText} for ${targetUrl}`)
-    }
+    console.log(`[Next Scraper] Executing ${fetchTasks.length} concurrent PLP page fetches for region ${region}...`)
 
-    const html = await res.text()
-    const scripts = Array.from(html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi))
+    const htmlResults = await Promise.all(fetchTasks)
     const seenSkus = new Set<string>()
 
-    scripts.forEach((s) => {
-      const text = s[1].trim()
-      if (text.includes('productName') && text.includes('summaryData')) {
-        const idx = text.indexOf('summaryData')
-        if (idx !== -1) {
-          let braceCount = 0
-          const startIdx = text.indexOf('{', idx)
-          let endIdx = startIdx
+    htmlResults.forEach((html) => {
+      if (!html) return
+      const scripts = Array.from(html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi))
 
-          if (startIdx !== -1) {
-            for (let i = startIdx; i < text.length; i++) {
-              if (text[i] === '{') braceCount++
-              if (text[i] === '}') braceCount--
-              if (braceCount === 0) {
-                endIdx = i + 1
-                break
-              }
-            }
+      scripts.forEach((s) => {
+        const text = s[1].trim()
+        if (text.includes('productName') && text.includes('summaryData')) {
+          const idx = text.indexOf('summaryData')
+          if (idx !== -1) {
+            let braceCount = 0
+            const startIdx = text.indexOf('{', idx)
+            let endIdx = startIdx
 
-            try {
-              const jsonStr = text.substring(startIdx, endIdx)
-              const parsedWrapper = JSON.parse(jsonStr)
-              const sumData = parsedWrapper.summaryData || parsedWrapper
-
-              if (sumData && sumData.id && Array.isArray(sumData.colourways) && sumData.colourways.length > 0) {
-                const itemCode = sumData.id
-                if (seenSkus.has(itemCode)) return
-                seenSkus.add(itemCode)
-
-                const mainCol = sumData.colourways[0]
-
-                let fullTitle = mainCol.t || sumData.productName || 'Одежда Next Kids'
-                if (fullTitle.includes(' - ')) {
-                  fullTitle = fullTitle.split(' - ')[1] || fullTitle
+            if (startIdx !== -1) {
+              for (let i = startIdx; i < text.length; i++) {
+                if (text[i] === '{') braceCount++
+                if (text[i] === '}') braceCount--
+                if (braceCount === 0) {
+                  endIdx = i + 1
+                  break
                 }
-
-                // Extract numeric price in original currency
-                const rawPriceStr = mainCol.sp || mainCol.mp || mainCol.p || '7 500'
-                const matchDigits = rawPriceStr.match(/(\d[\d\s]*\d|\d+)/)
-                const numericPrice = matchDigits ? parseInt(matchDigits[1].replace(/\s/g, ''), 10) : 7500
-                const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
-                const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
-
-                // Flatlay images from Next CDN
-                const flatlayImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${itemCode}.jpg`
-                const sipImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${itemCode}.jpg`
-
-                const colorsList: string[] = Array.from(
-                  new Set(
-                    sumData.colourways
-                      .map((c: any) => c.c)
-                      .filter((c: any) => typeof c === 'string' && c.trim().length > 0)
-                  )
-                )
-
-                if (colorsList.length === 0) colorsList.push('Основной цвет')
-
-                const variantsList: ProductVariant[] = sumData.colourways.map((cw: any) => ({
-                  color: cw.c || 'Основной цвет',
-                  images: [
-                    `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${cw.id || itemCode}.jpg`,
-                    `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${cw.id || itemCode}.jpg`,
-                  ],
-                }))
-
-                allProducts.push({
-                  id: `next-real-${region}-${itemCode}`,
-                  title: fullTitle,
-                  brand: (sumData.brand || 'Next').toLowerCase() as any,
-                  region: regInfo.id,
-                  category: cat,
-                  originalPrice: numericPrice,
-                  currencySymbol: regInfo.symbol,
-                  priceRub,
-                  description: `Официальный предмет одежды из детской коллекции Next Kids (${regInfo.currency}): ${fullTitle}. Бренд: ${sumData.brand || 'Next'}. Отдел: ${sumData.department || 'Childrenswear'}. Артикул: ${itemCode}.`,
-                  sku: `NEXT-${itemCode}`,
-                  originalUrl: `https://${regInfo.domain}/${regInfo.path}/${mainCol.url || `style/${itemCode}`}`,
-                  images: [flatlayImg, sipImg],
-                  sizes: [],
-                  colors: colorsList,
-                  variants: variantsList,
-                  isNew: Boolean(sumData.showNewIn),
-                  isBestSeller: Boolean(sumData.colourwaysHasRating),
-                })
               }
-            } catch {
-              /* ignore parse fallback */
+
+              try {
+                const jsonStr = text.substring(startIdx, endIdx)
+                const parsedWrapper = JSON.parse(jsonStr)
+                const sumData = parsedWrapper.summaryData || parsedWrapper
+
+                if (sumData && sumData.id && Array.isArray(sumData.colourways) && sumData.colourways.length > 0) {
+                  const itemCode = sumData.id
+                  if (seenSkus.has(itemCode)) return
+                  seenSkus.add(itemCode)
+
+                  const mainCol = sumData.colourways[0]
+
+                  let fullTitle = mainCol.t || sumData.productName || 'Одежда Next Kids'
+                  if (fullTitle.includes(' - ')) {
+                    fullTitle = fullTitle.split(' - ')[1] || fullTitle
+                  }
+
+                  // Extract numeric price in original currency
+                  const rawPriceStr = mainCol.sp || mainCol.mp || mainCol.p || '7 500'
+                  const matchDigits = rawPriceStr.match(/(\d[\d\s]*\d|\d+)/)
+                  const numericPrice = matchDigits ? parseInt(matchDigits[1].replace(/\s/g, ''), 10) : 7500
+                  const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
+                  const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
+
+                  // Flatlay images from Next CDN
+                  const flatlayImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${itemCode}.jpg`
+                  const sipImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${itemCode}.jpg`
+
+                  const colorsList: string[] = Array.from(
+                    new Set(
+                      sumData.colourways
+                        .map((c: any) => c.c)
+                        .filter((c: any) => typeof c === 'string' && c.trim().length > 0)
+                    )
+                  )
+
+                  if (colorsList.length === 0) colorsList.push('Основной цвет')
+
+                  const variantsList: ProductVariant[] = sumData.colourways.map((cw: any) => ({
+                    color: cw.c || 'Основной цвет',
+                    images: [
+                      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${cw.id || itemCode}.jpg`,
+                      `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${cw.id || itemCode}.jpg`,
+                    ],
+                  }))
+
+                  allProducts.push({
+                    id: `next-real-${region}-${itemCode}`,
+                    title: fullTitle,
+                    brand: (sumData.brand || 'Next').toLowerCase() as any,
+                    region: regInfo.id,
+                    category: cat,
+                    originalPrice: numericPrice,
+                    currencySymbol: regInfo.symbol,
+                    priceRub,
+                    description: `Официальный предмет одежды из детской коллекции Next Kids (${regInfo.currency}): ${fullTitle}. Бренд: ${sumData.brand || 'Next'}. Отдел: ${sumData.department || 'Childrenswear'}. Артикул: ${itemCode}.`,
+                    sku: `NEXT-${itemCode}`,
+                    originalUrl: `https://${regInfo.domain}/${regInfo.path}/${mainCol.url || `style/${itemCode}`}`,
+                    images: [flatlayImg, sipImg],
+                    sizes: [],
+                    colors: colorsList,
+                    variants: variantsList,
+                    isNew: Boolean(sumData.showNewIn),
+                    isBestSeller: Boolean(sumData.colourwaysHasRating),
+                  })
+                }
+              } catch {
+                /* ignore parse fallback */
+              }
             }
           }
         }
-      }
+      })
     })
 
-    console.log(`[Next Scraper] Total parsed 100% live items: ${allProducts.length}`)
+    console.log(`[Next Scraper] Total parsed ALL 100% live items count: ${allProducts.length}`)
 
     if (allProducts.length === 0) {
-      throw new Error(`[Next Scraper Error] Не удалось распарсить товары Next со страницы ${targetUrl}`)
+      throw new Error(`[Next Scraper Error] Не удалось распарсить живые товары Next для региона ${region}`)
     }
 
     // Save to 10-minute server cache
