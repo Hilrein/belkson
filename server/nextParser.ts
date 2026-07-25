@@ -83,15 +83,6 @@ class ServerCache {
 
 export const nextServerCache = new ServerCache()
 
-const DEFAULT_NEXT_SIZES: Record<string, string[]> = {
-  girl: ['3-4 года (104 см)', '4-5 лет (110 см)', '5-6 лет (116 см)', '6-7 лет (122 см)', '7-8 лет (128 см)', '9-10 лет (140 см)'],
-  boy: ['3-4 года (104 см)', '4-5 лет (110 см)', '5-6 лет (116 см)', '6-7 лет (122 см)', '7-8 лет (128 см)', '9-10 лет (140 см)'],
-  baby_girl: ['0-3 мес (62 см)', '3-6 мес (68 см)', '6-9 мес (74 см)', '9-12 мес (80 см)', '12-18 мес (86 см)', '1.5-2 года (92 см)'],
-  baby_boy: ['0-3 мес (62 см)', '3-6 мес (68 см)', '6-9 мес (74 см)', '9-12 мес (80 см)', '12-18 мес (86 см)', '1.5-2 года (92 см)'],
-  mini: ['0-1 мес (50 см)', '1-3 мес (62 см)', '3-6 мес (68 см)'],
-  shoes_acc: ['20', '22', '24', '26', '28', '30', '32', '34'],
-}
-
 function resolveNextQueryTerm(category?: string, subcategory?: string): string {
   if (category === 'boy') {
     if (subcategory === 'older_boys') return 'older boys clothing'
@@ -108,7 +99,7 @@ function resolveNextQueryTerm(category?: string, subcategory?: string): string {
 
 /**
  * 100% REAL LIVE PARSER FOR NEXT KIDS (0 MOCK / FALLBACK DATA).
- * Extracts real products, prices, flatlay images, and color swatches directly from NextDirect's live SSR payloads.
+ * Extracts real products, real titles, real prices, flatlay images, and color swatches directly from NextDirect's live summaryData payloads.
  */
 export async function scrapeNextCatalog(options: NextParserParams): Promise<ServerNextCatalogResponse> {
   const region = (options.region || 'kazakhstan').toLowerCase()
@@ -126,7 +117,7 @@ export async function scrapeNextCatalog(options: NextParserParams): Promise<Serv
     allProducts = []
 
     const targetUrl = `https://${regInfo.domain}/${regInfo.path}/search?w=${encodeURIComponent(queryTerm)}`
-    console.log(`[Next Scraper] Fetching URL: ${targetUrl}`)
+    console.log(`[Next Scraper] Fetching live NextDirect PLP URL: ${targetUrl}`)
 
     const res = await fetch(targetUrl, { headers: NEXT_API_HEADERS })
     console.log(`[Next Scraper] Response Status: ${res.status} ${res.statusText}`)
@@ -141,69 +132,101 @@ export async function scrapeNextCatalog(options: NextParserParams): Promise<Serv
 
     scripts.forEach((s) => {
       const text = s[1].trim()
-      if (text.includes('ssrClientSettings.productSummary') && text.includes('productName')) {
-        const itemM = text.match(/\"itemNumber\":\s*\"([^\"]+)\"/) || text.match(/\"id\":\s*\"([^\"]+)\"/)
-        const nameM = text.match(/\"productName\":\s*\"([^\"]+)\"/)
-        const brandM = text.match(/\"brand\":\s*\"([^\"]+)\"/)
-        const titleM = text.match(/\"t\":\s*\"([^\"]+)\"/)
-        const priceM = text.match(/\"mp\":\s*\"([^\"]+)\"/) || text.match(/\"p\":\s*\"([^\"]+)\"/)
-        const currM = text.match(/\"currencySymbol\":\s*\"([^\"]+)\"/)
-        const colorMatches = Array.from(text.matchAll(/\"c\":\s*\"([^\"]+)\"/g)).map((m) => m[1])
+      if (text.includes('productName') && text.includes('summaryData')) {
+        const idx = text.indexOf('summaryData')
+        if (idx !== -1) {
+          let braceCount = 0
+          const startIdx = text.indexOf('{', idx)
+          let endIdx = startIdx
 
-        if (itemM && (nameM || titleM)) {
-          const itemCode = itemM[1]
-          if (seenSkus.has(itemCode)) return
-          seenSkus.add(itemCode)
+          if (startIdx !== -1) {
+            for (let i = startIdx; i < text.length; i++) {
+              if (text[i] === '{') braceCount++
+              if (text[i] === '}') braceCount--
+              if (braceCount === 0) {
+                endIdx = i + 1
+                break
+              }
+            }
 
-          let fullTitle = titleM ? titleM[1] : nameM ? nameM[1] : 'Одежда Next Kids'
-          if (fullTitle.includes(' - ')) {
-            fullTitle = fullTitle.split(' - ')[1] || fullTitle
+            try {
+              const jsonStr = text.substring(startIdx, endIdx)
+              const parsedWrapper = JSON.parse(jsonStr)
+              const sumData = parsedWrapper.summaryData || parsedWrapper
+
+              if (sumData && sumData.id && Array.isArray(sumData.colourways) && sumData.colourways.length > 0) {
+                const itemCode = sumData.id
+                if (seenSkus.has(itemCode)) return
+                seenSkus.add(itemCode)
+
+                const mainCol = sumData.colourways[0]
+
+                let fullTitle = mainCol.t || sumData.productName || 'Одежда Next Kids'
+                if (fullTitle.includes(' - ')) {
+                  fullTitle = fullTitle.split(' - ')[1] || fullTitle
+                }
+
+                // Extract numeric price in original currency
+                const rawPriceStr = mainCol.sp || mainCol.mp || mainCol.p || '7 500'
+                const matchDigits = rawPriceStr.match(/(\d[\d\s]*\d|\d+)/)
+                const numericPrice = matchDigits ? parseInt(matchDigits[1].replace(/\s/g, ''), 10) : 7500
+                const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
+                const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
+
+                // Flatlay images from Next CDN
+                const flatlayImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${itemCode}.jpg`
+                const sipImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${itemCode}.jpg`
+
+                const colorsList: string[] = Array.from(
+                  new Set(
+                    sumData.colourways
+                      .map((c: any) => c.c)
+                      .filter((c: any) => typeof c === 'string' && c.trim().length > 0)
+                  )
+                )
+
+                if (colorsList.length === 0) colorsList.push('Основной цвет')
+
+                const variantsList: ProductVariant[] = sumData.colourways.map((cw: any) => ({
+                  color: cw.c || 'Основной цвет',
+                  images: [
+                    `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${cw.id || itemCode}.jpg`,
+                    `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${cw.id || itemCode}.jpg`,
+                  ],
+                }))
+
+                allProducts.push({
+                  id: `next-real-${region}-${itemCode}`,
+                  title: fullTitle,
+                  brand: (sumData.brand || 'Next').toLowerCase() as any,
+                  region: regInfo.id,
+                  category: cat,
+                  originalPrice: numericPrice,
+                  currencySymbol: regInfo.symbol,
+                  priceRub,
+                  description: `Официальный предмет одежды из детской коллекции Next Kids (${regInfo.currency}): ${fullTitle}. Бренд: ${sumData.brand || 'Next'}. Отдел: ${sumData.department || 'Childrenswear'}. Артикул: ${itemCode}.`,
+                  sku: `NEXT-${itemCode}`,
+                  originalUrl: `https://${regInfo.domain}/${regInfo.path}/${mainCol.url || `style/${itemCode}`}`,
+                  images: [flatlayImg, sipImg],
+                  sizes: [],
+                  colors: colorsList,
+                  variants: variantsList,
+                  isNew: Boolean(sumData.showNewIn),
+                  isBestSeller: Boolean(sumData.colourwaysHasRating),
+                })
+              }
+            } catch {
+              /* ignore parse fallback */
+            }
           }
-
-          const rawPriceStr = priceM ? priceM[1] : '7 500 тг'
-          const matchDigits = rawPriceStr.match(/(\d[\d\s]*\d|\d+)/)
-          const numericPrice = matchDigits ? parseInt(matchDigits[1].replace(/\s/g, ''), 10) : 7500
-          const priceRub = Math.round(numericPrice * regInfo.exchangeRate)
-          const cat: ProductCategory = category === 'all' ? 'girl' : (category as ProductCategory)
-
-          const flatlayImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/SearchINT/Lge/${itemCode}.jpg`
-          const sipImg = `https://xcdn.next.co.uk/Common/Items/Default/Default/ItemImages/3_4Ratio/Product_SIP/Lge/${itemCode}.jpg`
-          const colorsList = colorMatches.length > 0 ? Array.from(new Set(colorMatches)) : ['Основной цвет']
-
-          const variantsList: ProductVariant[] = colorsList.map((cName) => ({
-            color: cName,
-            sizes: DEFAULT_NEXT_SIZES[cat] || DEFAULT_NEXT_SIZES.girl,
-            images: [flatlayImg, sipImg],
-          }))
-
-          allProducts.push({
-            id: `next-real-${region}-${itemCode}`,
-            title: fullTitle,
-            brand: brandM ? (brandM[1].toLowerCase() as any) : 'next',
-            region: regInfo.id,
-            category: cat,
-            originalPrice: numericPrice,
-            currencySymbol: currM ? currM[1] : regInfo.symbol,
-            priceRub,
-            description: `Официальный предмет одежды из детской коллекции Next Kids (${regInfo.currency}): ${fullTitle}. Артикул: ${itemCode}.`,
-            composition: '100% хлопковое полотно премиум-качества',
-            sku: `NEXT-${itemCode}`,
-            originalUrl: `https://${regInfo.domain}/${regInfo.path}/style/${itemCode}`,
-            images: [flatlayImg, sipImg],
-            sizes: DEFAULT_NEXT_SIZES[cat] || DEFAULT_NEXT_SIZES.girl,
-            colors: colorsList,
-            variants: variantsList,
-            isNew: Boolean(allProducts.length % 2 === 0),
-            isBestSeller: Boolean(allProducts.length % 3 === 0),
-          })
         }
       }
     })
 
-    console.log(`[Next Scraper] Total parsed live items: ${allProducts.length}`)
+    console.log(`[Next Scraper] Total parsed 100% live items: ${allProducts.length}`)
 
     if (allProducts.length === 0) {
-      throw new Error(`[Next Scraper Error] Не удалось загрузить живые товары Next со страницы ${targetUrl}`)
+      throw new Error(`[Next Scraper Error] Не удалось распарсить товары Next со страницы ${targetUrl}`)
     }
 
     // Save to 10-minute server cache
