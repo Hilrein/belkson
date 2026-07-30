@@ -1,9 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
+export type CountryItem = {
+  name: string
+  url: string
+}
+
 export type OfficialStore = {
   id: number
   name: string
-  countries: string[]
+  countries: CountryItem[]
   sortOrder: number
   isActive: boolean
 }
@@ -12,7 +17,7 @@ type OfficialStoresContextValue = {
   stores: OfficialStore[]
   loading: boolean
   error: string | null
-  addStore: (data: { name: string; countries: string[]; sortOrder?: number; isActive?: boolean }) => Promise<void>
+  addStore: (data: { name: string; countries: (string | CountryItem)[]; sortOrder?: number; isActive?: boolean }) => Promise<void>
   updateStore: (id: number, data: Partial<OfficialStore>) => Promise<void>
   deleteStore: (id: number) => Promise<void>
   refresh: () => Promise<void>
@@ -21,9 +26,43 @@ type OfficialStoresContextValue = {
 const OfficialStoresContext = createContext<OfficialStoresContextValue | null>(null)
 
 const DEFAULT_STORES: OfficialStore[] = [
-  { id: 1, name: 'Zara', countries: ['Spain', 'UK', 'Poland', 'Germany', 'Kazakhstan'], sortOrder: 1, isActive: true },
-  { id: 2, name: 'H&M', countries: ['UK', 'Germany', 'Poland', 'USA'], sortOrder: 2, isActive: true },
-  { id: 3, name: 'Next', countries: ['UK', 'Kazakhstan', 'Germany', 'Spain'], sortOrder: 3, isActive: true },
+  {
+    id: 1,
+    name: 'Zara',
+    countries: [
+      { name: 'Spain', url: 'https://www.zara.com/es/' },
+      { name: 'UK', url: 'https://www.zara.com/uk/' },
+      { name: 'Poland', url: 'https://www.zara.com/pl/' },
+      { name: 'Germany', url: 'https://www.zara.com/de/' },
+      { name: 'Kazakhstan', url: 'https://www.zara.com/kz/' },
+    ],
+    sortOrder: 1,
+    isActive: true,
+  },
+  {
+    id: 2,
+    name: 'H&M',
+    countries: [
+      { name: 'UK', url: 'https://www2.hm.com/en_gb/index.html' },
+      { name: 'Germany', url: 'https://www2.hm.com/de_de/index.html' },
+      { name: 'Poland', url: 'https://www2.hm.com/pl_pl/index.html' },
+      { name: 'USA', url: 'https://www2.hm.com/en_us/index.html' },
+    ],
+    sortOrder: 2,
+    isActive: true,
+  },
+  {
+    id: 3,
+    name: 'Next',
+    countries: [
+      { name: 'UK', url: 'https://www.next.co.uk' },
+      { name: 'Kazakhstan', url: 'https://www.next.kz' },
+      { name: 'Germany', url: 'https://www.next.de' },
+      { name: 'Spain', url: 'https://www.next.es' },
+    ],
+    sortOrder: 3,
+    isActive: true,
+  },
 ]
 
 export function OfficialStoresProvider({ children }: { children: ReactNode }) {
@@ -55,7 +94,12 @@ export function OfficialStoresProvider({ children }: { children: ReactNode }) {
     refresh()
   }, [])
 
-  const addStore = async (data: { name: string; countries: string[]; sortOrder?: number; isActive?: boolean }) => {
+  const addStore = async (data: {
+    name: string
+    countries: (string | CountryItem)[]
+    sortOrder?: number
+    isActive?: boolean
+  }) => {
     const res = await fetch('/api/official-stores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

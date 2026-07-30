@@ -108,8 +108,9 @@ export default function AdminPage() {
   const [storeDrawerMode, setStoreDrawerMode] = useState<'add' | 'edit'>('add')
   const [editingStoreId, setEditingStoreId] = useState<number | null>(null)
   const [storeName, setStoreName] = useState('')
-  const [storeCountries, setStoreCountries] = useState<string[]>([])
+  const [storeCountries, setStoreCountries] = useState<{ name: string; url: string }[]>([])
   const [countryInput, setCountryInput] = useState('')
+  const [countryUrlInput, setCountryUrlInput] = useState('')
   const [storeSaving, setStoreSaving] = useState(false)
 
   // Delete Store modal state
@@ -123,6 +124,7 @@ export default function AdminPage() {
     setStoreName('')
     setStoreCountries([])
     setCountryInput('')
+    setCountryUrlInput('')
     setStoreDrawerOpen(true)
   }
 
@@ -130,8 +132,15 @@ export default function AdminPage() {
     setStoreDrawerMode('edit')
     setEditingStoreId(store.id)
     setStoreName(store.name)
-    setStoreCountries([...store.countries])
+    setStoreCountries(
+      (store.countries || []).map((c) =>
+        typeof c === 'string'
+          ? { name: c, url: '' }
+          : { name: c.name || '', url: c.url || '' },
+      ),
+    )
     setCountryInput('')
+    setCountryUrlInput('')
     setStoreDrawerOpen(true)
   }
 
@@ -141,15 +150,17 @@ export default function AdminPage() {
   }
 
   const handleAddCountry = () => {
-    const val = countryInput.trim()
-    if (val && !storeCountries.includes(val)) {
-      setStoreCountries([...storeCountries, val])
+    const name = countryInput.trim()
+    const url = countryUrlInput.trim()
+    if (name && !storeCountries.some((c) => c.name === name)) {
+      setStoreCountries([...storeCountries, { name, url }])
       setCountryInput('')
+      setCountryUrlInput('')
     }
   }
 
-  const handleRemoveCountry = (country: string) => {
-    setStoreCountries(storeCountries.filter((c) => c !== country))
+  const handleRemoveCountry = (name: string) => {
+    setStoreCountries(storeCountries.filter((c) => c.name !== name))
   }
 
   const handleSaveStore = async () => {
@@ -597,14 +608,29 @@ export default function AdminPage() {
                             Страны / регионы выкупа ({store.countries.length}):
                           </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {store.countries.map((c) => (
-                              <span
-                                key={c}
-                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface border border-gray-200 text-on-surface"
-                              >
-                                {c}
-                              </span>
-                            ))}
+                            {store.countries.map((c) => {
+                              const name = typeof c === 'string' ? c : c.name
+                              const url = typeof c === 'string' ? '' : c.url
+                              return (
+                                <span
+                                  key={name}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-surface border border-gray-200 text-on-surface"
+                                >
+                                  <span>{name}</span>
+                                  {url && (
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      title={url}
+                                      className="text-[#ce7ed5] hover:underline inline-flex items-center"
+                                    >
+                                      <Icon name="open_in_new" className="text-[12px]" />
+                                    </a>
+                                  )}
+                                </span>
+                              )
+                            })}
                             {store.countries.length === 0 && (
                               <span className="text-xs text-gray-400 italic">
                                 Нет добавленных стран
@@ -1324,13 +1350,13 @@ export default function AdminPage() {
 
           <div>
             <label className="block text-body-sm font-medium text-on-surface mb-2">
-              Страны / регионы выкупа
+              Страны / регионы выкупа и ссылки
             </label>
-            <div className="flex gap-2 mb-3">
+            <div className="space-y-2 mb-3">
               <input
                 type="text"
-                className="flex-1 px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                placeholder="Например: Spain, UK, Turkey"
+                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder="Название страны (например: Spain, UK, Турция)"
                 value={countryInput}
                 onChange={(e) => setCountryInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -1340,26 +1366,48 @@ export default function AdminPage() {
                   }
                 }}
               />
-              <button
-                type="button"
-                className="px-4 py-2 bg-[#ce7ed5] text-white rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer"
-                onClick={handleAddCountry}
-              >
-                + Добавить
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  className="flex-1 px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                  placeholder="Ссылка на сайт (например: https://zara.com/es/)"
+                  value={countryUrlInput}
+                  onChange={(e) => setCountryUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddCountry()
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="px-4 py-2 bg-[#ce7ed5] text-white rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer"
+                  onClick={handleAddCountry}
+                >
+                  + Добавить
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {storeCountries.map((country) => (
+              {storeCountries.map((c) => (
                 <span
-                  key={country}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-surface border border-gray-200 text-on-surface font-medium"
+                  key={c.name}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-surface border border-gray-200 text-on-surface font-medium"
                 >
-                  <span>{country}</span>
+                  <span className="font-semibold">{c.name}</span>
+                  {c.url ? (
+                    <span className="text-xs text-on-surface-variant max-w-[150px] truncate" title={c.url}>
+                      ({c.url})
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">(без ссылки)</span>
+                  )}
                   <button
                     type="button"
-                    className="hover:text-red-600 transition-colors cursor-pointer"
-                    onClick={() => handleRemoveCountry(country)}
+                    className="hover:text-red-600 transition-colors cursor-pointer ml-1"
+                    onClick={() => handleRemoveCountry(c.name)}
                   >
                     <Icon name="close" className="text-xs" />
                   </button>
@@ -1367,7 +1415,7 @@ export default function AdminPage() {
               ))}
               {storeCountries.length === 0 && (
                 <p className="text-xs text-gray-400 italic">
-                  Добавьте хотя бы одну страну или нажмите Enter после ввода.
+                  Добавьте хотя бы одну страну/регион.
                 </p>
               )}
             </div>

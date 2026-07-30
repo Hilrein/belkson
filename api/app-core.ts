@@ -459,14 +459,35 @@ app.put('/api/settings/currency', handleUpdateCurrency)
 
 /* ─── Official Stores DB & API ────────────────────────────────────── */
 
-type DbOfficialStore = {
-  id: number
+type CountryItem = {
   name: string
-  countries: string | string[] | { name: string; url?: string }[]
-  sort_order: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  url: string
+}
+
+function normalizeCountries(raw: unknown): CountryItem[] {
+  let list: unknown[] = []
+  if (typeof raw === 'string') {
+    try {
+      list = JSON.parse(raw) as unknown[]
+    } catch {
+      list = []
+    }
+  } else if (Array.isArray(raw)) {
+    list = raw
+  }
+  return list.map((item) => {
+    if (typeof item === 'string') {
+      return { name: item.trim(), url: '' }
+    }
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>
+      return {
+        name: String(obj.name ?? '').trim(),
+        url: String(obj.url ?? '').trim(),
+      }
+    }
+    return { name: '—', url: '' }
+  })
 }
 
 async function ensureOfficialStoresTable() {
@@ -487,9 +508,9 @@ async function ensureOfficialStoresTable() {
     await client`
       INSERT INTO official_stores (name, countries, sort_order, is_active)
       VALUES 
-        ('Zara', '["Spain", "UK", "Poland", "Germany", "Kazakhstan"]'::jsonb, 1, true),
-        ('H&M', '["UK", "Germany", "Poland", "USA"]'::jsonb, 2, true),
-        ('Next', '["UK", "Kazakhstan", "Germany", "Spain"]'::jsonb, 3, true);
+        ('Zara', '[{"name":"Spain","url":"https://www.zara.com/es/"},{"name":"UK","url":"https://www.zara.com/uk/"},{"name":"Poland","url":"https://www.zara.com/pl/"},{"name":"Germany","url":"https://www.zara.com/de/"},{"name":"Kazakhstan","url":"https://www.zara.com/kz/"}]'::jsonb, 1, true),
+        ('H&M', '[{"name":"UK","url":"https://www2.hm.com/en_gb/index.html"},{"name":"Germany","url":"https://www2.hm.com/de_de/index.html"},{"name":"Poland","url":"https://www2.hm.com/pl_pl/index.html"},{"name":"USA","url":"https://www2.hm.com/en_us/index.html"}]'::jsonb, 2, true),
+        ('Next', '[{"name":"UK","url":"https://www.next.co.uk"},{"name":"Kazakhstan","url":"https://www.next.kz"},{"name":"Germany","url":"https://www.next.de"},{"name":"Spain","url":"https://www.next.es"}]'::jsonb, 3, true);
     `
   }
 }
@@ -504,7 +525,7 @@ app.get('/official-stores', async (c) => {
   const stores = rows.map((r) => ({
     id: r.id,
     name: r.name,
-    countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+    countries: normalizeCountries(r.countries),
     sortOrder: Number(r.sort_order ?? 0),
     isActive: Boolean(r.is_active),
     createdAt: r.created_at,
@@ -522,7 +543,7 @@ app.post('/official-stores', async (c) => {
   const name = String(body.name ?? '').trim()
   if (!name) return c.json({ error: 'Name is required' }, 400)
 
-  const countries = Array.isArray(body.countries) ? body.countries : []
+  const countries = normalizeCountries(body.countries)
   const sortOrder = Number(body.sortOrder ?? 0)
   const isActive = body.isActive !== undefined ? Boolean(body.isActive) : true
 
@@ -537,7 +558,7 @@ app.post('/official-stores', async (c) => {
     {
       id: r.id,
       name: r.name,
-      countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+      countries: normalizeCountries(r.countries),
       sortOrder: Number(r.sort_order ?? 0),
       isActive: Boolean(r.is_active),
       createdAt: r.created_at,
@@ -564,12 +585,8 @@ app.put('/official-stores/:id', async (c) => {
   const name = body.name !== undefined ? String(body.name).trim() : cur.name
   const countries =
     body.countries !== undefined
-      ? Array.isArray(body.countries)
-        ? body.countries
-        : []
-      : typeof cur.countries === 'string'
-      ? JSON.parse(cur.countries)
-      : cur.countries
+      ? normalizeCountries(body.countries)
+      : normalizeCountries(cur.countries)
   const sortOrder = body.sortOrder !== undefined ? Number(body.sortOrder) : Number(cur.sort_order)
   const isActive = body.isActive !== undefined ? Boolean(body.isActive) : Boolean(cur.is_active)
 
@@ -588,7 +605,7 @@ app.put('/official-stores/:id', async (c) => {
   return c.json({
     id: r.id,
     name: r.name,
-    countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+    countries: normalizeCountries(r.countries),
     sortOrder: Number(r.sort_order ?? 0),
     isActive: Boolean(r.is_active),
     createdAt: r.created_at,
