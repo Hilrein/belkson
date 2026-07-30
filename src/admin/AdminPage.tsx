@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
+import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -77,6 +78,16 @@ export default function AdminPage() {
     refresh,
   } = useCatalog()
 
+  const {
+    stores: officialStores,
+    loading: storesLoading,
+    addStore,
+    updateStore,
+    deleteStore,
+  } = useOfficialStores()
+
+  const [activeTab, setActiveTab] = useState<'products' | 'official-stores'>('products')
+
   const [saving, setSaving] = useState(false)
 
   const [navOpen, setNavOpen] = useState(false)
@@ -91,6 +102,96 @@ export default function AdminPage() {
   const [imageBusy, setImageBusy] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Store Drawer state
+  const [storeDrawerOpen, setStoreDrawerOpen] = useState(false)
+  const [storeDrawerMode, setStoreDrawerMode] = useState<'add' | 'edit'>('add')
+  const [editingStoreId, setEditingStoreId] = useState<number | null>(null)
+  const [storeName, setStoreName] = useState('')
+  const [storeCountries, setStoreCountries] = useState<string[]>([])
+  const [countryInput, setCountryInput] = useState('')
+  const [storeSaving, setStoreSaving] = useState(false)
+
+  // Delete Store modal state
+  const [deleteStoreModalOpen, setDeleteStoreModalOpen] = useState(false)
+  const [deletingStoreId, setDeletingStoreId] = useState<number | null>(null)
+  const [storeDeleting, setStoreDeleting] = useState(false)
+
+  const openAddStore = () => {
+    setStoreDrawerMode('add')
+    setEditingStoreId(null)
+    setStoreName('')
+    setStoreCountries([])
+    setCountryInput('')
+    setStoreDrawerOpen(true)
+  }
+
+  const openEditStore = (store: OfficialStore) => {
+    setStoreDrawerMode('edit')
+    setEditingStoreId(store.id)
+    setStoreName(store.name)
+    setStoreCountries([...store.countries])
+    setCountryInput('')
+    setStoreDrawerOpen(true)
+  }
+
+  const closeStoreDrawer = () => {
+    setStoreDrawerOpen(false)
+    setEditingStoreId(null)
+  }
+
+  const handleAddCountry = () => {
+    const val = countryInput.trim()
+    if (val && !storeCountries.includes(val)) {
+      setStoreCountries([...storeCountries, val])
+      setCountryInput('')
+    }
+  }
+
+  const handleRemoveCountry = (country: string) => {
+    setStoreCountries(storeCountries.filter((c) => c !== country))
+  }
+
+  const handleSaveStore = async () => {
+    if (!storeName.trim()) {
+      alert('Введите название магазина')
+      return
+    }
+    setStoreSaving(true)
+    try {
+      if (storeDrawerMode === 'add') {
+        await addStore({
+          name: storeName.trim(),
+          countries: storeCountries,
+          isActive: true,
+        })
+      } else if (editingStoreId != null) {
+        await updateStore(editingStoreId, {
+          name: storeName.trim(),
+          countries: storeCountries,
+        })
+      }
+      closeStoreDrawer()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка сохранения магазина')
+    } finally {
+      setStoreSaving(false)
+    }
+  }
+
+  const confirmDeleteStore = async () => {
+    if (deletingStoreId == null) return
+    setStoreDeleting(true)
+    try {
+      await deleteStore(deletingStoreId)
+      setDeleteStoreModalOpen(false)
+      setDeletingStoreId(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка удаления магазина')
+    } finally {
+      setStoreDeleting(false)
+    }
+  }
 
   useEffect(() => {
     const tw = (window as unknown as { tailwind?: { config: unknown } }).tailwind
@@ -118,12 +219,25 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    const locked = slideOpen || currencyOpen || navOpen || deleteOpen
+    const locked =
+      slideOpen ||
+      currencyOpen ||
+      navOpen ||
+      deleteOpen ||
+      storeDrawerOpen ||
+      deleteStoreModalOpen
     document.body.style.overflow = locked ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
     }
-  }, [slideOpen, currencyOpen, navOpen, deleteOpen])
+  }, [
+    slideOpen,
+    currencyOpen,
+    navOpen,
+    deleteOpen,
+    storeDrawerOpen,
+    deleteStoreModalOpen,
+  ])
 
   // Close mobile nav on desktop resize
   useEffect(() => {
@@ -317,18 +431,24 @@ export default function AdminPage() {
         </button>
       </div>
       <ul className="flex flex-col gap-1.5 flex-grow">
-        {NAV_ITEMS.map((item) => (
-          <li key={item.label}>
-            <a
-              className={navLinkClass(item.active)}
-              href={item.href}
-              onClick={closeNav}
-            >
-              <Icon name={item.icon} />
-              <span className="text-button font-button">{item.label}</span>
-            </a>
-          </li>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const isActive = activeTab === item.id
+          return (
+            <li key={item.id}>
+              <button
+                type="button"
+                className={`w-full text-left cursor-pointer ${navLinkClass(isActive)}`}
+                onClick={() => {
+                  setActiveTab(item.id as 'products' | 'official-stores')
+                  closeNav()
+                }}
+              >
+                <Icon name={item.icon} />
+                <span className="text-button font-button">{item.label}</span>
+              </button>
+            </li>
+          )
+        })}
       </ul>
       <div className="mt-auto flex flex-col gap-1.5 border-t border-gray-200 pt-4">
         <Link className={navLinkClass(false)} to="/" onClick={closeNav}>
@@ -409,204 +529,319 @@ export default function AdminPage() {
           {loading && (
             <p className="text-sm text-on-surface-variant">Загрузка из Neon…</p>
           )}
-          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
-                Управление товарами
-              </h1>
-              <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
-                Управление запасами, ценами и деталями коллекции Belkson.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-2 bg-[#ce7ed5] text-white px-4 py-2.5 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] w-full md:w-auto shrink-0"
-              onClick={openAdd}
-            >
-              <Icon name="add" className="text-sm" />
-              <span className="text-button font-button">Добавить товар</span>
-            </button>
-          </div>
-
-          <section className="w-full">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
-              <h3 className="text-xl font-semibold text-on-surface">
-                Недавние товары
-              </h3>
-              <div className="flex gap-2 flex-wrap items-center">
-                <div className="relative inline-block">
-                  <select
-                    className="appearance-none bg-surface border border-gray-200 rounded-md px-3 py-1.5 pr-8 text-body-sm font-medium text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer"
-                    value={currency}
-                    onChange={(e) => {
-                      void setCurrency(e.target.value as CurrencyCode).catch(
-                        (err) =>
-                          alert(
-                            err instanceof Error
-                              ? err.message
-                              : 'Ошибка смены валюты',
-                          ),
-                      )
-                    }}
-                  >
-                    <option value="RUB">RUB (₽)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="USD">USD ($)</option>
-                  </select>
-                  <Icon
-                    name="expand_more"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-on-surface-variant"
-                  />
+          {activeTab === 'official-stores' ? (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+                    Выкуп с официальных сайтов
+                  </h1>
+                  <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                    Управление магазинами и доступными странами/регионами в выпадающем меню навигации.
+                  </p>
                 </div>
                 <button
                   type="button"
-                  className="p-2 bg-surface border border-gray-200 rounded-md text-on-surface hover:bg-surface-variant transition-colors"
-                  aria-label="Фильтр"
+                  className="flex items-center justify-center gap-2 bg-[#ce7ed5] text-white px-4 py-2.5 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] w-full md:w-auto shrink-0 cursor-pointer font-medium"
+                  onClick={openAddStore}
                 >
-                  <Icon name="filter_list" className="text-sm" />
-                </button>
-                <button
-                  type="button"
-                  className="px-3 py-1.5 bg-surface border border-gray-200 rounded-md text-body-sm font-medium text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto text-center"
-                  onClick={openCurrency}
-                >
-                  <span className="sm:hidden">Валюта сайта</span>
-                  <span className="hidden sm:inline">
-                    Изменить валюту для всего сайта
-                  </span>
+                  <Icon name="add" className="text-sm" />
+                  <span>Добавить магазин</span>
                 </button>
               </div>
-            </div>
 
-            {/* Mobile cards */}
-            <div className="md:hidden space-y-3">
-              {products.map((product) => (
-                <article
-                  key={product.id}
-                  className="bg-surface-container-lowest border border-gray-200 rounded-md p-3 flex gap-3"
-                >
-                  <div className="w-14 h-14 shrink-0 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
-                    <img
-                      className="w-full h-full object-cover"
-                      alt={product.name}
-                      src={product.image}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-medium text-on-surface text-sm leading-snug truncate">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-on-surface-variant mt-0.5">
-                          #{product.id} · {product.category}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0 text-on-surface-variant hover:text-on-surface p-1.5 -mr-1 rounded-md hover:bg-surface-variant"
-                        onClick={() => openEdit(product)}
-                        aria-label={`Редактировать ${product.name}`}
-                      >
-                        <EditIcon />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <span className="text-sm font-medium text-on-surface">
-                        {format(product.priceRub)}
-                      </span>
-                      <span className="bg-surface-variant text-on-surface px-2 py-0.5 rounded-sm text-xs">
-                        {product.status}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {/* Desktop table — full width of content area */}
-            <div className="hidden md:block w-full bg-surface-container-lowest border border-gray-200 rounded-md overflow-hidden">
-              <table className="w-full table-fixed text-left border-collapse text-sm">
-                <colgroup>
-                  <col className="w-[56px]" />
-                  <col className="w-[72px]" />
-                  <col />
-                  <col className="w-[140px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[120px]" />
-                  <col className="w-[88px]" />
-                </colgroup>
-                <thead>
-                  <tr className="bg-surface border-b border-gray-200">
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      ID
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      Фото
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      Название
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      Категория
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      Цена
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant">
-                      Статус
-                    </th>
-                    <th className="p-3 text-label-md font-label-md text-on-surface-variant text-right">
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-body-sm font-body-sm text-on-surface">
-                  {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="border-b border-gray-200 last:border-b-0 hover:bg-surface transition-colors"
+              {storesLoading ? (
+                <p className="text-sm text-on-surface-variant">Загрузка магазинов из Neon…</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {officialStores.map((store) => (
+                    <div
+                      key={store.id}
+                      className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between"
                     >
-                      <td className="p-3 text-on-surface-variant align-middle">
-                        {product.id}
-                      </td>
-                      <td className="p-3 align-middle">
-                        <div className="w-10 h-10 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
-                          <img
-                            className="w-full h-full object-cover"
-                            alt={product.name}
-                            src={product.image}
-                          />
+                      <div>
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-on-surface">{store.name}</h3>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                store.isActive
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                              }`}
+                            >
+                              {store.isActive ? 'Активен' : 'Отключен'}
+                            </span>
+                          </div>
+                          {/* Active Toggle */}
+                          <button
+                            type="button"
+                            title={store.isActive ? 'Деактивировать' : 'Активировать'}
+                            className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ease-in-out ${
+                              store.isActive ? 'bg-[#ce7ed5]' : 'bg-gray-300'
+                            }`}
+                            onClick={() => {
+                              void updateStore(store.id, { isActive: !store.isActive })
+                            }}
+                          >
+                            <div
+                              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                                store.isActive ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
                         </div>
-                      </td>
-                      <td className="p-3 font-medium align-middle truncate">
-                        {product.name}
-                      </td>
-                      <td className="p-3 align-middle">{product.category}</td>
-                      <td className="p-3 align-middle whitespace-nowrap">
-                        {format(product.priceRub)}
-                      </td>
-                      <td className="p-3 align-middle">
-                        <span className="inline-block bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">
-                          {product.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right align-middle">
+
+                        <div className="mb-4">
+                          <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-2">
+                            Страны / регионы выкупа ({store.countries.length}):
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {store.countries.map((c) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-surface border border-gray-200 text-on-surface"
+                              >
+                                {c}
+                              </span>
+                            ))}
+                            {store.countries.length === 0 && (
+                              <span className="text-xs text-gray-400 italic">
+                                Нет добавленных стран
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
                         <button
                           type="button"
-                          className="text-on-surface-variant hover:text-on-surface transition-colors p-1"
-                          onClick={() => openEdit(product)}
-                          aria-label={`Редактировать ${product.name}`}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-variant rounded-md transition-colors cursor-pointer"
+                          onClick={() => openEditStore(store)}
                         >
                           <EditIcon />
+                          <span>Изменить</span>
                         </button>
-                      </td>
-                    </tr>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                          onClick={() => {
+                            setDeletingStoreId(store.id)
+                            setDeleteStoreModalOpen(true)
+                          }}
+                        >
+                          <Icon name="delete" className="text-sm" />
+                          <span>Удалить</span>
+                        </button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
-          </section>
+          ) : (
+            <>
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+                    Управление товарами
+                  </h1>
+                  <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                    Управление запасами, ценами и деталями коллекции Belkson.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="flex items-center justify-center gap-2 bg-[#ce7ed5] text-white px-4 py-2.5 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] w-full md:w-auto shrink-0"
+                  onClick={openAdd}
+                >
+                  <Icon name="add" className="text-sm" />
+                  <span className="text-button font-button">Добавить товар</span>
+                </button>
+              </div>
+
+              <section className="w-full">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
+                  <h3 className="text-xl font-semibold text-on-surface">
+                    Недавние товары
+                  </h3>
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <div className="relative inline-block">
+                      <select
+                        className="appearance-none bg-surface border border-gray-200 rounded-md px-3 py-1.5 pr-8 text-body-sm font-medium text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer"
+                        value={currency}
+                        onChange={(e) => {
+                          void setCurrency(e.target.value as CurrencyCode).catch(
+                            (err) =>
+                              alert(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Ошибка смены валюты',
+                              ),
+                          )
+                        }}
+                      >
+                        <option value="RUB">RUB (₽)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="USD">USD ($)</option>
+                      </select>
+                      <Icon
+                        name="expand_more"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-sm pointer-events-none text-on-surface-variant"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="p-2 bg-surface border border-gray-200 rounded-md text-on-surface hover:bg-surface-variant transition-colors"
+                      aria-label="Фильтр"
+                    >
+                      <Icon name="filter_list" className="text-sm" />
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 bg-surface border border-gray-200 rounded-md text-body-sm font-medium text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto text-center"
+                      onClick={openCurrency}
+                    >
+                      <span className="sm:hidden">Валюта сайта</span>
+                      <span className="hidden sm:inline">
+                        Изменить валюту для всего сайта
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-3">
+                  {products.map((product) => (
+                    <article
+                      key={product.id}
+                      className="bg-surface-container-lowest border border-gray-200 rounded-md p-3 flex gap-3"
+                    >
+                      <div className="w-14 h-14 shrink-0 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
+                        <img
+                          className="w-full h-full object-cover"
+                          alt={product.name}
+                          src={product.image}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-on-surface text-sm leading-snug truncate">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-on-surface-variant mt-0.5">
+                              #{product.id} · {product.category}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className="shrink-0 text-on-surface-variant hover:text-on-surface p-1.5 -mr-1 rounded-md hover:bg-surface-variant"
+                            onClick={() => openEdit(product)}
+                            aria-label={`Редактировать ${product.name}`}
+                          >
+                            <EditIcon />
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <span className="text-sm font-medium text-on-surface">
+                            {format(product.priceRub)}
+                          </span>
+                          <span className="bg-surface-variant text-on-surface px-2 py-0.5 rounded-sm text-xs">
+                            {product.status}
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                {/* Desktop table — full width of content area */}
+                <div className="hidden md:block w-full bg-surface-container-lowest border border-gray-200 rounded-md overflow-hidden">
+                  <table className="w-full table-fixed text-left border-collapse text-sm">
+                    <colgroup>
+                      <col className="w-[56px]" />
+                      <col className="w-[72px]" />
+                      <col />
+                      <col className="w-[140px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[120px]" />
+                      <col className="w-[88px]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="bg-surface border-b border-gray-200">
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          ID
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Фото
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Название
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Категория
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Цена
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Статус
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant text-right">
+                          Действия
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-body-sm font-body-sm text-on-surface">
+                      {products.map((product) => (
+                        <tr
+                          key={product.id}
+                          className="border-b border-gray-200 last:border-b-0 hover:bg-surface transition-colors"
+                        >
+                          <td className="p-3 text-on-surface-variant align-middle">
+                            {product.id}
+                          </td>
+                          <td className="p-3 align-middle">
+                            <div className="w-10 h-10 rounded-sm bg-surface-variant overflow-hidden border border-gray-200">
+                              <img
+                                className="w-full h-full object-cover"
+                                alt={product.name}
+                                src={product.image}
+                              />
+                            </div>
+                          </td>
+                          <td className="p-3 font-medium align-middle truncate">
+                            {product.name}
+                          </td>
+                          <td className="p-3 align-middle">{product.category}</td>
+                          <td className="p-3 align-middle whitespace-nowrap">
+                            {format(product.priceRub)}
+                          </td>
+                          <td className="p-3 align-middle">
+                            <span className="inline-block bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">
+                              {product.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right align-middle">
+                            <button
+                              type="button"
+                              className="text-on-surface-variant hover:text-on-surface transition-colors p-1"
+                              onClick={() => openEdit(product)}
+                              aria-label={`Редактировать ${product.name}`}
+                            >
+                              <EditIcon />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </main>
 
@@ -1041,6 +1276,179 @@ export default function AdminPage() {
               disabled={deleting}
             >
               {deleting ? 'Удаление…' : 'Удалить'}
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* Store slide-over drawer */}
+      <div
+        className={`fixed inset-0 bg-black/20 z-[60] transition-opacity ${
+          storeDrawerOpen ? '' : 'hidden'
+        }`}
+        onClick={closeStoreDrawer}
+        aria-hidden={!storeDrawerOpen}
+      />
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-surface-container-lowest z-[70] flex flex-col border-l border-gray-200 transition-transform duration-300 ease-in-out ${
+          storeDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        aria-hidden={!storeDrawerOpen}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+          <h2 className="text-lg sm:text-headline-md font-headline-md text-on-surface">
+            {storeDrawerMode === 'edit' ? 'Редактировать магазин' : 'Добавить магазин'}
+          </h2>
+          <button
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded cursor-pointer"
+            onClick={closeStoreDrawer}
+            aria-label="Закрыть"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-2">
+              Название магазина *
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="Например: Zara, H&M, Massimo Dutti"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-2">
+              Страны / регионы выкупа
+            </label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder="Например: Spain, UK, Turkey"
+                value={countryInput}
+                onChange={(e) => setCountryInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddCountry()
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="px-4 py-2 bg-[#ce7ed5] text-white rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer"
+                onClick={handleAddCountry}
+              >
+                + Добавить
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {storeCountries.map((country) => (
+                <span
+                  key={country}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-surface border border-gray-200 text-on-surface font-medium"
+                >
+                  <span>{country}</span>
+                  <button
+                    type="button"
+                    className="hover:text-red-600 transition-colors cursor-pointer"
+                    onClick={() => handleRemoveCountry(country)}
+                  >
+                    <Icon name="close" className="text-xs" />
+                  </button>
+                </span>
+              ))}
+              {storeCountries.length === 0 && (
+                <p className="text-xs text-gray-400 italic">
+                  Добавьте хотя бы одну страну или нажмите Enter после ввода.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 bg-surface flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+            onClick={closeStoreDrawer}
+            disabled={storeSaving}
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            className="bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium disabled:opacity-60 cursor-pointer"
+            onClick={() => void handleSaveStore()}
+            disabled={storeSaving}
+          >
+            {storeSaving ? 'Сохранение…' : 'Сохранить'}
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Store Confirmation Modal */}
+      <div
+        className={`fixed inset-0 z-[90] flex items-center justify-center p-4 ${
+          deleteStoreModalOpen ? '' : 'hidden'
+        }`}
+        aria-hidden={!deleteStoreModalOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/30"
+          onClick={() => !storeDeleting && setDeleteStoreModalOpen(false)}
+        />
+        <div
+          className="relative z-10 w-full max-w-md bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+            <h2 className="text-base sm:text-xl font-semibold text-on-surface pr-2">
+              Удалить магазин?
+            </h2>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0 cursor-pointer"
+              onClick={() => setDeleteStoreModalOpen(false)}
+              disabled={storeDeleting}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" className="text-sm" />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 space-y-3">
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Магазин будет удален из выпадающего меню выкупа навсегда.
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              Это действие нельзя отменить.
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto cursor-pointer"
+              onClick={() => setDeleteStoreModalOpen(false)}
+              disabled={storeDeleting}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors w-full sm:w-auto disabled:opacity-60 cursor-pointer"
+              onClick={() => void confirmDeleteStore()}
+              disabled={storeDeleting}
+            >
+              {storeDeleting ? 'Удаление…' : 'Удалить'}
             </button>
           </div>
         </div>

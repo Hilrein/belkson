@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCatalog } from '../store/CatalogContext'
 import { useCart } from '../store/CartContext'
+import { useOfficialStores } from '../store/OfficialStoresContext'
 import { CATEGORIES } from '../store/catalog'
 import { openTelegramOrder, getTelegramProfileUrl } from '../lib/telegramOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
@@ -19,6 +20,8 @@ const PROMO_SRC =
  */
 export default function StorefrontLayout() {
   const { format, loading } = useCatalog()
+  const { stores: officialStores } = useOfficialStores()
+  const activeOfficialStores = officialStores.filter((s) => s.isActive)
   const {
     items: cartItems,
     totalCount,
@@ -260,69 +263,43 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8">
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      to="/shop/zara"
-                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
-                    >
-                      Zara
-                    </Link>
-                    <ul className="flex flex-col gap-2">
-                      {['Spain', 'UK', 'Poland', 'Germany', 'Kazakhstan'].map(
-                        (c) => (
-                          <li key={c}>
-                            <Link
-                              className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                              to={`/shop/zara/${c.toLowerCase()}`}
-                            >
-                              {c}
-                            </Link>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      to="/shop/hm"
-                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
-                    >
-                      H&amp;M
-                    </Link>
-                    <ul className="flex flex-col gap-2">
-                      {['UK', 'Germany', 'Poland', 'USA'].map((c) => (
-                        <li key={c}>
-                          <Link
-                            className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                            to={`/shop/hm/${c.toLowerCase()}`}
-                          >
-                            {c}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      to="/shop/next"
-                      className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim block hover:text-[#ce7ed5] transition-colors"
-                    >
-                      Next
-                    </Link>
-                    <ul className="flex flex-col gap-2">
-                      {['UK', 'Kazakhstan', 'Germany', 'Spain'].map((c) => (
-                        <li key={c}>
-                          <Link
-                            className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal"
-                            to={`/shop/next/${c.toLowerCase()}`}
-                          >
-                            {c}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8 overflow-x-auto">
+                  {activeOfficialStores.map((store) => (
+                    <div key={store.id} className="flex-1 min-w-[140px]">
+                      <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
+                        {store.name}
+                      </h3>
+                      <ul className="flex flex-col gap-2">
+                        {store.countries.map((c) => {
+                          const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string }) : null
+                          const name = item ? String(item.name || '') : String(c || '')
+                          const url = item ? String(item.url || '#') : '#'
+                          const isExternal = url.startsWith('http://') || url.startsWith('https://')
+                          return (
+                            <li key={name}>
+                              {isExternal ? (
+                                <a
+                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal text-sm"
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {name}
+                                </a>
+                              ) : (
+                                <Link
+                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal text-sm"
+                                  to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
+                                >
+                                  {name}
+                                </Link>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -527,27 +504,32 @@ export default function StorefrontLayout() {
               <h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">
                 Выкуп с официальных сайтов
               </h3>
-              <Link
-                className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                to="/shop/zara"
-                onClick={toggleNavDrawer}
-              >
-                Zara
-              </Link>
-              <Link
-                className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                to="/shop/hm"
-                onClick={toggleNavDrawer}
-              >
-                H&amp;M
-              </Link>
-              <Link
-                className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                to="/shop/next"
-                onClick={toggleNavDrawer}
-              >
-                Next
-              </Link>
+              {activeOfficialStores.map((store) => {
+                const first = store.countries[0] as unknown
+                const firstUrl = first && typeof first === 'object' ? String((first as { url?: string }).url || '') : ''
+                const isExternal = firstUrl.startsWith('http://') || firstUrl.startsWith('https://')
+                return isExternal ? (
+                  <a
+                    key={store.id}
+                    className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
+                    href={firstUrl || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={toggleNavDrawer}
+                  >
+                    {store.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={store.id}
+                    className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
+                    to={firstUrl || `/shop/${store.name.toLowerCase()}`}
+                    onClick={toggleNavDrawer}
+                  >
+                    {store.name}
+                  </Link>
+                )
+              })}
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
             <div className="flex flex-col gap-5">

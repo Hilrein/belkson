@@ -457,6 +457,159 @@ async function handleUpdateCurrency(c: any) {
 app.put('/settings/currency', handleUpdateCurrency)
 app.put('/api/settings/currency', handleUpdateCurrency)
 
+/* ─── Official Stores DB & API ────────────────────────────────────── */
+
+type DbOfficialStore = {
+  id: number
+  name: string
+  countries: string | string[] | { name: string; url?: string }[]
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+async function ensureOfficialStoresTable() {
+  const client = getSql()
+  await client`
+    CREATE TABLE IF NOT EXISTS official_stores (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      countries JSONB NOT NULL DEFAULT '[]'::jsonb,
+      sort_order INT DEFAULT 0,
+      is_active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    );
+  `
+  const existing = (await client`SELECT COUNT(*)::int as count FROM official_stores`) as { count: number }[]
+  if (existing[0]?.count === 0) {
+    await client`
+      INSERT INTO official_stores (name, countries, sort_order, is_active)
+      VALUES 
+        ('Zara', '["Spain", "UK", "Poland", "Germany", "Kazakhstan"]'::jsonb, 1, true),
+        ('H&M', '["UK", "Germany", "Poland", "USA"]'::jsonb, 2, true),
+        ('Next', '["UK", "Kazakhstan", "Germany", "Spain"]'::jsonb, 3, true);
+    `
+  }
+}
+
+app.get('/official-stores', async (c) => {
+  const client = getSql()
+  await ensureOfficialStoresTable()
+  const rows = (await client`
+    SELECT * FROM official_stores ORDER BY sort_order ASC, id ASC
+  `) as DbOfficialStore[]
+
+  const stores = rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+    sortOrder: Number(r.sort_order ?? 0),
+    isActive: Boolean(r.is_active),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }))
+
+  return c.json(stores)
+})
+
+app.post('/official-stores', async (c) => {
+  const body = await c.req.json()
+  const client = getSql()
+  await ensureOfficialStoresTable()
+
+  const name = String(body.name ?? '').trim()
+  if (!name) return c.json({ error: 'Name is required' }, 400)
+
+  const countries = Array.isArray(body.countries) ? body.countries : []
+  const sortOrder = Number(body.sortOrder ?? 0)
+  const isActive = body.isActive !== undefined ? Boolean(body.isActive) : true
+
+  const rows = (await client`
+    INSERT INTO official_stores (name, countries, sort_order, is_active)
+    VALUES (${name}, ${JSON.stringify(countries)}::jsonb, ${sortOrder}, ${isActive})
+    RETURNING *
+  `) as DbOfficialStore[]
+
+  const r = rows[0]
+  return c.json(
+    {
+      id: r.id,
+      name: r.name,
+      countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+      sortOrder: Number(r.sort_order ?? 0),
+      isActive: Boolean(r.is_active),
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+    201,
+  )
+})
+
+app.put('/official-stores/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+  const body = await c.req.json()
+  const client = getSql()
+  await ensureOfficialStoresTable()
+
+  const existing = (await client`
+    SELECT * FROM official_stores WHERE id = ${id} LIMIT 1
+  `) as DbOfficialStore[]
+  if (!existing[0]) return c.json({ error: 'Not found' }, 404)
+
+  const cur = existing[0]
+  const name = body.name !== undefined ? String(body.name).trim() : cur.name
+  const countries =
+    body.countries !== undefined
+      ? Array.isArray(body.countries)
+        ? body.countries
+        : []
+      : typeof cur.countries === 'string'
+      ? JSON.parse(cur.countries)
+      : cur.countries
+  const sortOrder = body.sortOrder !== undefined ? Number(body.sortOrder) : Number(cur.sort_order)
+  const isActive = body.isActive !== undefined ? Boolean(body.isActive) : Boolean(cur.is_active)
+
+  const rows = (await client`
+    UPDATE official_stores SET
+      name = ${name},
+      countries = ${JSON.stringify(countries)}::jsonb,
+      sort_order = ${sortOrder},
+      is_active = ${isActive},
+      updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `) as DbOfficialStore[]
+
+  const r = rows[0]
+  return c.json({
+    id: r.id,
+    name: r.name,
+    countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+    sortOrder: Number(r.sort_order ?? 0),
+    isActive: Boolean(r.is_active),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  })
+})
+
+app.delete('/official-stores/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+  const client = getSql()
+  await ensureOfficialStoresTable()
+  const rows = (await client`
+    DELETE FROM official_stores WHERE id = ${id} RETURNING id
+  `) as { id: number }[]
+
+  if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+  return c.json({ ok: true, id })
+})
+
 app.onError((err, c) => {
   console.error(err)
   return c.json(

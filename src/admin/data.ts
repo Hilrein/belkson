@@ -9,10 +9,7 @@ export {
 } from '../store/catalog'
 
 export const NAV_ITEMS = [
-  { icon: 'dashboard', label: 'Панель управления', href: '#', active: false },
-  { icon: 'inventory_2', label: 'Товары', href: '/admin', active: true },
-  { icon: 'shopping_cart', label: 'Выкуп с сайтов', href: '#', active: false },
-  { icon: 'settings', label: 'Настройки', href: '#', active: false },
-  { icon: 'article', label: 'Инфо-страницы', href: '#', active: false },
+  { icon: 'inventory_2', label: 'Товары', id: 'products', href: '/admin' },
+  { icon: 'shopping_cart', label: 'Выкуп с сайтов', id: 'official-stores', href: '#' },
 ] as const
 
