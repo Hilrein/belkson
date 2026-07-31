@@ -4,7 +4,12 @@ import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
 import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresContext'
-import { usePurchaseTerms, type PurchaseTermStep } from '../store/PurchaseTermsContext'
+import {
+  usePurchaseTerms,
+  type PurchaseTermStep,
+  type VariantTermsConfig,
+  DEFAULT_ALL_TERMS,
+} from '../store/PurchaseTermsContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -87,22 +92,36 @@ export default function AdminPage() {
     deleteStore,
   } = useOfficialStores()
 
-  const { terms, updateTerms } = usePurchaseTerms()
+  const { allTerms, updateAllTerms } = usePurchaseTerms()
 
   const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms'>('products')
+  const [termsSubTab, setTermsSubTab] = useState<'v1' | 'v2' | 'v3'>('v1')
 
-  // Purchase Terms state
-  const [termsTitle, setTermsTitle] = useState('')
-  const [termsSteps, setTermsSteps] = useState<PurchaseTermStep[]>([])
+  // Purchase Terms state for all 3 variants
+  const [v1Config, setV1Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v1)
+  const [v2Config, setV2Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v2)
+  const [v3Config, setV3Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v3)
   const [termsSaving, setTermsSaving] = useState(false)
   const [termsSavedSuccess, setTermsSavedSuccess] = useState(false)
 
   useEffect(() => {
-    if (terms) {
-      setTermsTitle(terms.title || 'Вариант 3: Порядок и условия выкупа')
-      setTermsSteps(terms.steps || [])
+    if (allTerms) {
+      setV1Config(allTerms.v1)
+      setV2Config(allTerms.v2)
+      setV3Config(allTerms.v3)
     }
-  }, [terms])
+  }, [allTerms])
+
+  const activeConfig = termsSubTab === 'v1' ? v1Config : termsSubTab === 'v2' ? v2Config : v3Config
+  const setActiveConfig = (newConfig: VariantTermsConfig) => {
+    if (termsSubTab === 'v1') setV1Config(newConfig)
+    else if (termsSubTab === 'v2') setV2Config(newConfig)
+    else setV3Config(newConfig)
+  }
+
+  const handleTitleChange = (newTitle: string) => {
+    setActiveConfig({ ...activeConfig, title: newTitle })
+  }
 
   const handleAddStep = () => {
     const newStep: PurchaseTermStep = {
@@ -111,39 +130,48 @@ export default function AdminPage() {
       title: 'Новый шаг',
       description: 'Описание этапа выкупа товара.',
     }
-    setTermsSteps([...termsSteps, newStep])
+    setActiveConfig({
+      ...activeConfig,
+      steps: [...activeConfig.steps, newStep],
+    })
   }
 
   const handleUpdateStep = (id: string, field: keyof PurchaseTermStep, val: string) => {
-    setTermsSteps(
-      termsSteps.map((step) => (step.id === id ? { ...step, [field]: val } : step)),
-    )
+    setActiveConfig({
+      ...activeConfig,
+      steps: activeConfig.steps.map((step) =>
+        step.id === id ? { ...step, [field]: val } : step,
+      ),
+    })
   }
 
   const handleRemoveStep = (id: string) => {
-    setTermsSteps(termsSteps.filter((step) => step.id !== id))
+    setActiveConfig({
+      ...activeConfig,
+      steps: activeConfig.steps.filter((step) => step.id !== id),
+    })
   }
 
   const handleMoveStep = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= termsSteps.length) return
-    const updated = [...termsSteps]
+    if (targetIndex < 0 || targetIndex >= activeConfig.steps.length) return
+    const updated = [...activeConfig.steps]
     const temp = updated[index]
     updated[index] = updated[targetIndex]
     updated[targetIndex] = temp
-    setTermsSteps(updated)
+    setActiveConfig({
+      ...activeConfig,
+      steps: updated,
+    })
   }
 
   const handleSavePurchaseTerms = async () => {
-    if (!termsTitle.trim()) {
-      alert('Введите заголовок секции')
-      return
-    }
     setTermsSaving(true)
     try {
-      await updateTerms({
-        title: termsTitle.trim(),
-        steps: termsSteps,
+      await updateAllTerms({
+        v1: v1Config,
+        v2: v2Config,
+        v3: v3Config,
       })
       setTermsSavedSuccess(true)
       setTimeout(() => setTermsSavedSuccess(false), 3000)
@@ -611,16 +639,16 @@ export default function AdminPage() {
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
                 <div className="min-w-0 flex-1">
                   <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
-                    Условия выкупа (Вариант 3)
+                    Условия выкупа (Все варианты)
                   </h1>
                   <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-                    Настройка визитки «Порядок и условия выкупа» с иконками и описанием этапов на главной странице.
+                    Настройка заголовков и шагов для всех трех вариантов представления выкупа на главной странице.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {termsSavedSuccess && (
                     <span className="text-sm text-green-600 font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-md border border-green-200">
-                      <Icon name="check_circle" className="text-base" /> Сохранено!
+                      <Icon name="check_circle" className="text-base" /> Все варианты сохранены!
                     </span>
                   )}
                   <button
@@ -630,16 +658,56 @@ export default function AdminPage() {
                     disabled={termsSaving}
                   >
                     <Icon name="save" />
-                    <span>{termsSaving ? 'Сохранение…' : 'Сохранить изменения'}</span>
+                    <span>{termsSaving ? 'Сохранение…' : 'Сохранить все варианты'}</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Subtabs for Variants */}
+              <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+                <button
+                  type="button"
+                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
+                    termsSubTab === 'v1'
+                      ? 'bg-[#ce7ed5] text-white shadow-sm'
+                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
+                  }`}
+                  onClick={() => setTermsSubTab('v1')}
+                >
+                  <Icon name="format_list_numbered" className="text-base" />
+                  <span>Вариант 1 (Список)</span>
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
+                    termsSubTab === 'v2'
+                      ? 'bg-[#ce7ed5] text-white shadow-sm'
+                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
+                  }`}
+                  onClick={() => setTermsSubTab('v2')}
+                >
+                  <Icon name="view_headline" className="text-base" />
+                  <span>Вариант 2 (Минимализм)</span>
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
+                    termsSubTab === 'v3'
+                      ? 'bg-[#ce7ed5] text-white shadow-sm'
+                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
+                  }`}
+                  onClick={() => setTermsSubTab('v3')}
+                >
+                  <Icon name="timeline" className="text-base" />
+                  <span>Вариант 3 (Иконки)</span>
+                </button>
               </div>
 
               {/* Section Title Editor Card */}
               <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
                 <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
                   <Icon name="title" className="text-[#ce7ed5]" />
-                  <span>Заголовок секции</span>
+                  <span>Заголовок выбранного варианта ({termsSubTab.toUpperCase()})</span>
                 </h2>
                 <div>
                   <label className="block text-body-sm font-medium text-on-surface mb-2">
@@ -648,9 +716,9 @@ export default function AdminPage() {
                   <input
                     type="text"
                     className="w-full px-3.5 py-2.5 bg-surface border border-gray-200 rounded-lg text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container font-medium"
-                    value={termsTitle}
-                    onChange={(e) => setTermsTitle(e.target.value)}
-                    placeholder="Например: Вариант 3: Порядок и условия выкупа"
+                    value={activeConfig.title}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    placeholder="Например: Порядок и условия выкупа"
                   />
                 </div>
               </div>
@@ -660,7 +728,7 @@ export default function AdminPage() {
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
                     <Icon name="format_list_numbered" className="text-[#ce7ed5]" />
-                    <span>Этапы выкупа ({termsSteps.length})</span>
+                    <span>Этапы выкупа ({activeConfig.steps.length})</span>
                   </h2>
                   <button
                     type="button"
@@ -672,7 +740,7 @@ export default function AdminPage() {
                   </button>
                 </div>
 
-                {termsSteps.map((step, index) => (
+                {activeConfig.steps.map((step, index) => (
                   <div
                     key={step.id}
                     className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4 relative group"
@@ -698,7 +766,7 @@ export default function AdminPage() {
                           type="button"
                           className="p-1.5 text-gray-500 hover:text-on-surface rounded hover:bg-gray-100 disabled:opacity-30 cursor-pointer"
                           onClick={() => handleMoveStep(index, 'down')}
-                          disabled={index === termsSteps.length - 1}
+                          disabled={index === activeConfig.steps.length - 1}
                           title="Переместить ниже"
                         >
                           <Icon name="arrow_downward" className="text-base" />
@@ -715,42 +783,44 @@ export default function AdminPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
-                          Иконка (Material Symbol)
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 h-10 rounded-lg bg-surface border border-gray-200 flex items-center justify-center shrink-0 text-primary">
-                            <Icon name={step.icon || 'star'} className="text-xl" />
+                      {termsSubTab === 'v3' && (
+                        <div>
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+                            Иконка (Material Symbol)
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-lg bg-surface border border-gray-200 flex items-center justify-center shrink-0 text-primary">
+                              <Icon name={step.icon || 'star'} className="text-xl" />
+                            </div>
+                            <input
+                              type="text"
+                              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                              value={step.icon}
+                              onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
+                              placeholder="search, payment..."
+                            />
                           </div>
-                          <input
-                            type="text"
-                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                            value={step.icon}
-                            onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
-                            placeholder="search, payment..."
-                          />
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {['search', 'edit_document', 'calculate', 'payment', 'local_shipping', 'shopping_bag', 'package_2', 'bolt', 'verified'].map((presetIcon) => (
+                              <button
+                                key={presetIcon}
+                                type="button"
+                                className={`p-1 rounded text-xs border cursor-pointer ${
+                                  step.icon === presetIcon
+                                    ? 'bg-[#ce7ed5]/20 border-[#ce7ed5] text-primary font-bold'
+                                    : 'border-gray-200 hover:bg-gray-100 text-gray-600'
+                                }`}
+                                onClick={() => handleUpdateStep(step.id, 'icon', presetIcon)}
+                                title={presetIcon}
+                              >
+                                <Icon name={presetIcon} className="text-sm" />
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {['search', 'edit_document', 'calculate', 'payment', 'local_shipping', 'shopping_bag', 'package_2', 'bolt', 'verified'].map((presetIcon) => (
-                            <button
-                              key={presetIcon}
-                              type="button"
-                              className={`p-1 rounded text-xs border cursor-pointer ${
-                                step.icon === presetIcon
-                                  ? 'bg-[#ce7ed5]/20 border-[#ce7ed5] text-primary font-bold'
-                                  : 'border-gray-200 hover:bg-gray-100 text-gray-600'
-                              }`}
-                              onClick={() => handleUpdateStep(step.id, 'icon', presetIcon)}
-                              title={presetIcon}
-                            >
-                              <Icon name={presetIcon} className="text-sm" />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      )}
 
-                      <div className="md:col-span-2 space-y-3">
+                      <div className={termsSubTab === 'v3' ? 'md:col-span-2 space-y-3' : 'md:col-span-3 space-y-3'}>
                         <div>
                           <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
                             Название этапа *
@@ -781,7 +851,7 @@ export default function AdminPage() {
                   </div>
                 ))}
 
-                {termsSteps.length === 0 && (
+                {activeConfig.steps.length === 0 && (
                   <div className="text-center py-12 bg-surface-container-lowest border border-dashed border-gray-300 rounded-xl">
                     <p className="text-on-surface-variant text-sm mb-3">Шаги пока не добавлены.</p>
                     <button

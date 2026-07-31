@@ -11,7 +11,7 @@ import type { CatalogProduct } from './store/catalog'
 export default function HomePage() {
   const { newArrivals, favorites, format } = useCatalog()
   const { addToCart } = useCart()
-  const { terms } = usePurchaseTerms()
+  const { allTerms } = usePurchaseTerms()
   const [heroIndex, setHeroIndex] = useState(0)
   const newArrivalsRef = useRef<HTMLDivElement>(null)
   const heroSlideCount = 2
@@ -358,37 +358,16 @@ export default function HomePage() {
         <div className="mb-8 md:mb-10">
           <p className="text-sm text-on-surface-variant mb-1.5">Вариант 1</p>
           <h2 className="font-headline-md text-headline-md text-primary">
-            Порядок и условия выкупа
+            {allTerms.v1.title}
           </h2>
         </div>
 
         <ol className="rounded-2xl border border-surface-dim bg-surface-container-lowest overflow-hidden">
-          {[
-            {
-              title: 'Выбор товара',
-              text: 'Выбираете вещи на официальных сайтах Zara, H&M или Next.',
-            },
-            {
-              title: 'Оформление заказа',
-              text: 'Присылаете ссылки на товары в Telegram или Instagram.',
-            },
-            {
-              title: 'Расчёт стоимости',
-              text: 'Считаем итоговую сумму с доставкой и комиссией.',
-            },
-            {
-              title: 'Оплата',
-              text: 'Оплачиваете удобным способом.',
-            },
-            {
-              title: 'Доставка',
-              text: 'Выкупаем товар и доставляем вам.',
-            },
-          ].map((step, i) => (
+          {allTerms.v1.steps.map((step, i) => (
             <li
-              key={step.title}
+              key={step.id || step.title}
               className={`grid grid-cols-[3rem_1fr] md:grid-cols-[4.5rem_minmax(0,12rem)_1fr] gap-x-3 md:gap-x-6 gap-y-1 px-5 md:px-7 py-5 md:py-6 ${
-                i < 4 ? 'border-b border-surface-dim' : ''
+                i < allTerms.v1.steps.length - 1 ? 'border-b border-surface-dim' : ''
               }`}
             >
               <span className="text-sm text-primary tabular-nums pt-0.5">
@@ -398,43 +377,41 @@ export default function HomePage() {
                 {step.title}
               </h3>
               <p className="col-start-2 md:col-start-3 text-[15px] text-on-surface-variant leading-relaxed">
-                {step.text}
+                {step.description}
               </p>
             </li>
           ))}
         </ol>
       </section>
+
       {/* Variant 2: Editorial Minimalist */}
       <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim">
-      <h2 className="font-headline-md text-headline-md text-primary mb-12 text-center">Вариант 2: Порядок и условия выкупа</h2>
-      <div className="max-w-4xl mx-auto flex flex-col">
-      <div className="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
-      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Выбор товара</h3>
-      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&amp;M или Next.</p>
-      </div>
-      <div className="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start bg-surface-container-low/50 px-4 sm:px-6 rounded-2xl">
-      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Оформление заказа</h3>
-      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Присылаете нам ссылки на выбранные товары в Telegram или Instagram.</p>
-      </div>
-      <div className="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
-      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Расчет стоимости</h3>
-      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.</p>
-      </div>
-      <div className="py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start bg-surface-container-low/50 px-4 sm:px-6 rounded-2xl">
-      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Оплата</h3>
-      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Вы производите оплату удобным способом.</p>
-      </div>
-      </div>
+        <h2 className="font-headline-md text-headline-md text-primary mb-12 text-center">
+          {allTerms.v2.title}
+        </h2>
+        <div className="max-w-4xl mx-auto flex flex-col">
+          {allTerms.v2.steps.map((step, index) => (
+            <div
+              key={step.id || step.title}
+              className={`py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start ${
+                index % 2 === 1 ? 'bg-surface-container-low/50 px-4 sm:px-6 rounded-2xl' : ''
+              }`}
+            >
+              <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">{step.title}</h3>
+              <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">{step.description}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Variant 3: Visual Narrative */}
       <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim overflow-hidden font-[EB_Garamond,Plus_Jakarta_Sans,sans-serif]">
-        <h2 className="font-headline-md text-headline-md text-primary mb-16 text-center">{terms.title}</h2>
+        <h2 className="font-headline-md text-headline-md text-primary mb-16 text-center">{allTerms.v3.title}</h2>
         <div className="relative">
           <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
           <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
-            {terms.steps.map((step) => (
-              <div key={step.id} className="flex-1 min-w-[200px] snap-start group">
+            {allTerms.v3.steps.map((step) => (
+              <div key={step.id || step.title} className="flex-1 min-w-[200px] snap-start group">
                 <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
                   <span className="material-symbols-outlined text-3xl font-light">{step.icon || 'star'}</span>
                 </div>
