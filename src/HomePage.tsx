@@ -370,17 +370,23 @@ export default function HomePage() {
             <div className="relative">
               <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
               <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
-                {variant.steps.map((step) => (
-                  <div key={step.id || step.title} className="flex-1 min-w-[200px] snap-start group">
-                    {step.icon && step.icon !== 'none' && step.icon.trim() !== '' && (
-                      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-                        <span className="material-symbols-outlined text-3xl font-light">{step.icon}</span>
-                      </div>
-                    )}
-                    <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">{step.title}</h3>
-                    <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">{step.description}</p>
-                  </div>
-                ))}
+                {variant.steps.map((step, idx) => {
+                  const labelPrefix = step.stepLabel ? `${step.stepLabel}: ` : ''
+                  const fullTitle = `${labelPrefix}${step.title}`
+                  return (
+                    <div key={step.id || step.title || idx} className="flex-1 min-w-[200px] snap-start group">
+                      {step.icon && step.icon !== 'none' && step.icon.trim() !== '' && (
+                        <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+                          <span className="material-symbols-outlined text-3xl font-light">{step.icon}</span>
+                        </div>
+                      )}
+                      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">
+                        {fullTitle}
+                      </h3>
+                      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">{step.description}</p>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </section>

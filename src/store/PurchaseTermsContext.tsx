@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 export type PurchaseTermStep = {
   id: string
   icon: string
+  stepLabel?: string
   title: string
   description: string
 }

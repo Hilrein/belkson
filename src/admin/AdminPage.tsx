@@ -905,7 +905,9 @@ export default function AdminPage() {
                             <span className="w-6 h-6 rounded-full bg-[#ce7ed5]/15 text-[#ce7ed5] font-bold text-xs flex items-center justify-center">
                               {index + 1}
                             </span>
-                            <h3 className="font-medium text-sm text-on-surface">Шаг {index + 1}: {step.title || 'Без названия'}</h3>
+                            <h3 className="font-medium text-sm text-on-surface">
+                              {step.stepLabel ? `${step.stepLabel}: ` : `Шаг ${index + 1}: `}{step.title || 'Без названия'}
+                            </h3>
                           </div>
                           <div className="flex items-center gap-1">
                             <button
@@ -987,17 +989,31 @@ export default function AdminPage() {
                           </div>
 
                           <div className="md:col-span-2 space-y-2">
-                            <div>
-                              <label className="block text-xs text-on-surface-variant mb-1">
-                                Название этапа *
-                              </label>
-                              <input
-                                type="text"
-                                className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
-                                value={step.title}
-                                onChange={(e) => handleUpdateStep(step.id, 'title', e.target.value)}
-                                placeholder="Например: Выбор товара"
-                              />
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-xs text-on-surface-variant mb-1">
+                                  Метка шага
+                                </label>
+                                <input
+                                  type="text"
+                                  className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                  value={step.stepLabel ?? `Шаг ${index + 1}`}
+                                  onChange={(e) => handleUpdateStep(step.id, 'stepLabel', e.target.value)}
+                                  placeholder="Шаг 1, Этап 1..."
+                                />
+                              </div>
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs text-on-surface-variant mb-1">
+                                  Название шага *
+                                </label>
+                                <input
+                                  type="text"
+                                  className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                  value={step.title}
+                                  onChange={(e) => handleUpdateStep(step.id, 'title', e.target.value)}
+                                  placeholder="Например: Выбор товара"
+                                />
+                              </div>
                             </div>
 
                             <div>
