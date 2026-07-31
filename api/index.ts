@@ -314,6 +314,207 @@ async function buildApp() {
   app.get('/external/:shop/:country?', handleExternalShop)
   app.get('/api/external/:shop/:country?', handleExternalShop)
 
+  /* ─── Purchase Terms DB & API ────────────────────────────────────── */
+
+  const DEFAULT_DYNAMIC_VARIANTS = [
+    {
+      id: 'v1',
+      badge: 'Вариант 1',
+      title: 'Порядок и условия выкупа',
+      isActive: true,
+      steps: [
+        { id: '1', icon: 'search', title: 'Выбор товара', description: 'Выбираете вещи на официальных сайтах Zara, H&M или Next.' },
+        { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете ссылки на товары в Telegram или Instagram.' },
+        { id: '3', icon: 'calculate', title: 'Расчёт стоимости', description: 'Считаем итоговую сумму с доставкой и комиссией.' },
+        { id: '4', icon: 'payment', title: 'Оплата', description: 'Оплачиваете удобным способом.' },
+        { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Выкупаем товар и доставляем вам.' },
+      ],
+    },
+    {
+      id: 'v2',
+      badge: 'Вариант 2',
+      title: 'Порядок и условия выкупа',
+      isActive: true,
+      steps: [
+        { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
+        { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
+        { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
+        { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
+        { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
+      ],
+    },
+    {
+      id: 'v3',
+      badge: 'Вариант 3',
+      title: 'Порядок и условия выкупа',
+      isActive: true,
+      steps: [
+        { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
+        { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
+        { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
+        { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
+        { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
+      ],
+    },
+  ]
+
+  async function ensureSiteSettingsTable() {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS site_settings (
+          key VARCHAR(255) PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `
+    } catch (e) {
+      console.warn('ensureSiteSettingsTable error:', e)
+    }
+  }
+
+  async function handleGetPurchaseTerms(c: any) {
+    await ensureSiteSettingsTable()
+    try {
+      const rows = (await sql`
+        SELECT key, value FROM site_settings WHERE key IN ('purchase_terms_dynamic', 'purchase_terms_all', 'purchase_terms_v3')
+      `) as { key: string; value: string }[]
+
+      const dynamicRow = rows.find((r) => r.key === 'purchase_terms_dynamic')
+      if (dynamicRow?.value) {
+        const variants = typeof dynamicRow.value === 'string' ? JSON.parse(dynamicRow.value) : dynamicRow.value
+        if (Array.isArray(variants)) {
+          return c.json({ variants })
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch purchase terms from Neon DB:', err)
+    }
+
+    return c.json({ variants: DEFAULT_DYNAMIC_VARIANTS })
+  }
+
+  async function handleUpdatePurchaseTerms(c: any) {
+    const body = await c.req.json()
+    const variants = Array.isArray(body.variants) ? body.variants : DEFAULT_DYNAMIC_VARIANTS
+    const valueData = JSON.stringify(variants)
+
+    await ensureSiteSettingsTable()
+    await sql`
+      INSERT INTO site_settings (key, value)
+      VALUES ('purchase_terms_dynamic', ${valueData})
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `
+
+    return c.json({ variants })
+  }
+
+  app.get('/purchase-terms', handleGetPurchaseTerms)
+  app.get('/api/purchase-terms', handleGetPurchaseTerms)
+  app.put('/purchase-terms', handleUpdatePurchaseTerms)
+  app.put('/api/purchase-terms', handleUpdatePurchaseTerms)
+
+  /* ─── Official Stores DB & API ────────────────────────────────────── */
+  async function ensureOfficialStoresTable() {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS official_stores (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) UNIQUE NOT NULL,
+          is_active BOOLEAN DEFAULT true,
+          countries JSONB DEFAULT '[]'::jsonb,
+          sort_order INT DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+      `
+    } catch (e) {
+      console.warn('ensureOfficialStoresTable error:', e)
+    }
+  }
+
+  async function handleGetOfficialStores(c: any) {
+    await ensureOfficialStoresTable()
+    const rows = await sql`SELECT * FROM official_stores ORDER BY sort_order ASC, id ASC`
+    return c.json({
+      stores: rows.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        isActive: Boolean(r.is_active),
+        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+        sortOrder: r.sort_order,
+      }))
+    })
+  }
+
+  async function handleCreateOfficialStore(c: any) {
+    await ensureOfficialStoresTable()
+    const body = await c.req.json()
+    const name = String(body.name || '').trim()
+    const slug = String(body.slug || name.toLowerCase().replace(/\s+/g, '-')).trim()
+    const countries = Array.isArray(body.countries) ? JSON.stringify(body.countries) : '[]'
+    const rows = await sql`
+      INSERT INTO official_stores (name, slug, is_active, countries, sort_order)
+      VALUES (${name}, ${slug}, ${body.isActive ?? true}, ${countries}, ${body.sortOrder ?? 0})
+      RETURNING *
+    `
+    const r = rows[0]
+    return c.json({
+      store: {
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        isActive: Boolean(r.is_active),
+        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+        sortOrder: r.sort_order,
+      }
+    })
+  }
+
+  async function handleUpdateOfficialStore(c: any) {
+    await ensureOfficialStoresTable()
+    const id = Number(c.req.param('id'))
+    const body = await c.req.json()
+    const countries = Array.isArray(body.countries) ? JSON.stringify(body.countries) : '[]'
+    const rows = await sql`
+      UPDATE official_stores
+      SET name = COALESCE(${body.name}, name),
+          is_active = COALESCE(${body.isActive}, is_active),
+          countries = ${countries},
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `
+    const r = rows[0]
+    if (!r) return c.json({ error: 'Not found' }, 404)
+    return c.json({
+      store: {
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        isActive: Boolean(r.is_active),
+        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
+        sortOrder: r.sort_order,
+      }
+    })
+  }
+
+  async function handleDeleteOfficialStore(c: any) {
+    await ensureOfficialStoresTable()
+    const id = Number(c.req.param('id'))
+    await sql`DELETE FROM official_stores WHERE id = ${id}`
+    return c.json({ ok: true, id })
+  }
+
+  app.get('/official-stores', handleGetOfficialStores)
+  app.get('/api/official-stores', handleGetOfficialStores)
+  app.post('/official-stores', handleCreateOfficialStore)
+  app.post('/api/official-stores', handleCreateOfficialStore)
+  app.put('/official-stores/:id', handleUpdateOfficialStore)
+  app.put('/api/official-stores/:id', handleUpdateOfficialStore)
+  app.delete('/official-stores/:id', handleDeleteOfficialStore)
+  app.delete('/api/official-stores/:id', handleDeleteOfficialStore)
+
   app.onError((err, c) => {
     console.error(err)
     return c.json(

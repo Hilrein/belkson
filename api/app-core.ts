@@ -568,22 +568,18 @@ async function handleUpdatePurchaseTerms(c: any) {
 
     const valueData = JSON.stringify(variants)
 
-    try {
-      const client = getSql()
-      await ensureSiteSettingsTable(client)
-      await client`
-        INSERT INTO site_settings (key, value)
-        VALUES ('purchase_terms_dynamic', ${valueData})
-        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-      `
-    } catch (dbErr) {
-      console.warn('Neon DB write warning (saving to client response):', dbErr)
-    }
+    const client = getSql()
+    await ensureSiteSettingsTable(client)
+    await client`
+      INSERT INTO site_settings (key, value)
+      VALUES ('purchase_terms_dynamic', ${valueData})
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `
 
     return c.json({ variants })
   } catch (err: any) {
-    console.error('handleUpdatePurchaseTerms error:', err)
-    return c.json({ error: err?.message || 'Failed to process update' }, 500)
+    console.error('handleUpdatePurchaseTerms Neon DB error:', err)
+    return c.json({ error: err?.message || 'Database error' }, 500)
   }
 }
 
