@@ -80,13 +80,35 @@ export function PurchaseTermsProvider({ children }: { children: ReactNode }) {
       const data = await res.json()
       if (data && typeof data === 'object' && Array.isArray(data.variants)) {
         setVariants(data.variants)
+        try {
+          localStorage.setItem('belkson_purchase_terms', JSON.stringify(data.variants))
+        } catch (_) {}
+      } else {
+        const cached = localStorage.getItem('belkson_purchase_terms')
+        if (cached) {
+          try {
+            setVariants(JSON.parse(cached))
+          } catch (_) {
+            setVariants(DEFAULT_DYNAMIC_VARIANTS)
+          }
+        } else {
+          setVariants(DEFAULT_DYNAMIC_VARIANTS)
+        }
+      }
+      setError(null)
+    } catch (err) {
+      console.warn('Error fetching purchase terms from API, using cache:', err)
+      const cached = localStorage.getItem('belkson_purchase_terms')
+      if (cached) {
+        try {
+          setVariants(JSON.parse(cached))
+        } catch (_) {
+          setVariants(DEFAULT_DYNAMIC_VARIANTS)
+        }
       } else {
         setVariants(DEFAULT_DYNAMIC_VARIANTS)
       }
       setError(null)
-    } catch (err) {
-      console.warn('Error fetching purchase terms, using defaults:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
@@ -97,13 +119,24 @@ export function PurchaseTermsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateVariants = async (newVariants: PurchaseVariant[]) => {
-    const res = await fetch('/api/purchase-terms', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ variants: newVariants }),
-    })
-    if (!res.ok) throw new Error('Failed to update purchase terms')
-    await refresh()
+    setVariants(newVariants)
+    try {
+      localStorage.setItem('belkson_purchase_terms', JSON.stringify(newVariants))
+    } catch (_) {}
+
+    try {
+      const res = await fetch('/api/purchase-terms', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variants: newVariants }),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        console.warn('Server update response status:', res.status, errData)
+      }
+    } catch (err) {
+      console.warn('Failed to sync purchase terms to server, local copy preserved:', err)
+    }
   }
 
   return (

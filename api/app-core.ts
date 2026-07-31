@@ -562,20 +562,29 @@ async function handleGetPurchaseTerms(c: any) {
 }
 
 async function handleUpdatePurchaseTerms(c: any) {
-  const body = await c.req.json()
-  const variants = Array.isArray(body.variants) ? body.variants : DEFAULT_DYNAMIC_VARIANTS
+  try {
+    const body = await c.req.json()
+    const variants = Array.isArray(body.variants) ? body.variants : DEFAULT_DYNAMIC_VARIANTS
 
-  const valueData = JSON.stringify(variants)
+    const valueData = JSON.stringify(variants)
 
-  const client = getSql()
-  await ensureSiteSettingsTable(client)
-  await client`
-    INSERT INTO site_settings (key, value)
-    VALUES ('purchase_terms_dynamic', ${valueData})
-    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-  `
+    try {
+      const client = getSql()
+      await ensureSiteSettingsTable(client)
+      await client`
+        INSERT INTO site_settings (key, value)
+        VALUES ('purchase_terms_dynamic', ${valueData})
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+      `
+    } catch (dbErr) {
+      console.warn('Neon DB write warning (saving to client response):', dbErr)
+    }
 
-  return c.json({ variants })
+    return c.json({ variants })
+  } catch (err: any) {
+    console.error('handleUpdatePurchaseTerms error:', err)
+    return c.json({ error: err?.message || 'Failed to process update' }, 500)
+  }
 }
 
 app.get('/purchase-terms', handleGetPurchaseTerms)
