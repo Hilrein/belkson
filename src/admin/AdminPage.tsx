@@ -67,6 +67,79 @@ function EditIcon() {
   )
 }
 
+const ICON_CATEGORIES = [
+  {
+    category: 'Шопинг и покупки',
+    icons: [
+      { name: 'shopping_bag', label: 'Пакет' },
+      { name: 'shopping_cart', label: 'Корзина' },
+      { name: 'storefront', label: 'Магазин' },
+      { name: 'store', label: 'Витрина' },
+      { name: 'sell', label: 'Продажа' },
+      { name: 'label', label: 'Ярлык' },
+      { name: 'redeem', label: 'Подарок' },
+    ],
+  },
+  {
+    category: 'Поиск и выбор',
+    icons: [
+      { name: 'search', label: 'Поиск' },
+      { name: 'pageview', label: 'Просмотр' },
+      { name: 'find_in_page', label: 'Найти' },
+      { name: 'saved_search', label: 'Сохраненный' },
+      { name: 'manage_search', label: 'Поиск товара' },
+    ],
+  },
+  {
+    category: 'Заказ и документы',
+    icons: [
+      { name: 'edit_document', label: 'Оформление' },
+      { name: 'description', label: 'Документ' },
+      { name: 'assignment', label: 'Задание' },
+      { name: 'checklist', label: 'Чеклист' },
+      { name: 'contract', label: 'Договор' },
+      { name: 'receipt_long', label: 'Чек' },
+    ],
+  },
+  {
+    category: 'Оплата и финансы',
+    icons: [
+      { name: 'calculate', label: 'Расчет' },
+      { name: 'payment', label: 'Оплата' },
+      { name: 'credit_card', label: 'Карта' },
+      { name: 'currency_ruble', label: 'Рубль' },
+      { name: 'account_balance_wallet', label: 'Кошелек' },
+      { name: 'payments', label: 'Платежи' },
+      { name: 'paid', label: 'Оплачено' },
+    ],
+  },
+  {
+    category: 'Доставка и логистика',
+    icons: [
+      { name: 'local_shipping', label: 'Доставка' },
+      { name: 'package_2', label: 'Посылка' },
+      { name: 'inventory', label: 'Склад' },
+      { name: 'flight_takeoff', label: 'Авиа' },
+      { name: 'cargo', label: 'Груз' },
+      { name: 'rv_hookup', label: 'Транспорт' },
+    ],
+  },
+  {
+    category: 'Связь и сервис',
+    icons: [
+      { name: 'forum', label: 'Чат' },
+      { name: 'chat', label: 'Сообщения' },
+      { name: 'send', label: 'Отправить' },
+      { name: 'support_agent', label: 'Поддержка' },
+      { name: 'verified', label: 'Гарантия' },
+      { name: 'workspace_premium', label: 'Премиум' },
+      { name: 'bolt', label: 'Быстро' },
+      { name: 'star', label: 'Звезда' },
+      { name: 'shield', label: 'Защита' },
+    ],
+  },
+]
+
 /**
  * Port of static-admin/admin.html — responsive products admin.
  */
@@ -102,6 +175,24 @@ export default function AdminPage() {
   const [termsSaving, setTermsSaving] = useState(false)
   const [termsSavedSuccess, setTermsSavedSuccess] = useState(false)
   const [deleteVariantModalOpen, setDeleteVariantModalOpen] = useState(false)
+
+  // Icon Picker state
+  const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [targetStepId, setTargetStepId] = useState<string | null>(null)
+  const [iconSearchQuery, setIconSearchQuery] = useState('')
+
+  const openIconPicker = (stepId: string) => {
+    setTargetStepId(stepId)
+    setIconSearchQuery('')
+    setIconPickerOpen(true)
+  }
+
+  const selectIcon = (iconName: string) => {
+    if (targetStepId) {
+      handleUpdateStep(targetStepId, 'icon', iconName)
+    }
+    setIconPickerOpen(false)
+  }
 
   useEffect(() => {
     if (storeVariants && storeVariants.length > 0) {
@@ -852,16 +943,30 @@ export default function AdminPage() {
                               Иконка
                             </label>
                             <div className="flex items-center gap-2">
-                              <div className="w-9 h-9 rounded-md bg-surface-container-lowest border border-gray-200 flex items-center justify-center shrink-0 text-primary">
-                                <Icon name={step.icon || 'star'} className="text-lg" />
+                              <button
+                                type="button"
+                                className="w-10 h-10 rounded-lg bg-surface-container-lowest border border-gray-300 hover:border-[#ce7ed5] hover:bg-[#ce7ed5]/10 flex items-center justify-center shrink-0 text-primary transition-all cursor-pointer group/icon shadow-xs"
+                                onClick={() => openIconPicker(step.id)}
+                                title="Нажмите для выбора иконки"
+                              >
+                                <Icon name={step.icon || 'star'} className="text-xl group-hover/icon:scale-110 transition-transform" />
+                              </button>
+                              <div className="flex-1 relative">
+                                <input
+                                  type="text"
+                                  className="w-full pl-2.5 pr-14 py-2 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                  value={step.icon}
+                                  onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
+                                  placeholder="search, payment..."
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#ce7ed5] hover:underline font-medium cursor-pointer"
+                                  onClick={() => openIconPicker(step.id)}
+                                >
+                                  Выбрать
+                                </button>
                               </div>
-                              <input
-                                type="text"
-                                className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                                value={step.icon}
-                                onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
-                                placeholder="search, payment..."
-                              />
                             </div>
                           </div>
 
@@ -1915,6 +2020,120 @@ export default function AdminPage() {
               onClick={handleDeleteVariant}
             >
               Удалить вариант
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Icon Picker Modal */}
+      <div
+        className={`fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity ${
+          iconPickerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!iconPickerOpen}
+        onClick={() => setIconPickerOpen(false)}
+      >
+        <div
+          className="bg-surface-container-lowest border border-gray-200 rounded-2xl shadow-2xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden font-[Inter,system-ui,sans-serif]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-surface shrink-0">
+            <div>
+              <h3 className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                <Icon name="grid_view" className="text-[#ce7ed5]" />
+                <span>Выберите иконку</span>
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Нажмите на любую иконку для применения к этапу
+              </p>
+            </div>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              onClick={() => setIconPickerOpen(false)}
+            >
+              <Icon name="close" className="text-lg" />
+            </button>
+          </div>
+
+          {/* Search bar */}
+          <div className="p-4 border-b border-gray-100 bg-surface-container-lowest shrink-0">
+            <div className="relative">
+              <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+              <input
+                type="text"
+                className="w-full pl-9 pr-4 py-2 bg-surface border border-gray-200 rounded-lg text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-[#ce7ed5]"
+                placeholder="Поиск иконки (поиск, доставка, оплата...)"
+                value={iconSearchQuery}
+                onChange={(e) => setIconSearchQuery(e.target.value)}
+              />
+              {iconSearchQuery && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                  onClick={() => setIconSearchQuery('')}
+                >
+                  Очистить
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Icon Grid Content */}
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+            {ICON_CATEGORIES.map((cat) => {
+              const filtered = cat.icons.filter(
+                (ico) =>
+                  ico.name.toLowerCase().includes(iconSearchQuery.toLowerCase()) ||
+                  ico.label.toLowerCase().includes(iconSearchQuery.toLowerCase()),
+              )
+              if (filtered.length === 0) return null
+
+              return (
+                <div key={cat.category} className="space-y-2.5">
+                  <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                    {cat.category}
+                  </h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {filtered.map((ico) => {
+                      const isCurrent =
+                        targetStepId &&
+                        activeVariant?.steps.find((s) => s.id === targetStepId)?.icon === ico.name
+                      return (
+                        <button
+                          key={ico.name}
+                          type="button"
+                          className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer group ${
+                            isCurrent
+                              ? 'bg-[#ce7ed5]/15 border-[#ce7ed5] text-[#ce7ed5] ring-2 ring-[#ce7ed5]/30 font-bold'
+                              : 'bg-surface border-gray-200 hover:border-[#ce7ed5] hover:bg-[#ce7ed5]/5 text-on-surface'
+                          }`}
+                          onClick={() => selectIcon(ico.name)}
+                          title={`${ico.label} (${ico.name})`}
+                        >
+                          <Icon name={ico.name} className="text-2xl mb-1 group-hover:scale-110 transition-transform" />
+                          <span className="text-[11px] truncate max-w-full text-center leading-tight">
+                            {ico.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Custom Icon Entry Footer */}
+          <div className="p-4 border-t border-gray-200 bg-surface shrink-0 flex items-center justify-between gap-3 text-xs text-on-surface-variant">
+            <span>Нужна другая иконка? Введите любое имя Material Symbol в поле поиска или текстовое поле.</span>
+            <button
+              type="button"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-on-surface rounded-lg font-medium transition-colors shrink-0 cursor-pointer"
+              onClick={() => setIconPickerOpen(false)}
+            >
+              Закрыть
             </button>
           </div>
         </div>

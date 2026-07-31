@@ -516,8 +516,22 @@ const DEFAULT_DYNAMIC_VARIANTS: PurchaseVariant[] = [
   },
 ]
 
+async function ensureSiteSettingsTable(client: any) {
+  try {
+    await client`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    `
+  } catch (err) {
+    console.warn('ensureSiteSettingsTable error:', err)
+  }
+}
+
 async function handleGetPurchaseTerms(c: any) {
   const client = getSql()
+  await ensureSiteSettingsTable(client)
   try {
     const rows = (await client`
       SELECT key, value FROM site_settings WHERE key IN ('purchase_terms_dynamic', 'purchase_terms_all', 'purchase_terms_v3')
@@ -542,7 +556,7 @@ async function handleGetPurchaseTerms(c: any) {
       return c.json({ variants: migrated })
     }
   } catch (err) {
-    console.warn('Failed to fetch purchase terms setting:', err)
+    console.warn('Failed to fetch purchase terms setting from Neon DB:', err)
   }
   return c.json({ variants: DEFAULT_DYNAMIC_VARIANTS })
 }
@@ -554,6 +568,7 @@ async function handleUpdatePurchaseTerms(c: any) {
   const valueData = JSON.stringify(variants)
 
   const client = getSql()
+  await ensureSiteSettingsTable(client)
   await client`
     INSERT INTO site_settings (key, value)
     VALUES ('purchase_terms_dynamic', ${valueData})
