@@ -457,108 +457,110 @@ async function handleUpdateCurrency(c: any) {
 app.put('/settings/currency', handleUpdateCurrency)
 app.put('/api/settings/currency', handleUpdateCurrency)
 
-/* ─── Purchase Terms API (All Variants) ─────────────────────────── */
+/* ─── Purchase Terms API (Dynamic Variants) ───────────────────────── */
 
-const DEFAULT_V1_TERMS = {
-  title: 'Порядок и условия выкупа',
-  steps: [
-    { id: '1', icon: 'search', title: 'Выбор товара', description: 'Выбираете вещи на официальных сайтах Zara, H&M или Next.' },
-    { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете ссылки на товары в Telegram или Instagram.' },
-    { id: '3', icon: 'calculate', title: 'Расчёт стоимости', description: 'Считаем итоговую сумму с доставкой и комиссией.' },
-    { id: '4', icon: 'payment', title: 'Оплата', description: 'Оплачиваете удобным способом.' },
-    { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Выкупаем товар и доставляем вам.' },
-  ],
+type PurchaseTermStep = {
+  id: string
+  icon: string
+  title: string
+  description: string
 }
 
-const DEFAULT_V2_TERMS = {
-  title: 'Вариант 2: Порядок и условия выкупа',
-  steps: [
-    { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
-    { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
-    { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
-    { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
-    { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
-  ],
+type PurchaseVariant = {
+  id: string
+  badge: string
+  title: string
+  isActive: boolean
+  steps: PurchaseTermStep[]
 }
 
-const DEFAULT_V3_TERMS = {
-  title: 'Вариант 3: Порядок и условия выкупа',
-  steps: [
-    { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
-    { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
-    { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
-    { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
-    { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
-  ],
-}
-
-const DEFAULT_ALL_PURCHASE_TERMS = {
-  v1: DEFAULT_V1_TERMS,
-  v2: DEFAULT_V2_TERMS,
-  v3: DEFAULT_V3_TERMS,
-}
+const DEFAULT_DYNAMIC_VARIANTS: PurchaseVariant[] = [
+  {
+    id: 'v1',
+    badge: 'Вариант 1',
+    title: 'Порядок и условия выкупа',
+    isActive: true,
+    steps: [
+      { id: '1', icon: 'search', title: 'Выбор товара', description: 'Выбираете вещи на официальных сайтах Zara, H&M или Next.' },
+      { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете ссылки на товары в Telegram или Instagram.' },
+      { id: '3', icon: 'calculate', title: 'Расчёт стоимости', description: 'Считаем итоговую сумму с доставкой и комиссией.' },
+      { id: '4', icon: 'payment', title: 'Оплата', description: 'Оплачиваете удобным способом.' },
+      { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Выкупаем товар и доставляем вам.' },
+    ],
+  },
+  {
+    id: 'v2',
+    badge: 'Вариант 2',
+    title: 'Порядок и условия выкупа',
+    isActive: true,
+    steps: [
+      { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
+      { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
+      { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
+      { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
+      { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
+    ],
+  },
+  {
+    id: 'v3',
+    badge: 'Вариант 3',
+    title: 'Порядок и условия выкупа',
+    isActive: true,
+    steps: [
+      { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
+      { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
+      { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.' },
+      { id: '4', icon: 'payment', title: 'Оплата', description: 'Вы производите оплату удобным способом.' },
+      { id: '5', icon: 'local_shipping', title: 'Доставка', description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.' },
+    ],
+  },
+]
 
 async function handleGetPurchaseTerms(c: any) {
   const client = getSql()
   try {
     const rows = (await client`
-      SELECT key, value FROM site_settings WHERE key IN ('purchase_terms_all', 'purchase_terms_v3')
+      SELECT key, value FROM site_settings WHERE key IN ('purchase_terms_dynamic', 'purchase_terms_all', 'purchase_terms_v3')
     `) as { key: string; value: string }[]
+
+    const dynamicRow = rows.find((r) => r.key === 'purchase_terms_dynamic')
+    if (dynamicRow?.value) {
+      const variants = typeof dynamicRow.value === 'string' ? JSON.parse(dynamicRow.value) : dynamicRow.value
+      if (Array.isArray(variants)) {
+        return c.json({ variants })
+      }
+    }
 
     const allRow = rows.find((r) => r.key === 'purchase_terms_all')
     if (allRow?.value) {
       const data = typeof allRow.value === 'string' ? JSON.parse(allRow.value) : allRow.value
-      return c.json({
-        v1: data.v1 || DEFAULT_V1_TERMS,
-        v2: data.v2 || DEFAULT_V2_TERMS,
-        v3: data.v3 || DEFAULT_V3_TERMS,
-      })
-    }
-
-    const v3Row = rows.find((r) => r.key === 'purchase_terms_v3')
-    if (v3Row?.value) {
-      const dataV3 = typeof v3Row.value === 'string' ? JSON.parse(v3Row.value) : v3Row.value
-      return c.json({
-        ...DEFAULT_ALL_PURCHASE_TERMS,
-        v3: {
-          title: dataV3.title || DEFAULT_V3_TERMS.title,
-          steps: Array.isArray(dataV3.steps) ? dataV3.steps : DEFAULT_V3_TERMS.steps,
-        },
-      })
+      const migrated: PurchaseVariant[] = [
+        { id: 'v1', badge: 'Вариант 1', title: data.v1?.title || 'Порядок и условия выкупа', isActive: true, steps: data.v1?.steps || DEFAULT_DYNAMIC_VARIANTS[0].steps },
+        { id: 'v2', badge: 'Вариант 2', title: data.v2?.title || 'Порядок и условия выкупа', isActive: true, steps: data.v2?.steps || DEFAULT_DYNAMIC_VARIANTS[1].steps },
+        { id: 'v3', badge: 'Вариант 3', title: data.v3?.title || 'Порядок и условия выкупа', isActive: true, steps: data.v3?.steps || DEFAULT_DYNAMIC_VARIANTS[2].steps },
+      ]
+      return c.json({ variants: migrated })
     }
   } catch (err) {
     console.warn('Failed to fetch purchase terms setting:', err)
   }
-  return c.json(DEFAULT_ALL_PURCHASE_TERMS)
+  return c.json({ variants: DEFAULT_DYNAMIC_VARIANTS })
 }
 
 async function handleUpdatePurchaseTerms(c: any) {
   const body = await c.req.json()
-  const payload = {
-    v1: {
-      title: String(body.v1?.title ?? DEFAULT_V1_TERMS.title).trim(),
-      steps: Array.isArray(body.v1?.steps) ? body.v1.steps : DEFAULT_V1_TERMS.steps,
-    },
-    v2: {
-      title: String(body.v2?.title ?? DEFAULT_V2_TERMS.title).trim(),
-      steps: Array.isArray(body.v2?.steps) ? body.v2.steps : DEFAULT_V2_TERMS.steps,
-    },
-    v3: {
-      title: String(body.v3?.title ?? DEFAULT_V3_TERMS.title).trim(),
-      steps: Array.isArray(body.v3?.steps) ? body.v3.steps : DEFAULT_V3_TERMS.steps,
-    },
-  }
+  const variants = Array.isArray(body.variants) ? body.variants : DEFAULT_DYNAMIC_VARIANTS
 
-  const valueData = JSON.stringify(payload)
+  const valueData = JSON.stringify(variants)
 
   const client = getSql()
   await client`
     INSERT INTO site_settings (key, value)
-    VALUES ('purchase_terms_all', ${valueData})
+    VALUES ('purchase_terms_dynamic', ${valueData})
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
   `
 
-  return c.json(payload)
+  return c.json({ variants })
 }
 
 app.get('/purchase-terms', handleGetPurchaseTerms)

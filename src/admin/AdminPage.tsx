@@ -7,8 +7,8 @@ import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresCo
 import {
   usePurchaseTerms,
   type PurchaseTermStep,
-  type VariantTermsConfig,
-  DEFAULT_ALL_TERMS,
+  type PurchaseVariant,
+  DEFAULT_DYNAMIC_VARIANTS,
 } from '../store/PurchaseTermsContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
@@ -92,75 +92,102 @@ export default function AdminPage() {
     deleteStore,
   } = useOfficialStores()
 
-  const { allTerms, updateAllTerms } = usePurchaseTerms()
+  const { variants: storeVariants, updateVariants } = usePurchaseTerms()
 
   const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms'>('products')
-  const [termsSubTab, setTermsSubTab] = useState<'v1' | 'v2' | 'v3'>('v1')
 
-  // Purchase Terms state for all 3 variants
-  const [v1Config, setV1Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v1)
-  const [v2Config, setV2Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v2)
-  const [v3Config, setV3Config] = useState<VariantTermsConfig>(DEFAULT_ALL_TERMS.v3)
+  // Dynamic variants state
+  const [localVariants, setLocalVariants] = useState<PurchaseVariant[]>(DEFAULT_DYNAMIC_VARIANTS)
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('v1')
   const [termsSaving, setTermsSaving] = useState(false)
   const [termsSavedSuccess, setTermsSavedSuccess] = useState(false)
+  const [deleteVariantModalOpen, setDeleteVariantModalOpen] = useState(false)
 
   useEffect(() => {
-    if (allTerms) {
-      setV1Config(allTerms.v1)
-      setV2Config(allTerms.v2)
-      setV3Config(allTerms.v3)
+    if (storeVariants && storeVariants.length > 0) {
+      setLocalVariants(storeVariants)
+      if (!storeVariants.some((v) => v.id === selectedVariantId)) {
+        setSelectedVariantId(storeVariants[0].id)
+      }
     }
-  }, [allTerms])
+  }, [storeVariants])
 
-  const activeConfig = termsSubTab === 'v1' ? v1Config : termsSubTab === 'v2' ? v2Config : v3Config
-  const setActiveConfig = (newConfig: VariantTermsConfig) => {
-    if (termsSubTab === 'v1') setV1Config(newConfig)
-    else if (termsSubTab === 'v2') setV2Config(newConfig)
-    else setV3Config(newConfig)
+  const activeVariant = localVariants.find((v) => v.id === selectedVariantId) || localVariants[0]
+
+  const handleUpdateActiveVariant = (updated: Partial<PurchaseVariant>) => {
+    if (!activeVariant) return
+    setLocalVariants(
+      localVariants.map((v) => (v.id === activeVariant.id ? { ...v, ...updated } : v)),
+    )
   }
 
-  const handleTitleChange = (newTitle: string) => {
-    setActiveConfig({ ...activeConfig, title: newTitle })
+  const handleAddVariant = () => {
+    const nextNum = localVariants.length + 1
+    const newId = `var-${Date.now()}`
+    const newVariant: PurchaseVariant = {
+      id: newId,
+      badge: `Вариант ${nextNum}`,
+      title: 'Порядок и условия выкупа',
+      isActive: true,
+      steps: [
+        { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальном сайте.' },
+        { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары.' },
+        { id: '3', icon: 'calculate', title: 'Расчет стоимости', description: 'Мы рассчитываем итоговую стоимость.' },
+      ],
+    }
+    setLocalVariants([...localVariants, newVariant])
+    setSelectedVariantId(newId)
+  }
+
+  const handleDeleteVariant = () => {
+    if (localVariants.length <= 1) {
+      alert('Нельзя удалить единственный вариант')
+      return
+    }
+    const remaining = localVariants.filter((v) => v.id !== activeVariant.id)
+    setLocalVariants(remaining)
+    setSelectedVariantId(remaining[0].id)
+    setDeleteVariantModalOpen(false)
   }
 
   const handleAddStep = () => {
+    if (!activeVariant) return
     const newStep: PurchaseTermStep = {
       id: String(Date.now()),
       icon: 'star',
       title: 'Новый шаг',
       description: 'Описание этапа выкупа товара.',
     }
-    setActiveConfig({
-      ...activeConfig,
-      steps: [...activeConfig.steps, newStep],
+    handleUpdateActiveVariant({
+      steps: [...activeVariant.steps, newStep],
     })
   }
 
   const handleUpdateStep = (id: string, field: keyof PurchaseTermStep, val: string) => {
-    setActiveConfig({
-      ...activeConfig,
-      steps: activeConfig.steps.map((step) =>
+    if (!activeVariant) return
+    handleUpdateActiveVariant({
+      steps: activeVariant.steps.map((step) =>
         step.id === id ? { ...step, [field]: val } : step,
       ),
     })
   }
 
   const handleRemoveStep = (id: string) => {
-    setActiveConfig({
-      ...activeConfig,
-      steps: activeConfig.steps.filter((step) => step.id !== id),
+    if (!activeVariant) return
+    handleUpdateActiveVariant({
+      steps: activeVariant.steps.filter((step) => step.id !== id),
     })
   }
 
   const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    if (!activeVariant) return
     const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= activeConfig.steps.length) return
-    const updated = [...activeConfig.steps]
+    if (targetIndex < 0 || targetIndex >= activeVariant.steps.length) return
+    const updated = [...activeVariant.steps]
     const temp = updated[index]
     updated[index] = updated[targetIndex]
     updated[targetIndex] = temp
-    setActiveConfig({
-      ...activeConfig,
+    handleUpdateActiveVariant({
       steps: updated,
     })
   }
@@ -168,11 +195,7 @@ export default function AdminPage() {
   const handleSavePurchaseTerms = async () => {
     setTermsSaving(true)
     try {
-      await updateAllTerms({
-        v1: v1Config,
-        v2: v2Config,
-        v3: v3Config,
-      })
+      await updateVariants(localVariants)
       setTermsSavedSuccess(true)
       setTimeout(() => setTermsSavedSuccess(false), 3000)
     } catch (err) {
@@ -636,19 +659,20 @@ export default function AdminPage() {
           )}
           {activeTab === 'purchase-terms' ? (
             <div className="space-y-6 max-w-4xl">
+              {/* Header */}
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
                 <div className="min-w-0 flex-1">
                   <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
-                    Условия выкупа (Все варианты)
+                    Условия выкупа
                   </h1>
                   <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-                    Настройка заголовков и шагов для всех трех вариантов представления выкупа на главной странице.
+                    Управление вариантами и шагами условий выкупа на сайте.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   {termsSavedSuccess && (
                     <span className="text-sm text-green-600 font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-md border border-green-200">
-                      <Icon name="check_circle" className="text-base" /> Все варианты сохранены!
+                      <Icon name="check_circle" className="text-base" /> Сохранено!
                     </span>
                   )}
                   <button
@@ -658,212 +682,235 @@ export default function AdminPage() {
                     disabled={termsSaving}
                   >
                     <Icon name="save" />
-                    <span>{termsSaving ? 'Сохранение…' : 'Сохранить все варианты'}</span>
+                    <span>{termsSaving ? 'Сохранение…' : 'Сохранить'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Subtabs for Variants */}
-              <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
-                <button
-                  type="button"
-                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
-                    termsSubTab === 'v1'
-                      ? 'bg-[#ce7ed5] text-white shadow-sm'
-                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
-                  }`}
-                  onClick={() => setTermsSubTab('v1')}
-                >
-                  <Icon name="format_list_numbered" className="text-base" />
-                  <span>Вариант 1 (Список)</span>
-                </button>
-                <button
-                  type="button"
-                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
-                    termsSubTab === 'v2'
-                      ? 'bg-[#ce7ed5] text-white shadow-sm'
-                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
-                  }`}
-                  onClick={() => setTermsSubTab('v2')}
-                >
-                  <Icon name="view_headline" className="text-base" />
-                  <span>Вариант 2 (Минимализм)</span>
-                </button>
-                <button
-                  type="button"
-                  className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
-                    termsSubTab === 'v3'
-                      ? 'bg-[#ce7ed5] text-white shadow-sm'
-                      : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
-                  }`}
-                  onClick={() => setTermsSubTab('v3')}
-                >
-                  <Icon name="timeline" className="text-base" />
-                  <span>Вариант 3 (Иконки)</span>
-                </button>
-              </div>
-
-              {/* Section Title Editor Card */}
-              <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
-                <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
-                  <Icon name="title" className="text-[#ce7ed5]" />
-                  <span>Заголовок выбранного варианта ({termsSubTab.toUpperCase()})</span>
-                </h2>
-                <div>
-                  <label className="block text-body-sm font-medium text-on-surface mb-2">
-                    Заголовок на главной странице
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3.5 py-2.5 bg-surface border border-gray-200 rounded-lg text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container font-medium"
-                    value={activeConfig.title}
-                    onChange={(e) => handleTitleChange(e.target.value)}
-                    placeholder="Например: Порядок и условия выкупа"
-                  />
-                </div>
-              </div>
-
-              {/* Steps List Section */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
-                    <Icon name="format_list_numbered" className="text-[#ce7ed5]" />
-                    <span>Этапы выкупа ({activeConfig.steps.length})</span>
-                  </h2>
+              {/* Dynamic Variant Selector Tabs */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {localVariants.map((v) => {
+                    const isSel = activeVariant && v.id === activeVariant.id
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer flex items-center gap-2 ${
+                          isSel
+                            ? 'bg-[#ce7ed5] text-white shadow-sm'
+                            : 'bg-surface-container-lowest border border-gray-200 text-on-surface hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedVariantId(v.id)}
+                      >
+                        <span>{v.badge || v.title || 'Вариант'}</span>
+                        {!v.isActive && (
+                          <span className="text-[10px] opacity-75 uppercase"> (скрыт)</span>
+                        )}
+                      </button>
+                    )
+                  })}
                   <button
                     type="button"
-                    className="px-4 py-2 border border-[#ce7ed5] text-[#ce7ed5] hover:bg-[#ce7ed5]/10 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
-                    onClick={handleAddStep}
+                    className="px-3.5 py-2 border border-dashed border-[#ce7ed5] text-[#ce7ed5] hover:bg-[#ce7ed5]/10 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                    onClick={handleAddVariant}
                   >
                     <Icon name="add" className="text-base" />
-                    <span>Добавить шаг</span>
+                    <span>Добавить вариант</span>
                   </button>
                 </div>
 
-                {activeConfig.steps.map((step, index) => (
-                  <div
-                    key={step.id}
-                    className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4 relative group"
+                {localVariants.length > 1 && (
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors flex items-center gap-1 cursor-pointer border border-red-200"
+                    onClick={() => setDeleteVariantModalOpen(true)}
                   >
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                      <div className="flex items-center gap-3">
-                        <span className="w-8 h-8 rounded-full bg-[#ce7ed5]/15 text-[#ce7ed5] font-bold text-sm flex items-center justify-center">
-                          {index + 1}
-                        </span>
-                        <h3 className="font-semibold text-on-surface">Шаг {index + 1}: {step.title || 'Без названия'}</h3>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          className="p-1.5 text-gray-500 hover:text-on-surface rounded hover:bg-gray-100 disabled:opacity-30 cursor-pointer"
-                          onClick={() => handleMoveStep(index, 'up')}
-                          disabled={index === 0}
-                          title="Переместить выше"
-                        >
-                          <Icon name="arrow_upward" className="text-base" />
-                        </button>
-                        <button
-                          type="button"
-                          className="p-1.5 text-gray-500 hover:text-on-surface rounded hover:bg-gray-100 disabled:opacity-30 cursor-pointer"
-                          onClick={() => handleMoveStep(index, 'down')}
-                          disabled={index === activeConfig.steps.length - 1}
-                          title="Переместить ниже"
-                        >
-                          <Icon name="arrow_downward" className="text-base" />
-                        </button>
-                        <button
-                          type="button"
-                          className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 cursor-pointer ml-2"
-                          onClick={() => handleRemoveStep(step.id)}
-                          title="Удалить шаг"
-                        >
-                          <Icon name="delete" className="text-base" />
-                        </button>
-                      </div>
-                    </div>
+                    <Icon name="delete" className="text-sm" />
+                    <span>Удалить этот вариант</span>
+                  </button>
+                )}
+              </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {termsSubTab === 'v3' && (
+              {/* Active Variant Settings Card */}
+              {activeVariant && (
+                <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
-                            Иконка (Material Symbol)
-                          </label>
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-lg bg-surface border border-gray-200 flex items-center justify-center shrink-0 text-primary">
-                              <Icon name={step.icon || 'star'} className="text-xl" />
-                            </div>
-                            <input
-                              type="text"
-                              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                              value={step.icon}
-                              onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
-                              placeholder="search, payment..."
-                            />
-                          </div>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {['search', 'edit_document', 'calculate', 'payment', 'local_shipping', 'shopping_bag', 'package_2', 'bolt', 'verified'].map((presetIcon) => (
-                              <button
-                                key={presetIcon}
-                                type="button"
-                                className={`p-1 rounded text-xs border cursor-pointer ${
-                                  step.icon === presetIcon
-                                    ? 'bg-[#ce7ed5]/20 border-[#ce7ed5] text-primary font-bold'
-                                    : 'border-gray-200 hover:bg-gray-100 text-gray-600'
-                                }`}
-                                onClick={() => handleUpdateStep(step.id, 'icon', presetIcon)}
-                                title={presetIcon}
-                              >
-                                <Icon name={presetIcon} className="text-sm" />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className={termsSubTab === 'v3' ? 'md:col-span-2 space-y-3' : 'md:col-span-3 space-y-3'}>
-                        <div>
-                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
-                            Название этапа *
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                            Название варианта (для админки / метки)
                           </label>
                           <input
                             type="text"
                             className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
-                            value={step.title}
-                            onChange={(e) => handleUpdateStep(step.id, 'title', e.target.value)}
-                            placeholder="Например: Оформление заказа"
+                            value={activeVariant.badge || ''}
+                            onChange={(e) => handleUpdateActiveVariant({ badge: e.target.value })}
+                            placeholder="Например: Вариант 1"
                           />
                         </div>
-
                         <div>
-                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
-                            Описание этапа
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                            Заголовок блока на сайте
                           </label>
-                          <textarea
-                            rows={2}
-                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                            value={step.description}
-                            onChange={(e) => handleUpdateStep(step.id, 'description', e.target.value)}
-                            placeholder="Например: Вы выбираете понравившиеся вещи..."
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
+                            value={activeVariant.title}
+                            onChange={(e) => handleUpdateActiveVariant({ title: e.target.value })}
+                            placeholder="Например: Порядок и условия выкупа"
                           />
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
 
-                {activeConfig.steps.length === 0 && (
-                  <div className="text-center py-12 bg-surface-container-lowest border border-dashed border-gray-300 rounded-xl">
-                    <p className="text-on-surface-variant text-sm mb-3">Шаги пока не добавлены.</p>
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-[#ce7ed5] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer"
-                      onClick={handleAddStep}
-                    >
-                      + Добавить первый шаг
-                    </button>
+                    <div className="flex items-center gap-3 shrink-0 sm:pt-4">
+                      <span className="text-xs font-medium text-on-surface-variant">
+                        Отображать на сайте:
+                      </span>
+                      <button
+                        type="button"
+                        className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ${
+                          activeVariant.isActive ? 'bg-[#ce7ed5]' : 'bg-gray-300'
+                        }`}
+                        onClick={() =>
+                          handleUpdateActiveVariant({ isActive: !activeVariant.isActive })
+                        }
+                      >
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                            activeVariant.isActive ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Steps List Section */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-base font-semibold text-on-surface flex items-center gap-2">
+                        <Icon name="format_list_numbered" className="text-[#ce7ed5]" />
+                        <span>Шаги варианта ({activeVariant.steps.length})</span>
+                      </h2>
+                      <button
+                        type="button"
+                        className="px-3.5 py-1.5 border border-[#ce7ed5] text-[#ce7ed5] hover:bg-[#ce7ed5]/10 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                        onClick={handleAddStep}
+                      >
+                        <Icon name="add" className="text-sm" />
+                        <span>Добавить шаг</span>
+                      </button>
+                    </div>
+
+                    {activeVariant.steps.map((step, index) => (
+                      <div
+                        key={step.id}
+                        className="bg-surface border border-gray-200 rounded-xl p-4 shadow-sm space-y-3 relative"
+                      >
+                        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-[#ce7ed5]/15 text-[#ce7ed5] font-bold text-xs flex items-center justify-center">
+                              {index + 1}
+                            </span>
+                            <h3 className="font-medium text-sm text-on-surface">Шаг {index + 1}: {step.title || 'Без названия'}</h3>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              className="p-1 text-gray-500 hover:text-on-surface rounded hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
+                              onClick={() => handleMoveStep(index, 'up')}
+                              disabled={index === 0}
+                              title="Выше"
+                            >
+                              <Icon name="arrow_upward" className="text-sm" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p-1 text-gray-500 hover:text-on-surface rounded hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
+                              onClick={() => handleMoveStep(index, 'down')}
+                              disabled={index === activeVariant.steps.length - 1}
+                              title="Ниже"
+                            >
+                              <Icon name="arrow_downward" className="text-sm" />
+                            </button>
+                            <button
+                              type="button"
+                              className="p-1 text-red-500 hover:text-red-700 rounded hover:bg-red-50 cursor-pointer ml-1"
+                              onClick={() => handleRemoveStep(step.id)}
+                              title="Удалить шаг"
+                            >
+                              <Icon name="delete" className="text-sm" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-xs text-on-surface-variant mb-1">
+                              Иконка
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <div className="w-9 h-9 rounded-md bg-surface-container-lowest border border-gray-200 flex items-center justify-center shrink-0 text-primary">
+                                <Icon name={step.icon || 'star'} className="text-lg" />
+                              </div>
+                              <input
+                                type="text"
+                                className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                value={step.icon}
+                                onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
+                                placeholder="search, payment..."
+                              />
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-2 space-y-2">
+                            <div>
+                              <label className="block text-xs text-on-surface-variant mb-1">
+                                Название этапа *
+                              </label>
+                              <input
+                                type="text"
+                                className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                value={step.title}
+                                onChange={(e) => handleUpdateStep(step.id, 'title', e.target.value)}
+                                placeholder="Например: Выбор товара"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs text-on-surface-variant mb-1">
+                                Описание этапа
+                              </label>
+                              <textarea
+                                rows={2}
+                                className="w-full px-2.5 py-1.5 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                value={step.description}
+                                onChange={(e) => handleUpdateStep(step.id, 'description', e.target.value)}
+                                placeholder="Описание..."
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {activeVariant.steps.length === 0 && (
+                      <div className="text-center py-8 bg-surface border border-dashed border-gray-300 rounded-xl">
+                        <p className="text-on-surface-variant text-xs mb-2">Шаги не добавлены.</p>
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 bg-[#ce7ed5] text-white rounded-lg text-xs font-medium hover:bg-opacity-90 transition-opacity cursor-pointer"
+                          onClick={handleAddStep}
+                        >
+                          + Добавить шаг
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : activeTab === 'official-stores' ? (
             <div className="space-y-6">
@@ -1822,6 +1869,52 @@ export default function AdminPage() {
               disabled={storeDeleting}
             >
               {storeDeleting ? 'Удаление…' : 'Удалить'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Variant Modal */}
+      <div
+        className={`fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 transition-opacity ${
+          deleteVariantModalOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!deleteVariantModalOpen}
+      >
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-xl shadow-2xl max-w-md w-full overflow-hidden font-[Inter,system-ui,sans-serif]">
+          <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center bg-surface">
+            <h3 className="text-lg font-semibold text-on-surface flex items-center gap-2">
+              <Icon name="delete" className="text-red-600" />
+              <span>Удалить вариант?</span>
+            </h3>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0 cursor-pointer"
+              onClick={() => setDeleteVariantModalOpen(false)}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" className="text-sm" />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 space-y-3">
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Вы уверены, что хотите удалить «{activeVariant?.badge || activeVariant?.title}»?
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto cursor-pointer"
+              onClick={() => setDeleteVariantModalOpen(false)}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors w-full sm:w-auto cursor-pointer"
+              onClick={handleDeleteVariant}
+            >
+              Удалить вариант
             </button>
           </div>
         </div>
