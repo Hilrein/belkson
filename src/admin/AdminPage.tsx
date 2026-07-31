@@ -4,6 +4,7 @@ import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
 import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresContext'
+import { usePurchaseTerms, type PurchaseTermStep } from '../store/PurchaseTermsContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -86,7 +87,72 @@ export default function AdminPage() {
     deleteStore,
   } = useOfficialStores()
 
-  const [activeTab, setActiveTab] = useState<'products' | 'official-stores'>('products')
+  const { terms, updateTerms } = usePurchaseTerms()
+
+  const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms'>('products')
+
+  // Purchase Terms state
+  const [termsTitle, setTermsTitle] = useState('')
+  const [termsSteps, setTermsSteps] = useState<PurchaseTermStep[]>([])
+  const [termsSaving, setTermsSaving] = useState(false)
+  const [termsSavedSuccess, setTermsSavedSuccess] = useState(false)
+
+  useEffect(() => {
+    if (terms) {
+      setTermsTitle(terms.title || 'Вариант 3: Порядок и условия выкупа')
+      setTermsSteps(terms.steps || [])
+    }
+  }, [terms])
+
+  const handleAddStep = () => {
+    const newStep: PurchaseTermStep = {
+      id: String(Date.now()),
+      icon: 'star',
+      title: 'Новый шаг',
+      description: 'Описание этапа выкупа товара.',
+    }
+    setTermsSteps([...termsSteps, newStep])
+  }
+
+  const handleUpdateStep = (id: string, field: keyof PurchaseTermStep, val: string) => {
+    setTermsSteps(
+      termsSteps.map((step) => (step.id === id ? { ...step, [field]: val } : step)),
+    )
+  }
+
+  const handleRemoveStep = (id: string) => {
+    setTermsSteps(termsSteps.filter((step) => step.id !== id))
+  }
+
+  const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= termsSteps.length) return
+    const updated = [...termsSteps]
+    const temp = updated[index]
+    updated[index] = updated[targetIndex]
+    updated[targetIndex] = temp
+    setTermsSteps(updated)
+  }
+
+  const handleSavePurchaseTerms = async () => {
+    if (!termsTitle.trim()) {
+      alert('Введите заголовок секции')
+      return
+    }
+    setTermsSaving(true)
+    try {
+      await updateTerms({
+        title: termsTitle.trim(),
+        steps: termsSteps,
+      })
+      setTermsSavedSuccess(true)
+      setTimeout(() => setTermsSavedSuccess(false), 3000)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка при сохранении')
+    } finally {
+      setTermsSaving(false)
+    }
+  }
 
   const [saving, setSaving] = useState(false)
 
@@ -450,7 +516,7 @@ export default function AdminPage() {
                 type="button"
                 className={`w-full text-left cursor-pointer ${navLinkClass(isActive)}`}
                 onClick={() => {
-                  setActiveTab(item.id as 'products' | 'official-stores')
+                  setActiveTab(item.id as 'products' | 'official-stores' | 'purchase-terms')
                   closeNav()
                 }}
               >
@@ -540,7 +606,196 @@ export default function AdminPage() {
           {loading && (
             <p className="text-sm text-on-surface-variant">Загрузка из Neon…</p>
           )}
-          {activeTab === 'official-stores' ? (
+          {activeTab === 'purchase-terms' ? (
+            <div className="space-y-6 max-w-4xl">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+                    Условия выкупа (Вариант 3)
+                  </h1>
+                  <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
+                    Настройка визитки «Порядок и условия выкупа» с иконками и описанием этапов на главной странице.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {termsSavedSuccess && (
+                    <span className="text-sm text-green-600 font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-md border border-green-200">
+                      <Icon name="check_circle" className="text-base" /> Сохранено!
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="bg-[#ce7ed5] text-white px-5 py-2.5 rounded-lg hover:bg-opacity-90 transition-all font-medium text-sm shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                    onClick={() => void handleSavePurchaseTerms()}
+                    disabled={termsSaving}
+                  >
+                    <Icon name="save" />
+                    <span>{termsSaving ? 'Сохранение…' : 'Сохранить изменения'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Title Editor Card */}
+              <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
+                <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                  <Icon name="title" className="text-[#ce7ed5]" />
+                  <span>Заголовок секции</span>
+                </h2>
+                <div>
+                  <label className="block text-body-sm font-medium text-on-surface mb-2">
+                    Заголовок на главной странице
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3.5 py-2.5 bg-surface border border-gray-200 rounded-lg text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container font-medium"
+                    value={termsTitle}
+                    onChange={(e) => setTermsTitle(e.target.value)}
+                    placeholder="Например: Вариант 3: Порядок и условия выкупа"
+                  />
+                </div>
+              </div>
+
+              {/* Steps List Section */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-on-surface flex items-center gap-2">
+                    <Icon name="format_list_numbered" className="text-[#ce7ed5]" />
+                    <span>Этапы выкупа ({termsSteps.length})</span>
+                  </h2>
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-[#ce7ed5] text-[#ce7ed5] hover:bg-[#ce7ed5]/10 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+                    onClick={handleAddStep}
+                  >
+                    <Icon name="add" className="text-base" />
+                    <span>Добавить шаг</span>
+                  </button>
+                </div>
+
+                {termsSteps.map((step, index) => (
+                  <div
+                    key={step.id}
+                    className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4 relative group"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-full bg-[#ce7ed5]/15 text-[#ce7ed5] font-bold text-sm flex items-center justify-center">
+                          {index + 1}
+                        </span>
+                        <h3 className="font-semibold text-on-surface">Шаг {index + 1}: {step.title || 'Без названия'}</h3>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          className="p-1.5 text-gray-500 hover:text-on-surface rounded hover:bg-gray-100 disabled:opacity-30 cursor-pointer"
+                          onClick={() => handleMoveStep(index, 'up')}
+                          disabled={index === 0}
+                          title="Переместить выше"
+                        >
+                          <Icon name="arrow_upward" className="text-base" />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-1.5 text-gray-500 hover:text-on-surface rounded hover:bg-gray-100 disabled:opacity-30 cursor-pointer"
+                          onClick={() => handleMoveStep(index, 'down')}
+                          disabled={index === termsSteps.length - 1}
+                          title="Переместить ниже"
+                        >
+                          <Icon name="arrow_downward" className="text-base" />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-1.5 text-red-500 hover:text-red-700 rounded hover:bg-red-50 cursor-pointer ml-2"
+                          onClick={() => handleRemoveStep(step.id)}
+                          title="Удалить шаг"
+                        >
+                          <Icon name="delete" className="text-base" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+                          Иконка (Material Symbol)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded-lg bg-surface border border-gray-200 flex items-center justify-center shrink-0 text-primary">
+                            <Icon name={step.icon || 'star'} className="text-xl" />
+                          </div>
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                            value={step.icon}
+                            onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
+                            placeholder="search, payment..."
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {['search', 'edit_document', 'calculate', 'payment', 'local_shipping', 'shopping_bag', 'package_2', 'bolt', 'verified'].map((presetIcon) => (
+                            <button
+                              key={presetIcon}
+                              type="button"
+                              className={`p-1 rounded text-xs border cursor-pointer ${
+                                step.icon === presetIcon
+                                  ? 'bg-[#ce7ed5]/20 border-[#ce7ed5] text-primary font-bold'
+                                  : 'border-gray-200 hover:bg-gray-100 text-gray-600'
+                              }`}
+                              onClick={() => handleUpdateStep(step.id, 'icon', presetIcon)}
+                              title={presetIcon}
+                            >
+                              <Icon name={presetIcon} className="text-sm" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-2 space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+                            Название этапа *
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container"
+                            value={step.title}
+                            onChange={(e) => handleUpdateStep(step.id, 'title', e.target.value)}
+                            placeholder="Например: Оформление заказа"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+                            Описание этапа
+                          </label>
+                          <textarea
+                            rows={2}
+                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                            value={step.description}
+                            onChange={(e) => handleUpdateStep(step.id, 'description', e.target.value)}
+                            placeholder="Например: Вы выбираете понравившиеся вещи..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {termsSteps.length === 0 && (
+                  <div className="text-center py-12 bg-surface-container-lowest border border-dashed border-gray-300 rounded-xl">
+                    <p className="text-on-surface-variant text-sm mb-3">Шаги пока не добавлены.</p>
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-[#ce7ed5] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer"
+                      onClick={handleAddStep}
+                    >
+                      + Добавить первый шаг
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : activeTab === 'official-stores' ? (
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div className="min-w-0 flex-1">

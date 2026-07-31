@@ -457,6 +457,83 @@ async function handleUpdateCurrency(c: any) {
 app.put('/settings/currency', handleUpdateCurrency)
 app.put('/api/settings/currency', handleUpdateCurrency)
 
+/* ─── Purchase Terms API ─────────────────────────────────────────── */
+
+const DEFAULT_PURCHASE_TERMS = {
+  title: 'Вариант 3: Порядок и условия выкупа',
+  steps: [
+    {
+      id: '1',
+      icon: 'search',
+      title: 'Выбор товара',
+      description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.',
+    },
+    {
+      id: '2',
+      icon: 'edit_document',
+      title: 'Оформление заказа',
+      description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.',
+    },
+    {
+      id: '3',
+      icon: 'calculate',
+      title: 'Расчет стоимости',
+      description: 'Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.',
+    },
+    {
+      id: '4',
+      icon: 'payment',
+      title: 'Оплата',
+      description: 'Вы производите оплату удобным способом.',
+    },
+    {
+      id: '5',
+      icon: 'local_shipping',
+      title: 'Доставка',
+      description: 'Мы выкупаем товар и доставляем его вам в кратчайшие сроки.',
+    },
+  ],
+}
+
+async function handleGetPurchaseTerms(c: any) {
+  const client = getSql()
+  try {
+    const rows = (await client`
+      SELECT value FROM site_settings WHERE key = 'purchase_terms_v3' LIMIT 1
+    `) as { value: string }[]
+
+    if (rows[0]?.value) {
+      const data = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value
+      return c.json(data)
+    }
+  } catch (err) {
+    console.warn('Failed to fetch purchase terms setting:', err)
+  }
+  return c.json(DEFAULT_PURCHASE_TERMS)
+}
+
+async function handleUpdatePurchaseTerms(c: any) {
+  const body = await c.req.json()
+  const title = String(body.title ?? DEFAULT_PURCHASE_TERMS.title).trim()
+  const steps = Array.isArray(body.steps) ? body.steps : DEFAULT_PURCHASE_TERMS.steps
+
+  const valueData = JSON.stringify({ title, steps })
+
+  const client = getSql()
+  await client`
+    INSERT INTO site_settings (key, value)
+    VALUES ('purchase_terms_v3', ${valueData})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `
+
+  return c.json({ title, steps })
+}
+
+app.get('/purchase-terms', handleGetPurchaseTerms)
+app.get('/api/purchase-terms', handleGetPurchaseTerms)
+app.put('/purchase-terms', handleUpdatePurchaseTerms)
+app.put('/api/purchase-terms', handleUpdatePurchaseTerms)
+
 /* ─── Official Stores DB & API ────────────────────────────────────── */
 
 type CountryItem = {

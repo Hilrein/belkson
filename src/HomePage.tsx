@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { Link } from 'react-router-dom'
 import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
+import { usePurchaseTerms } from './store/PurchaseTermsContext'
 import type { CatalogProduct } from './store/catalog'
 
 /**
@@ -10,6 +11,7 @@ import type { CatalogProduct } from './store/catalog'
 export default function HomePage() {
   const { newArrivals, favorites, format } = useCatalog()
   const { addToCart } = useCart()
+  const { terms } = usePurchaseTerms()
   const [heroIndex, setHeroIndex] = useState(0)
   const newArrivalsRef = useRef<HTMLDivElement>(null)
   const heroSlideCount = 2
@@ -422,56 +424,27 @@ export default function HomePage() {
       <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Оплата</h3>
       <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Вы производите оплату удобным способом.</p>
       </div>
-      <div className="py-8 border-t border-b border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start">
-      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">Доставка</h3>
-      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">Мы выкупаем товар и доставляем его вам в кратчайшие сроки.</p>
-      </div>
       </div>
       </section>
+
       {/* Variant 3: Visual Narrative */}
       <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim overflow-hidden font-[EB_Garamond,Plus_Jakarta_Sans,sans-serif]">
-      <h2 className="font-headline-md text-headline-md text-primary mb-16 text-center">Вариант 3: Порядок и условия выкупа</h2>
-      <div className="relative">
-      <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
-      <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
-      <div className="flex-1 min-w-[200px] snap-start group">
-      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-      <span className="material-symbols-outlined text-3xl font-light">search</span>
-      </div>
-      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Выбор товара</h3>
-      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&amp;M или Next.</p>
-      </div>
-      <div className="flex-1 min-w-[200px] snap-start group">
-      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-      <span className="material-symbols-outlined text-3xl font-light">edit_document</span>
-      </div>
-      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Оформление заказа</h3>
-      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Присылаете нам ссылки на выбранные товары в Telegram или Instagram.</p>
-      </div>
-      <div className="flex-1 min-w-[200px] snap-start group">
-      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-      <span className="material-symbols-outlined text-3xl font-light">calculate</span>
-      </div>
-      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Расчет стоимости</h3>
-      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Мы рассчитываем итоговую стоимость с учетом доставки и комиссии.</p>
-      </div>
-      <div className="flex-1 min-w-[200px] snap-start group">
-      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-      <span className="material-symbols-outlined text-3xl font-light">payment</span>
-      </div>
-      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Оплата</h3>
-      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Вы производите оплату удобным способом.</p>
-      </div>
-      <div className="flex-1 min-w-[200px] snap-start group">
-      <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-      <span className="material-symbols-outlined text-3xl font-light">local_shipping</span>
-      </div>
-      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">Доставка</h3>
-      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">Мы выкупаем товар и доставляем его вам в кратчайшие сроки.</p>
-      </div>
-      </div>
-      </div>
+        <h2 className="font-headline-md text-headline-md text-primary mb-16 text-center">{terms.title}</h2>
+        <div className="relative">
+          <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
+          <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
+            {terms.steps.map((step) => (
+              <div key={step.id} className="flex-1 min-w-[200px] snap-start group">
+                <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+                  <span className="material-symbols-outlined text-3xl font-light">{step.icon || 'star'}</span>
+                </div>
+                <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">{step.title}</h3>
+                <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
-      </main>
+    </main>
   )
 }
