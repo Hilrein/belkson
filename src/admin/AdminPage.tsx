@@ -871,9 +871,9 @@ export default function AdminPage() {
                               handleUpdateActiveVariant({ layout: e.target.value as any })
                             }
                           >
-                            <option value="list">Нумерованный список (Вариант 1)</option>
-                            <option value="editorial">Построчный минимализм (Вариант 2)</option>
-                            <option value="icons">Круглые иконки (Вариант 3)</option>
+                            <option value="list">Нумерованный список</option>
+                            <option value="editorial">Построчный минимализм</option>
+                            <option value="icons">Круглые иконки</option>
                           </select>
                         </div>
                       </div>
