@@ -828,10 +828,10 @@ export default function AdminPage() {
                 <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 sm:p-6 shadow-sm space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                     <div className="flex-1 space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                            Название варианта (для админки / метки)
+                            Название варианта (для админки)
                           </label>
                           <input
                             type="text"
@@ -852,6 +852,29 @@ export default function AdminPage() {
                             onChange={(e) => handleUpdateActiveVariant({ title: e.target.value })}
                             placeholder="Например: Порядок и условия выкупа"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                            Стиль отображения на сайте
+                          </label>
+                          <select
+                            className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-sm text-on-surface font-medium focus:outline-none focus:ring-1 focus:ring-primary-container cursor-pointer"
+                            value={
+                              activeVariant.layout ||
+                              (activeVariant.id === 'v1'
+                                ? 'list'
+                                : activeVariant.id === 'v2'
+                                  ? 'editorial'
+                                  : 'icons')
+                            }
+                            onChange={(e) =>
+                              handleUpdateActiveVariant({ layout: e.target.value as any })
+                            }
+                          >
+                            <option value="list">Нумерованный список (Вариант 1)</option>
+                            <option value="editorial">Построчный минимализм (Вариант 2)</option>
+                            <option value="icons">Круглые иконки (Вариант 3)</option>
+                          </select>
                         </div>
                       </div>
                     </div>

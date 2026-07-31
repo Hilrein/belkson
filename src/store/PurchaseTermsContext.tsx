@@ -13,6 +13,7 @@ export type PurchaseVariant = {
   badge: string
   title: string
   isActive: boolean
+  layout?: 'list' | 'editorial' | 'icons'
   steps: PurchaseTermStep[]
 }
 
@@ -30,6 +31,7 @@ export const DEFAULT_DYNAMIC_VARIANTS: PurchaseVariant[] = [
     badge: 'Вариант 1',
     title: 'Порядок и условия выкупа',
     isActive: true,
+    layout: 'list',
     steps: [
       { id: '1', icon: 'search', title: 'Выбор товара', description: 'Выбираете вещи на официальных сайтах Zara, H&M или Next.' },
       { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете ссылки на товары в Telegram или Instagram.' },
@@ -43,6 +45,7 @@ export const DEFAULT_DYNAMIC_VARIANTS: PurchaseVariant[] = [
     badge: 'Вариант 2',
     title: 'Порядок и условия выкупа',
     isActive: true,
+    layout: 'editorial',
     steps: [
       { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
       { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },
@@ -56,6 +59,7 @@ export const DEFAULT_DYNAMIC_VARIANTS: PurchaseVariant[] = [
     badge: 'Вариант 3',
     title: 'Порядок и условия выкупа',
     isActive: true,
+    layout: 'icons',
     steps: [
       { id: '1', icon: 'search', title: 'Выбор товара', description: 'Вы выбираете понравившиеся вещи на официальных сайтах Zara, H&M или Next.' },
       { id: '2', icon: 'edit_document', title: 'Оформление заказа', description: 'Присылаете нам ссылки на выбранные товары в Telegram или Instagram.' },

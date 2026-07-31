@@ -353,44 +353,137 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      {/* Dynamic Purchase Terms Variants */}
+      {/* Dynamic Purchase Terms Variants with original design styles restored */}
       {variants
         .filter((v) => v.isActive !== false)
-        .map((variant) => (
-          <section
-            key={variant.id}
-            className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim overflow-hidden font-[EB_Garamond,Plus_Jakarta_Sans,sans-serif]"
-          >
-            {variant.badge && (
-              <p className="text-sm text-on-surface-variant mb-1.5 text-center font-sans">{variant.badge}</p>
-            )}
-            <h2 className="font-headline-md text-headline-md text-primary mb-12 sm:mb-16 text-center">
-              {variant.title}
-            </h2>
-            <div className="relative">
-              <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
-              <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
-                {variant.steps.map((step, idx) => {
-                  const labelPrefix = step.stepLabel ? `${step.stepLabel}: ` : ''
-                  const fullTitle = `${labelPrefix}${step.title}`
-                  return (
-                    <div key={step.id || step.title || idx} className="flex-1 min-w-[200px] snap-start group">
-                      {step.icon && step.icon !== 'none' && step.icon.trim() !== '' && (
-                        <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
-                          <span className="material-symbols-outlined text-3xl font-light">{step.icon}</span>
-                        </div>
-                      )}
-                      <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">
-                        {fullTitle}
+        .map((variant, vIdx) => {
+          const layoutStyle =
+            variant.layout ||
+            (variant.id === 'v1' || vIdx === 0
+              ? 'list'
+              : variant.id === 'v2' || vIdx === 1
+                ? 'editorial'
+                : 'icons')
+
+          if (layoutStyle === 'list') {
+            return (
+              <section
+                key={variant.id}
+                className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim"
+              >
+                {variant.badge && (
+                  <p className="text-sm text-on-surface-variant mb-1.5 text-center font-sans">
+                    {variant.badge}
+                  </p>
+                )}
+                <h2 className="font-headline-md text-headline-md text-primary mb-12 text-center">
+                  {variant.title}
+                </h2>
+                <ol className="max-w-4xl mx-auto divide-y divide-surface-dim rounded-2xl bg-surface-container-low/40 border border-surface-dim overflow-hidden shadow-xs">
+                  {variant.steps.map((step, i) => (
+                    <li
+                      key={step.id || step.title || i}
+                      className={`grid grid-cols-[3rem_1fr] md:grid-cols-[4.5rem_minmax(0,12rem)_1fr] gap-x-3 md:gap-x-6 gap-y-1 px-5 md:px-7 py-5 md:py-6 ${
+                        i < variant.steps.length - 1 ? 'border-b border-surface-dim' : ''
+                      }`}
+                    >
+                      <span className="text-sm text-primary tabular-nums pt-0.5 font-sans font-medium">
+                        {step.stepLabel || String(i + 1).padStart(2, '0')}
+                      </span>
+                      <h3 className="text-base md:text-lg font-medium text-on-surface">
+                        {step.title}
                       </h3>
-                      <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">{step.description}</p>
+                      <p className="col-start-2 md:col-start-3 text-[15px] text-on-surface-variant leading-relaxed">
+                        {step.description}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )
+          }
+
+          if (layoutStyle === 'editorial') {
+            return (
+              <section
+                key={variant.id}
+                className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim"
+              >
+                {variant.badge && (
+                  <p className="text-sm text-on-surface-variant mb-1.5 text-center font-sans">
+                    {variant.badge}
+                  </p>
+                )}
+                <h2 className="font-headline-md text-headline-md text-primary mb-12 text-center">
+                  {variant.title}
+                </h2>
+                <div className="max-w-4xl mx-auto flex flex-col">
+                  {variant.steps.map((step, i) => (
+                    <div
+                      key={step.id || step.title || i}
+                      className={`py-8 border-t border-[#ce7ed5]/20 flex flex-col md:flex-row gap-4 md:gap-12 items-start ${
+                        i % 2 === 1 ? 'bg-surface-container-low/50 px-4 sm:px-6 rounded-2xl' : ''
+                      } ${i === variant.steps.length - 1 ? 'border-b' : ''}`}
+                    >
+                      <h3 className="font-headline-md text-xl text-primary md:w-1/3 shrink-0">
+                        {step.stepLabel ? `${step.stepLabel}: ${step.title}` : step.title}
+                      </h3>
+                      <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                        {step.description}
+                      </p>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
+              </section>
+            )
+          }
+
+          // Default / Style 3: Visual Narrative (Icons)
+          return (
+            <section
+              key={variant.id}
+              className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20 border-t border-surface-dim overflow-hidden font-[EB_Garamond,Plus_Jakarta_Sans,sans-serif]"
+            >
+              {variant.badge && (
+                <p className="text-sm text-on-surface-variant mb-1.5 text-center font-sans">
+                  {variant.badge}
+                </p>
+              )}
+              <h2 className="font-headline-md text-headline-md text-primary mb-12 sm:mb-16 text-center">
+                {variant.title}
+              </h2>
+              <div className="relative">
+                <div className="hidden md:block absolute top-10 left-0 w-full h-[1px] bg-outline-variant/30 z-0"></div>
+                <div className="flex flex-col md:flex-row gap-8 overflow-x-auto hide-scroll relative z-10 pb-8 snap-x snap-mandatory w-full max-w-full px-0">
+                  {variant.steps.map((step, idx) => {
+                    const labelPrefix = step.stepLabel ? `${step.stepLabel}: ` : ''
+                    const fullTitle = `${labelPrefix}${step.title}`
+                    return (
+                      <div
+                        key={step.id || step.title || idx}
+                        className="flex-1 min-w-[200px] snap-start group"
+                      >
+                        {step.icon && step.icon !== 'none' && step.icon.trim() !== '' && (
+                          <div className="w-20 h-20 mx-auto bg-surface border border-outline-variant/30 text-primary rounded-full flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#ce7ed5]/10 group-hover:border-[#ce7ed5] transition-colors duration-300">
+                            <span className="material-symbols-outlined text-3xl font-light">
+                              {step.icon}
+                            </span>
+                          </div>
+                        )}
+                        <h3 className="text-center font-body-lg text-lg text-primary mb-3 uppercase tracking-widest font-medium">
+                          {fullTitle}
+                        </h3>
+                        <p className="text-center font-body-md text-on-surface-variant text-sm leading-relaxed">
+                          {step.description}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
-        ))}
+            </section>
+          )
+        })}
     </main>
   )
 }
