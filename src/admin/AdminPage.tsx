@@ -949,23 +949,39 @@ export default function AdminPage() {
                                 onClick={() => openIconPicker(step.id)}
                                 title="Нажмите для выбора иконки"
                               >
-                                <Icon name={step.icon || 'star'} className="text-xl group-hover/icon:scale-110 transition-transform" />
+                                {step.icon && step.icon !== 'none' ? (
+                                  <Icon name={step.icon} className="text-xl group-hover/icon:scale-110 transition-transform" />
+                                ) : (
+                                  <span className="text-[10px] text-gray-400 font-bold">НЕТ</span>
+                                )}
                               </button>
                               <div className="flex-1 relative">
                                 <input
                                   type="text"
-                                  className="w-full pl-2.5 pr-14 py-2 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                                  value={step.icon}
+                                  className="w-full pl-2.5 pr-20 py-2 bg-surface-container-lowest border border-gray-200 rounded-md text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                                  value={step.icon || ''}
                                   onChange={(e) => handleUpdateStep(step.id, 'icon', e.target.value)}
-                                  placeholder="search, payment..."
+                                  placeholder="Без иконки..."
                                 />
-                                <button
-                                  type="button"
-                                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#ce7ed5] hover:underline font-medium cursor-pointer"
-                                  onClick={() => openIconPicker(step.id)}
-                                >
-                                  Выбрать
-                                </button>
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                  {step.icon && step.icon !== 'none' && (
+                                    <button
+                                      type="button"
+                                      className="text-xs text-gray-400 hover:text-red-500 font-bold cursor-pointer px-1"
+                                      onClick={() => handleUpdateStep(step.id, 'icon', '')}
+                                      title="Убрать иконку"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="text-xs text-[#ce7ed5] hover:underline font-medium cursor-pointer"
+                                    onClick={() => openIconPicker(step.id)}
+                                  >
+                                    Выбрать
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -2058,7 +2074,7 @@ export default function AdminPage() {
           </div>
 
           {/* Search bar */}
-          <div className="p-4 border-b border-gray-100 bg-surface-container-lowest shrink-0">
+          <div className="p-4 border-b border-gray-100 bg-surface-container-lowest shrink-0 space-y-3">
             <div className="relative">
               <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
               <input
@@ -2078,6 +2094,22 @@ export default function AdminPage() {
                 </button>
               )}
             </div>
+
+            {/* Option to clear / no icon */}
+            <button
+              type="button"
+              className={`w-full py-2 px-3 rounded-lg border border-dashed flex items-center justify-center gap-2 transition-all cursor-pointer text-xs font-medium ${
+                targetStepId &&
+                (!activeVariant?.steps.find((s) => s.id === targetStepId)?.icon ||
+                  activeVariant?.steps.find((s) => s.id === targetStepId)?.icon === 'none')
+                  ? 'bg-gray-200 border-gray-400 text-gray-800 font-bold'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-gray-400'
+              }`}
+              onClick={() => selectIcon('')}
+            >
+              <Icon name="block" className="text-sm text-gray-500" />
+              <span>Без иконки (не показывать круглую иконку)</span>
+            </button>
           </div>
 
           {/* Icon Grid Content */}
