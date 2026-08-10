@@ -758,6 +758,164 @@ app.delete('/official-stores/:id', async (c) => {
   return c.json({ ok: true, id })
 })
 
+/* ─── Discounts / Promotions DB & API ─────────────────────────────── */
+
+type DbDiscount = {
+  id: number
+  title: string
+  type: 'percent' | 'fixed'
+  threshold_rub: number
+  value: number
+  is_active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+function mapDiscount(r: DbDiscount) {
+  return {
+    id: r.id,
+    title: r.title,
+    type: r.type,
+    thresholdRub: Number(r.threshold_rub),
+    value: Number(r.value),
+    isActive: Boolean(r.is_active),
+    sortOrder: Number(r.sort_order ?? 0),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }
+}
+
+async function ensureDiscountsTable() {
+  const client = getSql()
+  const existing = (await client`
+    SELECT to_regclass('discounts') AS cls
+  `) as { cls: string | null }[]
+  if (existing[0]?.cls) return
+  await client`
+    CREATE TABLE IF NOT EXISTS discounts (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'percent' CHECK (type IN ('percent', 'fixed')),
+      threshold_rub INTEGER NOT NULL DEFAULT 0 CHECK (threshold_rub >= 0),
+      value NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (value >= 0),
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `
+  await client`
+    INSERT INTO discounts (title, type, threshold_rub, value, is_active, sort_order)
+    VALUES
+      ('Скидка 5% от 5 000 ₽', 'percent', 5000, 5, true, 1),
+      ('Скидка 10% от 10 000 ₽', 'percent', 10000, 10, true, 2)
+  `
+}
+
+function parseDiscountBody(body: Record<string, unknown>) {
+  const title = String(body.title ?? '').trim() || 'Скидка'
+  const type = body.type === 'fixed' ? 'fixed' : 'percent'
+  const thresholdRub = Math.max(0, Math.round(Number(body.thresholdRub) || 0))
+  const value = Math.max(0, Number(body.value) || 0)
+  const sortOrder = Math.round(Number(body.sortOrder) || 0)
+  const isActive = body.isActive !== undefined ? Boolean(body.isActive) : true
+  return { title, type, thresholdRub, value, sortOrder, isActive }
+}
+
+async function handleGetDiscounts(c: any) {
+  const client = getSql()
+  await ensureDiscountsTable()
+  const rows = (await client`
+    SELECT * FROM discounts ORDER BY sort_order ASC, id ASC
+  `) as DbDiscount[]
+  return c.json({ discounts: rows.map(mapDiscount) })
+}
+
+async function handlePostDiscounts(c: any) {
+  const body = await c.req.json()
+  const client = getSql()
+  await ensureDiscountsTable()
+  const { title, type, thresholdRub, value, sortOrder, isActive } =
+    parseDiscountBody(body)
+
+  const rows = (await client`
+    INSERT INTO discounts (title, type, threshold_rub, value, is_active, sort_order)
+    VALUES (${title}, ${type}, ${thresholdRub}, ${value}, ${isActive}, ${sortOrder})
+    RETURNING *
+  `) as DbDiscount[]
+
+  return c.json({ discount: mapDiscount(rows[0]) }, 201)
+}
+
+async function handlePutDiscounts(c: any) {
+  const id = Number(c.req.param('id'))
+  if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+  const body = await c.req.json()
+  const client = getSql()
+  await ensureDiscountsTable()
+
+  const existing = (await client`
+    SELECT * FROM discounts WHERE id = ${id} LIMIT 1
+  `) as DbDiscount[]
+  if (!existing[0]) return c.json({ error: 'Not found' }, 404)
+
+  const cur = existing[0]
+  const title = body.title !== undefined ? String(body.title).trim() || 'Скидка' : cur.title
+  const type = body.type === 'fixed' ? 'fixed' : body.type === 'percent' ? 'percent' : cur.type
+  const thresholdRub =
+    body.thresholdRub !== undefined
+      ? Math.max(0, Math.round(Number(body.thresholdRub) || 0))
+      : Number(cur.threshold_rub)
+  const value =
+    body.value !== undefined ? Math.max(0, Number(body.value) || 0) : Number(cur.value)
+  const sortOrder =
+    body.sortOrder !== undefined
+      ? Math.round(Number(body.sortOrder) || 0)
+      : Number(cur.sort_order)
+  const isActive =
+    body.isActive !== undefined ? Boolean(body.isActive) : Boolean(cur.is_active)
+
+  const rows = (await client`
+    UPDATE discounts SET
+      title = ${title},
+      type = ${type},
+      threshold_rub = ${thresholdRub},
+      value = ${value},
+      is_active = ${isActive},
+      sort_order = ${sortOrder},
+      updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `) as DbDiscount[]
+
+  return c.json({ discount: mapDiscount(rows[0]) })
+}
+
+async function handleDeleteDiscounts(c: any) {
+  const id = Number(c.req.param('id'))
+  if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+  const client = getSql()
+  await ensureDiscountsTable()
+  const rows = (await client`
+    DELETE FROM discounts WHERE id = ${id} RETURNING id
+  `) as { id: number }[]
+
+  if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+  return c.json({ ok: true, id })
+}
+
+app.get('/discounts', handleGetDiscounts)
+app.get('/api/discounts', handleGetDiscounts)
+app.post('/discounts', handlePostDiscounts)
+app.post('/api/discounts', handlePostDiscounts)
+app.put('/discounts/:id', handlePutDiscounts)
+app.put('/api/discounts/:id', handlePutDiscounts)
+app.delete('/discounts/:id', handleDeleteDiscounts)
+app.delete('/api/discounts/:id', handleDeleteDiscounts)
+
 app.onError((err, c) => {
   console.error(err)
   return c.json(

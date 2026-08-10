@@ -515,6 +515,130 @@ async function buildApp() {
   app.delete('/official-stores/:id', handleDeleteOfficialStore)
   app.delete('/api/official-stores/:id', handleDeleteOfficialStore)
 
+  /* ─── Discounts / Promotions DB & API ────────────────────────────── */
+  async function ensureDiscountsTable() {
+    try {
+      const existing = await sql`SELECT to_regclass('discounts') AS cls`
+      if (existing[0]?.cls) return
+      await sql`
+        CREATE TABLE IF NOT EXISTS discounts (
+          id SERIAL PRIMARY KEY,
+          title TEXT NOT NULL,
+          type TEXT NOT NULL DEFAULT 'percent' CHECK (type IN ('percent', 'fixed')),
+          threshold_rub INTEGER NOT NULL DEFAULT 0 CHECK (threshold_rub >= 0),
+          value NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (value >= 0),
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          sort_order INT NOT NULL DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+      `
+      await sql`
+        INSERT INTO discounts (title, type, threshold_rub, value, is_active, sort_order)
+        VALUES
+          ('Скидка 5% от 5 000 ₽', 'percent', 5000, 5, true, 1),
+          ('Скидка 10% от 10 000 ₽', 'percent', 10000, 10, true, 2)
+      `
+    } catch (e) {
+      console.warn('ensureDiscountsTable error:', e)
+    }
+  }
+
+  function mapDiscount(r: any) {
+    return {
+      id: r.id,
+      title: r.title,
+      type: r.type,
+      thresholdRub: Number(r.threshold_rub),
+      value: Number(r.value),
+      isActive: Boolean(r.is_active),
+      sortOrder: Number(r.sort_order ?? 0),
+    }
+  }
+
+  function parseDiscountBody(body: any) {
+    return {
+      title: String(body.title ?? '').trim() || 'Скидка',
+      type: body.type === 'fixed' ? 'fixed' : 'percent',
+      thresholdRub: Math.max(0, Math.round(Number(body.thresholdRub) || 0)),
+      value: Math.max(0, Number(body.value) || 0),
+      sortOrder: Math.round(Number(body.sortOrder) || 0),
+      isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+    }
+  }
+
+  async function handleGetDiscounts(c: any) {
+    await ensureDiscountsTable()
+    const rows = await sql`SELECT * FROM discounts ORDER BY sort_order ASC, id ASC`
+    return c.json({ discounts: rows.map(mapDiscount) })
+  }
+
+  async function handleCreateDiscount(c: any) {
+    await ensureDiscountsTable()
+    const body = await c.req.json()
+    const { title, type, thresholdRub, value, sortOrder, isActive } = parseDiscountBody(body)
+    const rows = await sql`
+      INSERT INTO discounts (title, type, threshold_rub, value, is_active, sort_order)
+      VALUES (${title}, ${type}, ${thresholdRub}, ${value}, ${isActive}, ${sortOrder})
+      RETURNING *
+    `
+    return c.json({ discount: mapDiscount(rows[0]) }, 201)
+  }
+
+  async function handleUpdateDiscount(c: any) {
+    await ensureDiscountsTable()
+    const id = Number(c.req.param('id'))
+    const body = await c.req.json()
+    const existing = await sql`SELECT * FROM discounts WHERE id = ${id} LIMIT 1`
+    const cur = existing[0]
+    if (!cur) return c.json({ error: 'Not found' }, 404)
+    const title = body.title !== undefined ? String(body.title).trim() || 'Скидка' : cur.title
+    const type = body.type === 'fixed' ? 'fixed' : body.type === 'percent' ? 'percent' : cur.type
+    const thresholdRub =
+      body.thresholdRub !== undefined
+        ? Math.max(0, Math.round(Number(body.thresholdRub) || 0))
+        : Number(cur.threshold_rub)
+    const value =
+      body.value !== undefined ? Math.max(0, Number(body.value) || 0) : Number(cur.value)
+    const sortOrder =
+      body.sortOrder !== undefined
+        ? Math.round(Number(body.sortOrder) || 0)
+        : Number(cur.sort_order)
+    const isActive =
+      body.isActive !== undefined ? Boolean(body.isActive) : Boolean(cur.is_active)
+    const rows = await sql`
+      UPDATE discounts
+      SET title = ${title},
+          type = ${type},
+          threshold_rub = ${thresholdRub},
+          value = ${value},
+          is_active = ${isActive},
+          sort_order = ${sortOrder},
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `
+    const r = rows[0]
+    return c.json({ discount: mapDiscount(r) })
+  }
+
+  async function handleDeleteDiscount(c: any) {
+    await ensureDiscountsTable()
+    const id = Number(c.req.param('id'))
+    const rows = await sql`DELETE FROM discounts WHERE id = ${id} RETURNING id`
+    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+    return c.json({ ok: true, id })
+  }
+
+  app.get('/discounts', handleGetDiscounts)
+  app.get('/api/discounts', handleGetDiscounts)
+  app.post('/discounts', handleCreateDiscount)
+  app.post('/api/discounts', handleCreateDiscount)
+  app.put('/discounts/:id', handleUpdateDiscount)
+  app.put('/api/discounts/:id', handleUpdateDiscount)
+  app.delete('/discounts/:id', handleDeleteDiscount)
+  app.delete('/api/discounts/:id', handleDeleteDiscount)
+
   app.onError((err, c) => {
     console.error(err)
     return c.json(

@@ -90,3 +90,24 @@ CREATE TABLE IF NOT EXISTS next_sync_queue (
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (region, category, status)
 );
+
+-- Automatic cart discounts / promotions.
+-- Cart applies the best applicable discount whose threshold_rub <= subtotal.
+CREATE TABLE IF NOT EXISTS discounts (
+  id            SERIAL PRIMARY KEY,
+  title         TEXT NOT NULL,
+  type          TEXT NOT NULL DEFAULT 'percent'
+                  CHECK (type IN ('percent', 'fixed')),
+  threshold_rub INTEGER NOT NULL DEFAULT 0 CHECK (threshold_rub >= 0),
+  value         NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (value >= 0),
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order    INT NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO discounts (title, type, threshold_rub, value, is_active, sort_order)
+VALUES
+  ('Скидка 5% от 5 000 ₽', 'percent', 5000, 5, true, 1),
+  ('Скидка 10% от 10 000 ₽', 'percent', 10000, 10, true, 2)
+ON CONFLICT DO NOTHING;

@@ -4,6 +4,7 @@ import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
 import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresContext'
+import { useDiscounts, type Discount, type DiscountType } from '../store/DiscountsContext'
 import {
   usePurchaseTerms,
   type PurchaseTermStep,
@@ -165,9 +166,17 @@ export default function AdminPage() {
     deleteStore,
   } = useOfficialStores()
 
+  const {
+    discounts: allDiscounts,
+    loading: discountsLoading,
+    addDiscount,
+    updateDiscount,
+    deleteDiscount,
+  } = useDiscounts()
+
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
 
-  const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms'>('products')
+  const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms' | 'discounts'>('products')
 
   // Dynamic variants state
   const [localVariants, setLocalVariants] = useState<PurchaseVariant[]>(DEFAULT_DYNAMIC_VARIANTS)
@@ -326,6 +335,100 @@ export default function AdminPage() {
   const [deletingStoreId, setDeletingStoreId] = useState<number | null>(null)
   const [storeDeleting, setStoreDeleting] = useState(false)
 
+  // Discount Drawer state
+  const [discountDrawerOpen, setDiscountDrawerOpen] = useState(false)
+  const [discountDrawerMode, setDiscountDrawerMode] = useState<'add' | 'edit'>('add')
+  const [editingDiscountId, setEditingDiscountId] = useState<number | null>(null)
+  const [discountTitle, setDiscountTitle] = useState('')
+  const [discountType, setDiscountType] = useState<DiscountType>('percent')
+  const [discountThreshold, setDiscountThreshold] = useState('')
+  const [discountValue, setDiscountValue] = useState('')
+  const [discountSortOrder, setDiscountSortOrder] = useState('')
+  const [discountIsActive, setDiscountIsActive] = useState(true)
+  const [discountSaving, setDiscountSaving] = useState(false)
+
+  // Delete Discount modal state
+  const [deleteDiscountModalOpen, setDeleteDiscountModalOpen] = useState(false)
+  const [deletingDiscountId, setDeletingDiscountId] = useState<number | null>(null)
+  const [discountDeleting, setDiscountDeleting] = useState(false)
+
+  const openAddDiscount = () => {
+    setDiscountDrawerMode('add')
+    setEditingDiscountId(null)
+    setDiscountTitle('')
+    setDiscountType('percent')
+    setDiscountThreshold('')
+    setDiscountValue('')
+    setDiscountSortOrder(String(allDiscounts.length + 1))
+    setDiscountIsActive(true)
+    setDiscountDrawerOpen(true)
+  }
+
+  const openEditDiscount = (discount: Discount) => {
+    setDiscountDrawerMode('edit')
+    setEditingDiscountId(discount.id)
+    setDiscountTitle(discount.title)
+    setDiscountType(discount.type)
+    setDiscountThreshold(String(discount.thresholdRub))
+    setDiscountValue(String(discount.value))
+    setDiscountSortOrder(String(discount.sortOrder))
+    setDiscountIsActive(discount.isActive)
+    setDiscountDrawerOpen(true)
+  }
+
+  const closeDiscountDrawer = () => {
+    setDiscountDrawerOpen(false)
+    setEditingDiscountId(null)
+  }
+
+  const handleSaveDiscount = async () => {
+    if (!discountTitle.trim()) {
+      alert('Введите название скидки')
+      return
+    }
+    const threshold = Math.max(0, Math.round(Number(discountThreshold) || 0))
+    const value = Math.max(0, Number(discountValue) || 0)
+    if (value <= 0) {
+      alert('Значение скидки должно быть больше 0')
+      return
+    }
+    setDiscountSaving(true)
+    try {
+      const payload = {
+        title: discountTitle.trim(),
+        type: discountType,
+        thresholdRub: threshold,
+        value,
+        sortOrder: Math.round(Number(discountSortOrder) || 0),
+        isActive: discountIsActive,
+      }
+      if (discountDrawerMode === 'add') {
+        await addDiscount(payload)
+      } else if (editingDiscountId != null) {
+        await updateDiscount(editingDiscountId, payload)
+      }
+      closeDiscountDrawer()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка сохранения скидки')
+    } finally {
+      setDiscountSaving(false)
+    }
+  }
+
+  const confirmDeleteDiscount = async () => {
+    if (deletingDiscountId == null) return
+    setDiscountDeleting(true)
+    try {
+      await deleteDiscount(deletingDiscountId)
+      setDeleteDiscountModalOpen(false)
+      setDeletingDiscountId(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка удаления скидки')
+    } finally {
+      setDiscountDeleting(false)
+    }
+  }
+
   const openAddStore = () => {
     setStoreDrawerMode('add')
     setEditingStoreId(null)
@@ -444,7 +547,9 @@ export default function AdminPage() {
       navOpen ||
       deleteOpen ||
       storeDrawerOpen ||
-      deleteStoreModalOpen
+      deleteStoreModalOpen ||
+      discountDrawerOpen ||
+      deleteDiscountModalOpen
     document.body.style.overflow = locked ? 'hidden' : ''
     return () => {
       document.body.style.overflow = ''
@@ -456,6 +561,8 @@ export default function AdminPage() {
     deleteOpen,
     storeDrawerOpen,
     deleteStoreModalOpen,
+    discountDrawerOpen,
+    deleteDiscountModalOpen,
   ])
 
   // Close mobile nav on desktop resize
@@ -658,7 +765,7 @@ export default function AdminPage() {
                 type="button"
                 className={`w-full text-left cursor-pointer ${navLinkClass(isActive)}`}
                 onClick={() => {
-                  setActiveTab(item.id as 'products' | 'official-stores' | 'purchase-terms')
+                  setActiveTab(item.id as 'products' | 'official-stores' | 'purchase-terms' | 'discounts')
                   closeNav()
                 }}
               >
@@ -1069,6 +1176,124 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'discounts' ? (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+                    Скидки и акции
+                  </h1>
+                  <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                    Автоматические скидки в корзине. Применяется лучшая активная
+                    скидка, порог которой ниже суммы корзины (например, −5% от
+                    5 000 ₽ и −10% от 10 000 ₽).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="flex items-center justify-center gap-2 bg-[#ce7ed5] text-white px-4 py-2.5 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] w-full md:w-auto shrink-0 cursor-pointer font-medium"
+                  onClick={openAddDiscount}
+                >
+                  <Icon name="add" className="text-sm" />
+                  <span>Добавить скидку</span>
+                </button>
+              </div>
+
+              {discountsLoading ? (
+                <p className="text-sm text-on-surface-variant">Загрузка скидок из Neon…</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {allDiscounts.map((discount) => (
+                    <div
+                      key={discount.id}
+                      className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <h3 className="text-lg font-bold text-on-surface leading-snug">
+                            {discount.title}
+                          </h3>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                              discount.isActive
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            }`}
+                          >
+                            {discount.isActive ? 'Активна' : 'Отключена'}
+                          </span>
+                        </div>
+
+                        <div className="mb-4 space-y-2 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-on-surface-variant">Скидка</span>
+                            <span className="font-semibold text-[#ce7ed5] text-base">
+                              {discount.type === 'percent'
+                                ? `−${discount.value}%`
+                                : `−${discount.value} ₽`}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-on-surface-variant">От суммы</span>
+                            <span className="font-medium text-on-surface">
+                              {discount.thresholdRub.toLocaleString('ru-RU')} ₽
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-on-surface-variant">Тип</span>
+                            <span className="inline-block bg-surface px-2 py-0.5 rounded text-xs border border-gray-200">
+                              {discount.type === 'percent'
+                                ? 'Процентная'
+                                : 'Фиксированная'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-4 border-t border-gray-100">
+                        <button
+                          type="button"
+                          title={discount.isActive ? 'Деактивировать' : 'Активировать'}
+                          className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-200 ease-in-out ${
+                            discount.isActive ? 'bg-[#ce7ed5]' : 'bg-gray-300'
+                          }`}
+                          onClick={() => {
+                            void updateDiscount(discount.id, { isActive: !discount.isActive })
+                          }}
+                        >
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                              discount.isActive ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-on-surface hover:bg-surface-variant rounded-md transition-colors cursor-pointer"
+                            onClick={() => openEditDiscount(discount)}
+                          >
+                            <EditIcon />
+                            <span>Изменить</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                            onClick={() => {
+                              setDeletingDiscountId(discount.id)
+                              setDeleteDiscountModalOpen(true)
+                            }}
+                          >
+                            <Icon name="delete" className="text-sm" />
+                            <span>Удалить</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -2029,6 +2254,219 @@ export default function AdminPage() {
               disabled={storeDeleting}
             >
               {storeDeleting ? 'Удаление…' : 'Удалить'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Discount slide-over drawer */}
+      <div
+        className={`fixed inset-0 bg-black/20 z-[60] transition-opacity ${
+          discountDrawerOpen ? '' : 'hidden'
+        }`}
+        onClick={closeDiscountDrawer}
+        aria-hidden={!discountDrawerOpen}
+      />
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-surface-container-lowest z-[70] flex flex-col border-l border-gray-200 transition-transform duration-300 ease-in-out ${
+          discountDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        aria-hidden={!discountDrawerOpen}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+          <h2 className="text-lg sm:text-headline-md font-headline-md text-on-surface">
+            {discountDrawerMode === 'edit' ? 'Редактировать скидку' : 'Добавить скидку'}
+          </h2>
+          <button
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded cursor-pointer"
+            onClick={closeDiscountDrawer}
+            aria-label="Закрыть"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-2">
+              Название скидки *
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="Например: Скидка 5% от 5 000 ₽"
+              value={discountTitle}
+              onChange={(e) => setDiscountTitle(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-2">
+              Тип скидки
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { value: 'percent', label: 'Процентная', hint: '−N% от суммы' },
+                  { value: 'fixed', label: 'Фиксированная', hint: '−N ₽ от суммы' },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`flex flex-col items-start gap-0.5 px-3 py-2.5 rounded-md border text-left transition-colors cursor-pointer ${
+                    discountType === opt.value
+                      ? 'border-[#ce7ed5] bg-[#ce7ed5]/10 text-[#ce7ed5]'
+                      : 'border-gray-200 bg-surface text-on-surface hover:bg-surface-variant'
+                  }`}
+                  onClick={() => setDiscountType(opt.value)}
+                >
+                  <span className="text-sm font-medium">{opt.label}</span>
+                  <span className="text-xs opacity-80">{opt.hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-sm font-medium text-on-surface mb-2">
+                Порог, от (₽)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder="5000"
+                value={discountThreshold}
+                onChange={(e) => setDiscountThreshold(e.target.value)}
+              />
+              <p className="text-xs text-on-surface-variant mt-1">
+                Скидка применяется, когда сумма корзины достигает этой суммы.
+              </p>
+            </div>
+            <div>
+              <label className="block text-body-sm font-medium text-on-surface mb-2">
+                {discountType === 'percent' ? 'Процент скидки (%)' : 'Сумма скидки (₽)'}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step={discountType === 'percent' ? '1' : '1'}
+                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder={discountType === 'percent' ? '5' : '500'}
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-2">
+              Порядок сортировки
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="1"
+              value={discountSortOrder}
+              onChange={(e) => setDiscountSortOrder(e.target.value)}
+            />
+            <p className="text-xs text-on-surface-variant mt-1">
+              Меньшие значения отображаются раньше в списке.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer text-body-sm text-on-surface">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 text-[#ce7ed5] focus:ring-[#ce7ed5]"
+              checked={discountIsActive}
+              onChange={(e) => setDiscountIsActive(e.target.checked)}
+            />
+            Скидка активна (применяется в корзине)
+          </label>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 bg-surface flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+            onClick={closeDiscountDrawer}
+            disabled={discountSaving}
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            className="bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium disabled:opacity-60 cursor-pointer"
+            onClick={() => void handleSaveDiscount()}
+            disabled={discountSaving}
+          >
+            {discountSaving ? 'Сохранение…' : 'Сохранить'}
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Discount Confirmation Modal */}
+      <div
+        className={`fixed inset-0 z-[90] flex items-center justify-center p-4 ${
+          deleteDiscountModalOpen ? '' : 'hidden'
+        }`}
+        aria-hidden={!deleteDiscountModalOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/30"
+          onClick={() => !discountDeleting && setDeleteDiscountModalOpen(false)}
+        />
+        <div
+          className="relative z-10 w-full max-w-md bg-surface-container-lowest border border-gray-200 rounded-md shadow-lg flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+            <h2 className="text-base sm:text-xl font-semibold text-on-surface pr-2">
+              Удалить скидку?
+            </h2>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface transition-colors p-2 rounded-md hover:bg-surface-variant shrink-0 cursor-pointer"
+              onClick={() => setDeleteDiscountModalOpen(false)}
+              disabled={discountDeleting}
+              aria-label="Закрыть"
+            >
+              <Icon name="close" className="text-sm" />
+            </button>
+          </div>
+          <div className="p-4 sm:p-6 space-y-3">
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Скидка перестанет применяться в корзине навсегда.
+            </p>
+            <p className="text-sm text-on-surface-variant">
+              Это действие нельзя отменить.
+            </p>
+          </div>
+          <div className="p-3 sm:p-4 border-t border-gray-200 bg-surface flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md border border-gray-200 text-sm font-semibold text-on-surface hover:bg-surface-variant transition-colors w-full sm:w-auto cursor-pointer"
+              onClick={() => setDeleteDiscountModalOpen(false)}
+              disabled={discountDeleting}
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2.5 sm:py-2 rounded-md bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors w-full sm:w-auto disabled:opacity-60 cursor-pointer"
+              onClick={() => void confirmDeleteDiscount()}
+              disabled={discountDeleting}
+            >
+              {discountDeleting ? 'Удаление…' : 'Удалить'}
             </button>
           </div>
         </div>

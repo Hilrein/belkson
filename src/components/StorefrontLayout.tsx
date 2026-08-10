@@ -25,7 +25,11 @@ export default function StorefrontLayout() {
   const {
     items: cartItems,
     totalCount,
+    subtotalRub,
+    discountRub,
     totalRub,
+    activeDiscount,
+    nextDiscount,
     removeFromCart,
     setQuantity,
   } = useCart()
@@ -36,6 +40,7 @@ export default function StorefrontLayout() {
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [resaleOpen, setResaleOpen] = useState(true)
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -500,36 +505,54 @@ export default function StorefrontLayout() {
               ))}
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
-            <div className="flex flex-col gap-5">
-              <h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">
+            <div className="flex flex-col">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between gap-2 font-headline-md text-sm uppercase tracking-wider text-outline hover:text-primary transition-colors"
+                onClick={() => setResaleOpen((v) => !v)}
+                aria-expanded={resaleOpen}
+              >
                 Выкуп с официальных сайтов
-              </h3>
-              {activeOfficialStores.map((store) => {
-                const first = store.countries[0] as unknown
-                const firstUrl = first && typeof first === 'object' ? String((first as { url?: string }).url || '') : ''
-                const isExternal = firstUrl.startsWith('http://') || firstUrl.startsWith('https://')
-                return isExternal ? (
-                  <a
-                    key={store.id}
-                    className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                    href={firstUrl || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={toggleNavDrawer}
-                  >
-                    {store.name}
-                  </a>
-                ) : (
-                  <Link
-                    key={store.id}
-                    className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                    to={firstUrl || `/shop/${store.name.toLowerCase()}`}
-                    onClick={toggleNavDrawer}
-                  >
-                    {store.name}
-                  </Link>
-                )
-              })}
+                <span
+                  className={`material-symbols-outlined text-[18px] transition-transform duration-300 ${
+                    resaleOpen ? '' : '-rotate-90'
+                  }`}
+                >
+                  expand_more
+                </span>
+              </button>
+              <div
+                className={`flex flex-col gap-5 overflow-hidden transition-all duration-300 ease-in-out ${
+                  resaleOpen ? 'max-h-96 mt-5' : 'max-h-0'
+                }`}
+              >
+                {activeOfficialStores.map((store) => {
+                  const first = store.countries[0] as unknown
+                  const firstUrl = first && typeof first === 'object' ? String((first as { url?: string }).url || '') : ''
+                  const isExternal = firstUrl.startsWith('http://') || firstUrl.startsWith('https://')
+                  return isExternal ? (
+                    <a
+                      key={store.id}
+                      className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
+                      href={firstUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={toggleNavDrawer}
+                    >
+                      {store.name}
+                    </a>
+                  ) : (
+                    <Link
+                      key={store.id}
+                      className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
+                      to={firstUrl || `/shop/${store.name.toLowerCase()}`}
+                      onClick={toggleNavDrawer}
+                    >
+                      {store.name}
+                    </Link>
+                  )
+                })}
+              </div>
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
             <div className="flex flex-col gap-5">
@@ -676,9 +699,55 @@ export default function StorefrontLayout() {
             </div>
           )}
           <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
+            {nextDiscount && (
+              <div className="mb-4">
+                <p className="mb-2 text-xs text-on-surface-variant">
+                  Ещё{' '}
+                  <span className="font-semibold text-on-surface">
+                    {format(nextDiscount.thresholdRub - subtotalRub)}
+                  </span>{' '}
+                  до скидки{' '}
+                  <span className="font-semibold text-primary">
+                    {nextDiscount.type === 'percent'
+                      ? `${nextDiscount.value}%`
+                      : format(nextDiscount.value)}
+                  </span>
+                </p>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.round(
+                          (subtotalRub / nextDiscount.thresholdRub) * 100,
+                        ),
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
+              <span>Сумма</span>
+              <span>{format(subtotalRub)}</span>
+            </div>
+            {activeDiscount && discountRub > 0 && (
+              <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
+                <span>
+                  Скидка{' '}
+                  {activeDiscount.type === 'percent'
+                    ? `${activeDiscount.value}%`
+                    : ''}
+                </span>
+                <span className="font-semibold">−{format(discountRub)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
               <span>Итого</span>
-              <span className="font-bold">{format(totalRub)}</span>
+              <span className="font-bold text-primary">
+                {format(totalRub)}
+              </span>
             </div>
             <button
               type="button"
@@ -690,7 +759,13 @@ export default function StorefrontLayout() {
               }`}
               onClick={() => {
                 if (cartItems.length === 0) return
-                openTelegramOrder(cartItems, format(totalRub))
+                const discountLabel =
+                  activeDiscount && discountRub > 0
+                    ? activeDiscount.type === 'percent'
+                      ? `−${activeDiscount.value}% (${format(discountRub)})`
+                      : `−${format(discountRub)}`
+                    : undefined
+                openTelegramOrder(cartItems, format(totalRub), discountLabel)
               }}
             >
               Оформить заказ

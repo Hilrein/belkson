@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { CatalogProduct } from './catalog'
+import { useDiscounts, type Discount } from './DiscountsContext'
 
 export type CartLine = {
   productId: number
@@ -21,7 +22,16 @@ export type CartLine = {
 type CartContextValue = {
   items: CartLine[]
   totalCount: number
+  /** Sum of all line totals before any discount */
+  subtotalRub: number
+  /** Ruble amount automatically discounted (0 if none applies) */
+  discountRub: number
+  /** Final payable amount after the automatic discount */
   totalRub: number
+  /** The applied discount rule, or null */
+  activeDiscount: Discount | null
+  /** Next discount rule that becomes available as subtotal grows, or null */
+  nextDiscount: Discount | null
   addToCart: (product: CatalogProduct, qty?: number) => void
   removeFromCart: (productId: number) => void
   setQuantity: (productId: number, quantity: number) => void
@@ -49,6 +59,7 @@ function saveCart(items: CartLine[]) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLine[]>(() => loadCart())
+  const { discounts } = useDiscounts()
 
   useEffect(() => {
     saveCart(items)
@@ -97,16 +108,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items],
   )
 
-  const totalRub = useMemo(
+  const subtotalRub = useMemo(
     () => items.reduce((s, l) => s + l.priceRub * l.quantity, 0),
     [items],
+  )
+
+  /**
+   * Best applicable automatic discount: the active rule with the largest
+   * threshold still below the subtotal (matches the -5% / -10% ladder).
+   */
+  const activeDiscount = useMemo(() => {
+    const applicable = discounts
+      .filter((d) => d.isActive && d.thresholdRub <= subtotalRub)
+      .sort((a, b) => b.thresholdRub - a.thresholdRub)
+    if (applicable.length === 0) return null
+    return applicable[0]
+  }, [discounts, subtotalRub])
+
+  /** Next rule that becomes available when the subtotal grows */
+  const nextDiscount = useMemo(() => {
+    const upcoming = discounts
+      .filter((d) => d.isActive && d.thresholdRub > subtotalRub)
+      .sort((a, b) => a.thresholdRub - b.thresholdRub)
+    if (upcoming.length === 0) return null
+    return upcoming[0]
+  }, [discounts, subtotalRub])
+
+  const discountRub = useMemo(() => {
+    if (!activeDiscount) return 0
+    const amount =
+      activeDiscount.type === 'percent'
+        ? Math.floor((subtotalRub * activeDiscount.value) / 100)
+        : Math.floor(activeDiscount.value)
+    return Math.max(0, Math.min(subtotalRub, amount))
+  }, [activeDiscount, subtotalRub])
+
+  const totalRub = useMemo(
+    () => Math.max(0, subtotalRub - discountRub),
+    [subtotalRub, discountRub],
   )
 
   const value = useMemo(
     () => ({
       items,
       totalCount,
+      subtotalRub,
+      discountRub,
       totalRub,
+      activeDiscount,
+      nextDiscount,
       addToCart,
       removeFromCart,
       setQuantity,
@@ -115,7 +165,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [
       items,
       totalCount,
+      subtotalRub,
+      discountRub,
       totalRub,
+      activeDiscount,
+      nextDiscount,
       addToCart,
       removeFromCart,
       setQuantity,

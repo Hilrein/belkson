@@ -14,24 +14,35 @@ export function getTelegramUsername(): string {
 export function buildOrderMessage(
   items: CartLine[],
   totalLabel: string,
+  discountLabel?: string,
 ): string {
   const lines = items.map((line, i) => {
     return `${i + 1}. ${line.name}${line.color ? ` (${line.color})` : ''} × ${line.quantity}`
   })
 
-  return [
+  const parts = [
     'Здравствуйте! Хочу оформить заказ:',
     '',
     ...lines,
     '',
-    `Итого: ${totalLabel}`,
-  ].join('\n')
+  ]
+  if (discountLabel) {
+    parts.push(`Скидка: ${discountLabel}`)
+    parts.push('')
+  }
+  parts.push(`Итого: ${totalLabel}`)
+
+  return parts.join('\n')
 }
 
 /** Open Telegram chat with prefilled order text */
-export function openTelegramOrder(items: CartLine[], totalLabel: string) {
+export function openTelegramOrder(
+  items: CartLine[],
+  totalLabel: string,
+  discountLabel?: string,
+) {
   const username = getTelegramUsername()
-  const text = buildOrderMessage(items, totalLabel)
+  const text = buildOrderMessage(items, totalLabel, discountLabel)
   const url = `https://t.me/${username}?text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
 }
