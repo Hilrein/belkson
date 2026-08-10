@@ -354,6 +354,7 @@ export default function HomePage() {
         </div>
       </section>
       {/* Dynamic Purchase Terms Variants with original design styles restored */}
+      <div id="usloviya-vykupa" className="scroll-mt-[calc(4rem+env(safe-area-inset-top,0px))]">
       {variants
         .filter((v) => v.isActive !== false)
         .map((variant, vIdx) => {
@@ -484,6 +485,7 @@ export default function HomePage() {
             </section>
           )
         })}
+      </div>
     </main>
   )
 }

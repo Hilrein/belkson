@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCatalog } from '../store/CatalogContext'
 import { useCart } from '../store/CartContext'
@@ -40,10 +40,26 @@ export default function StorefrontLayout() {
   const [cartOpen, setCartOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [resaleOpen, setResaleOpen] = useState(true)
+  const [resaleOpen, setResaleOpen] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  // Direction-aware animation for the "Ещё X ₽ до скидки" amount
+  const nextNeed = useMemo(
+    () => (nextDiscount ? nextDiscount.thresholdRub - subtotalRub : 0),
+    [nextDiscount, subtotalRub],
+  )
+  const [needDirection, setNeedDirection] = useState<'up' | 'down' | null>(null)
+  const prevNeedRef = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    const prev = prevNeedRef.current
+    if (prev !== null && nextNeed !== prev) {
+      setNeedDirection(nextNeed > prev ? 'up' : 'down')
+    }
+    prevNeedRef.current = nextNeed
+  }, [nextNeed])
 
   useEffect(() => {
     if (loading) {
@@ -79,6 +95,19 @@ export default function StorefrontLayout() {
   }, [navOpen, cartOpen])
 
   const toggleNavDrawer = useCallback(() => setNavOpen((v) => !v), [])
+  const goToTerms = useCallback(() => {
+    if (location.pathname === '/') {
+      setNavOpen(false)
+      window.setTimeout(() => {
+        document.getElementById('usloviya-vykupa')?.scrollIntoView({ behavior: 'smooth' })
+      }, 80)
+    } else {
+      navigate('/#usloviya-vykupa')
+    }
+  }, [location.pathname, navigate])
+  const handleResaleToggle = useCallback(() => {
+    setResaleOpen((v) => !v)
+  }, [])
   const toggleCart = useCallback(() => setCartOpen((v) => !v), [])
   const toggleSearch = useCallback(() => {
     setSearchOpen((open) => {
@@ -508,8 +537,8 @@ export default function StorefrontLayout() {
             <div className="flex flex-col">
               <button
                 type="button"
-                className="w-full flex items-center justify-between gap-2 font-headline-md text-sm uppercase tracking-wider text-outline hover:text-primary transition-colors"
-                onClick={() => setResaleOpen((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 text-left font-headline-md text-sm uppercase tracking-wider text-outline mb-1 hover:text-primary transition-colors"
+                onClick={handleResaleToggle}
                 aria-expanded={resaleOpen}
               >
                 Выкуп с официальных сайтов
@@ -526,6 +555,13 @@ export default function StorefrontLayout() {
                   resaleOpen ? 'max-h-96 mt-5' : 'max-h-0'
                 }`}
               >
+                <button
+                  type="button"
+                  className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors text-left"
+                  onClick={goToTerms}
+                >
+                  Порядок и условия выкупа
+                </button>
                 {activeOfficialStores.map((store) => {
                   const first = store.countries[0] as unknown
                   const firstUrl = first && typeof first === 'object' ? String((first as { url?: string }).url || '') : ''
@@ -703,8 +739,17 @@ export default function StorefrontLayout() {
               <div className="mb-4">
                 <p className="mb-2 text-xs text-on-surface-variant">
                   Ещё{' '}
-                  <span className="font-semibold text-on-surface">
-                    {format(nextDiscount.thresholdRub - subtotalRub)}
+                  <span
+                    key={`${nextNeed}-${needDirection}`}
+                    className={`inline-block font-semibold text-on-surface ${
+                      needDirection === 'up'
+                        ? 'animate-need-up'
+                        : needDirection === 'down'
+                          ? 'animate-need-down'
+                          : ''
+                    }`}
+                  >
+                    {format(nextNeed)}
                   </span>{' '}
                   до скидки{' '}
                   <span className="font-semibold text-primary">

@@ -224,3 +224,38 @@ main {
 .animate-spin {
   animation: belkson-spin 0.75s linear infinite;
 }
+
+/* Cart discount hint — the "need" amount animates up/down on change */
+@keyframes belkson-need-up {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes belkson-need-down {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-need-up {
+  animation: belkson-need-up 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.animate-need-down {
+  animation: belkson-need-down 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-need-up,
+  .animate-need-down {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}
