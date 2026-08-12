@@ -409,10 +409,16 @@ function AdminMessengerSettingsView() {
     }
   }, [settings])
 
-  const handleToggle = (id: string) => {
-    setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, isActive: !item.isActive } : item))
+  const handleToggle = async (id: string) => {
+    const updated = localSettings.map((item) =>
+      item.id === id ? { ...item, isActive: !item.isActive } : item
     )
+    setLocalSettings(updated)
+    setSaving(true)
+    await updateSettings(updated)
+    setSaving(false)
+    setSavedSuccess(true)
+    setTimeout(() => setSavedSuccess(false), 2500)
   }
 
   const handleChangeValue = (id: string, value: string) => {
@@ -426,7 +432,7 @@ function AdminMessengerSettingsView() {
     await updateSettings(localSettings)
     setSaving(false)
     setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 3000)
+    setTimeout(() => setSavedSuccess(false), 2500)
   }
 
   return (

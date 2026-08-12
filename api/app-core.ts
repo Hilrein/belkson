@@ -1184,7 +1184,7 @@ async function handlePutMessengerSettings(c: any) {
     const id = String(item.id)
     const label = item.label !== undefined ? String(item.label) : id.toUpperCase()
     const value = item.value !== undefined ? String(item.value).trim() : ''
-    const isActive = item.isActive !== undefined ? Boolean(item.isActive) : true
+    const isActive = item.isActive === true
 
     await client`
       INSERT INTO messenger_settings (id, label, value, is_active, updated_at)
