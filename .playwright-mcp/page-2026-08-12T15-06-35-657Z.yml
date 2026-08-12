@@ -1,0 +1,369 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - link "Belkson" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - paragraph [ref=e8]: Панель администратора
+    - list [ref=e9]:
+      - listitem [ref=e10]:
+        - button "inventory_2 Товары" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: inventory_2
+          - generic [ref=e13]: Товары
+      - listitem [ref=e14]:
+        - button "shopping_cart Выкуп с сайтов" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: shopping_cart
+          - generic [ref=e17]: Выкуп с сайтов
+      - listitem [ref=e18]:
+        - button "sell Скидки и акции" [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: sell
+          - generic [ref=e21]: Скидки и акции
+      - listitem [ref=e22]:
+        - button "checklist Условия выкупа" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: checklist
+          - generic [ref=e25]: Условия выкупа
+    - link "logout Выйти" [ref=e27] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e28]: logout
+      - generic [ref=e29]: Выйти
+  - main [ref=e30]:
+    - generic [ref=e33]:
+      - generic [ref=e34]: search
+      - searchbox "Поиск товаров, заказов..." [ref=e35]
+    - generic [ref=e36]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - heading "Управление товарами" [level=1] [ref=e40]
+          - paragraph [ref=e41]: Управление запасами, ценами и деталями коллекции Belkson.
+        - button "add Добавить товар" [active] [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: add
+          - generic [ref=e44]: Добавить товар
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Недавние товары" [level=3] [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]:
+              - combobox [ref=e50] [cursor=pointer]:
+                - option "RUB (₽)" [selected]
+                - option "EUR (€)"
+                - option "USD ($)"
+              - generic: expand_more
+            - button "Фильтр" [ref=e51] [cursor=pointer]:
+              - generic [ref=e52]: filter_list
+            - button "Изменить валюту для всего сайта" [ref=e53] [cursor=pointer]
+        - table [ref=e55]:
+          - rowgroup [ref=e65]:
+            - row [ref=e66]:
+              - columnheader "ID" [ref=e67]
+              - columnheader "Фото" [ref=e68]
+              - columnheader "Название" [ref=e69]
+              - columnheader "Бренд" [ref=e70]
+              - columnheader "Категория" [ref=e71]
+              - columnheader "Цена" [ref=e72]
+              - columnheader "Статус" [ref=e73]
+              - columnheader "Действия" [ref=e74]
+          - rowgroup [ref=e186]:
+            - row [ref=e187]:
+              - cell "2" [ref=e188]
+              - cell [ref=e189]:
+                - img "Test" [ref=e191]
+              - cell "Test" [ref=e192]
+              - cell "—" [ref=e193]
+              - cell "Малыши" [ref=e194]
+              - cell "1 000 ₽" [ref=e195]
+              - cell "В наличии" [ref=e196]
+              - cell [ref=e198]:
+                - button "Редактировать Test" [ref=e199] [cursor=pointer]
+  - generic [ref=e75]:
+    - generic [ref=e76]:
+      - heading "Добавить товар" [level=2] [ref=e203]
+      - button "Закрыть" [ref=e204] [cursor=pointer]:
+        - generic [ref=e79]: close
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - generic [ref=e82]: Фото товара
+        - button "image Перетащите фото сюда или нажмите для выбора Можно выбрать несколько · JPG, PNG, WebP · до 8 МБ" [ref=e205] [cursor=pointer]:
+          - generic [ref=e86]: image
+          - generic [ref=e87]: Перетащите фото сюда или нажмите для выбора
+          - generic [ref=e88]: Можно выбрать несколько · JPG, PNG, WebP · до 8 МБ
+        - generic [ref=e89]:
+          - generic [ref=e90]: Или вставьте ссылку на фото
+          - generic [ref=e91]:
+            - textbox "https://example.com/photo.jpg" [ref=e206]
+            - button "Добавить" [ref=e207] [cursor=pointer]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e96]: Название
+          - textbox [ref=e97]
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]: Артикул
+            - textbox [ref=e101]
+          - generic [ref=e102]:
+            - generic [ref=e103]: Цена (₽)
+            - spinbutton "0" [ref=e208]
+        - generic [ref=e105]:
+          - generic [ref=e106]: Категория
+          - combobox [ref=e107]:
+            - option "Малыши" [selected]
+            - option "Девочки"
+            - option "Мальчики"
+        - generic [ref=e108]:
+          - generic [ref=e109]: Цвет / оттенок
+          - textbox [ref=e110]
+        - generic [ref=e111]:
+          - generic [ref=e112]: Бренд
+          - 'textbox "Например: Zara, H&M, Belkson" [ref=e209]'
+        - generic [ref=e114]:
+          - generic [ref=e115]: Размеры
+          - generic [ref=e116]:
+            - 'textbox "Например: 74-80 см" [ref=e210]'
+            - button "Добавить" [ref=e211] [cursor=pointer]
+        - generic [ref=e119]:
+          - generic [ref=e120]: Статус
+          - combobox [ref=e121]:
+            - option "В наличии" [selected]
+            - option "Мало"
+            - option "Нет в наличии"
+        - generic [ref=e122]:
+          - generic [ref=e123] [cursor=pointer]:
+            - checkbox "Показывать в «Новинки» на сайте" [checked] [ref=e212]
+            - text: Показывать в «Новинки» на сайте
+          - generic [ref=e125] [cursor=pointer]:
+            - checkbox "Показывать в «Любимчики» на сайте" [ref=e213]
+            - text: Показывать в «Любимчики» на сайте
+    - generic [ref=e127]:
+      - button "Отмена" [ref=e214] [cursor=pointer]
+      - button "Сохранить" [ref=e215] [cursor=pointer]
+  - generic [ref=e130]:
+    - generic [ref=e131]:
+      - heading [level=2] [ref=e132]: Добавить магазин
+      - button [ref=e133] [cursor=pointer]:
+        - generic [ref=e134]: close
+    - generic [ref=e135]:
+      - generic [ref=e136]:
+        - generic [ref=e137]: Название магазина *
+        - textbox [ref=e138]:
+          - /placeholder: "Например: Zara, H&M, Massimo Dutti"
+      - generic [ref=e139]:
+        - generic [ref=e140]: Страны / регионы выкупа и ссылки
+        - generic [ref=e141]:
+          - textbox [ref=e142]:
+            - /placeholder: "Название страны (например: Spain, UK, Турция)"
+          - generic [ref=e143]:
+            - textbox [ref=e144]:
+              - /placeholder: "Ссылка на сайт (например: https://zara.com/es/)"
+            - button [ref=e145] [cursor=pointer]: + Добавить
+        - paragraph [ref=e147]: Добавьте хотя бы одну страну/регион.
+    - generic [ref=e148]:
+      - button [ref=e149] [cursor=pointer]: Отмена
+      - button [ref=e150] [cursor=pointer]: Сохранить
+  - generic [ref=e151]:
+    - generic [ref=e152]:
+      - heading [level=2] [ref=e153]: Добавить скидку
+      - button [ref=e154] [cursor=pointer]:
+        - generic [ref=e155]: close
+    - generic [ref=e156]:
+      - generic [ref=e157]:
+        - generic [ref=e158]: Название скидки *
+        - textbox [ref=e159]:
+          - /placeholder: "Например: Скидка 5% от 5 000 ₽"
+      - generic [ref=e160]:
+        - generic [ref=e161]: Тип скидки
+        - generic [ref=e162]:
+          - button [ref=e163] [cursor=pointer]:
+            - generic [ref=e164]: Процентная
+            - generic [ref=e165]: −N% от суммы
+          - button [ref=e166] [cursor=pointer]:
+            - generic [ref=e167]: Фиксированная
+            - generic [ref=e168]: −N ₽ от суммы
+      - generic [ref=e169]:
+        - generic [ref=e170]:
+          - generic [ref=e171]: Порог, от (₽)
+          - spinbutton [ref=e172]
+          - paragraph [ref=e173]: Скидка применяется, когда сумма корзины достигает этой суммы.
+        - generic [ref=e174]:
+          - generic [ref=e175]: Процент скидки (%)
+          - spinbutton [ref=e176]
+      - generic [ref=e177]:
+        - generic [ref=e178]: Порядок сортировки
+        - spinbutton [ref=e179]
+        - paragraph [ref=e180]: Меньшие значения отображаются раньше в списке.
+      - generic [ref=e181] [cursor=pointer]:
+        - checkbox [checked] [ref=e182]
+        - text: Скидка активна (применяется в корзине)
+    - generic [ref=e183]:
+      - button [ref=e184] [cursor=pointer]: Отмена
+      - button [ref=e185] [cursor=pointer]: Сохранить
+  - generic:
+    - generic:
+      - generic:
+        - heading [level=3]:
+          - generic: delete
+          - generic: Удалить вариант?
+        - button:
+          - generic: close
+      - generic:
+        - paragraph: Вы уверены, что хотите удалить «Вариант 1»?
+      - generic:
+        - button: Отмена
+        - button: Удалить вариант
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - heading [level=3]:
+            - generic: grid_view
+            - generic: Выберите иконку
+          - paragraph: Нажмите на любую иконку для применения к этапу
+        - button:
+          - generic: close
+      - generic:
+        - generic:
+          - generic: search
+          - textbox:
+            - /placeholder: Поиск иконки (поиск, доставка, оплата...)
+        - button:
+          - generic: block
+          - generic: Без иконки (не показывать круглую иконку)
+      - generic:
+        - generic:
+          - heading [level=4]: Шопинг и покупки
+          - generic:
+            - button:
+              - generic: shopping_bag
+              - generic: Пакет
+            - button:
+              - generic: shopping_cart
+              - generic: Корзина
+            - button:
+              - generic: storefront
+              - generic: Магазин
+            - button:
+              - generic: store
+              - generic: Витрина
+            - button:
+              - generic: sell
+              - generic: Продажа
+            - button:
+              - generic: label
+              - generic: Ярлык
+            - button:
+              - generic: redeem
+              - generic: Подарок
+        - generic:
+          - heading [level=4]: Поиск и выбор
+          - generic:
+            - button:
+              - generic: search
+              - generic: Поиск
+            - button:
+              - generic: pageview
+              - generic: Просмотр
+            - button:
+              - generic: find_in_page
+              - generic: Найти
+            - button:
+              - generic: saved_search
+              - generic: Сохраненный
+            - button:
+              - generic: manage_search
+              - generic: Поиск товара
+        - generic:
+          - heading [level=4]: Заказ и документы
+          - generic:
+            - button:
+              - generic: edit_document
+              - generic: Оформление
+            - button:
+              - generic: description
+              - generic: Документ
+            - button:
+              - generic: assignment
+              - generic: Задание
+            - button:
+              - generic: checklist
+              - generic: Чеклист
+            - button:
+              - generic: contract
+              - generic: Договор
+            - button:
+              - generic: receipt_long
+              - generic: Чек
+        - generic:
+          - heading [level=4]: Оплата и финансы
+          - generic:
+            - button:
+              - generic: calculate
+              - generic: Расчет
+            - button:
+              - generic: payment
+              - generic: Оплата
+            - button:
+              - generic: credit_card
+              - generic: Карта
+            - button:
+              - generic: currency_ruble
+              - generic: Рубль
+            - button:
+              - generic: account_balance_wallet
+              - generic: Кошелек
+            - button:
+              - generic: payments
+              - generic: Платежи
+            - button:
+              - generic: paid
+              - generic: Оплачено
+        - generic:
+          - heading [level=4]: Доставка и логистика
+          - generic:
+            - button:
+              - generic: local_shipping
+              - generic: Доставка
+            - button:
+              - generic: package_2
+              - generic: Посылка
+            - button:
+              - generic: inventory
+              - generic: Склад
+            - button:
+              - generic: flight_takeoff
+              - generic: Авиа
+            - button:
+              - generic: cargo
+              - generic: Груз
+            - button:
+              - generic: rv_hookup
+              - generic: Транспорт
+        - generic:
+          - heading [level=4]: Связь и сервис
+          - generic:
+            - button:
+              - generic: forum
+              - generic: Чат
+            - button:
+              - generic: chat
+              - generic: Сообщения
+            - button:
+              - generic: send
+              - generic: Отправить
+            - button:
+              - generic: support_agent
+              - generic: Поддержка
+            - button:
+              - generic: verified
+              - generic: Гарантия
+            - button:
+              - generic: workspace_premium
+              - generic: Премиум
+            - button:
+              - generic: bolt
+              - generic: Быстро
+            - button:
+              - generic: star
+              - generic: Звезда
+            - button:
+              - generic: shield
+              - generic: Защита
+      - generic:
+        - generic: Нужна другая иконка? Введите любое имя Material Symbol в поле поиска или текстовое поле.
+        - button: Закрыть

@@ -1,0 +1,184 @@
+- generic [ref=f1e2]:
+  - status [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - img "Belkson" [ref=f1e5]
+      - generic [ref=f1e6]:
+        - paragraph [ref=f1e7]: Belkson
+        - paragraph [ref=f1e8]: Загружаем каталог…
+  - banner [ref=f1e10]:
+    - generic [ref=f1e11]:
+      - generic [ref=f1e12]:
+        - button "Меню" [ref=f1e13] [cursor=pointer]:
+          - generic [ref=f1e14]: menu
+        - link "Belkson Logo Belkson" [ref=f1e15] [cursor=pointer]:
+          - /url: /
+          - img "Belkson Logo" [ref=f1e16]
+          - generic [ref=f1e17]: Belkson
+      - navigation [ref=f1e18]:
+        - link "Главная" [ref=f1e19] [cursor=pointer]:
+          - /url: /
+        - button "Категории keyboard_arrow_down" [ref=f1e21] [cursor=pointer]:
+          - text: Категории
+          - generic [ref=f1e22]: keyboard_arrow_down
+        - button "Выкуп с официальных сайтов keyboard_arrow_down" [ref=f1e24] [cursor=pointer]:
+          - text: Выкуп с официальных сайтов
+          - generic [ref=f1e25]: keyboard_arrow_down
+      - generic [ref=f1e26]:
+        - generic [ref=f1e27]:
+          - searchbox "Поиск..."
+          - button "Поиск" [ref=f1e28] [cursor=pointer]:
+            - generic [ref=f1e29]: search
+        - button "Корзина" [ref=f1e30] [cursor=pointer]:
+          - generic [ref=f1e31]: shopping_bag
+  - main [ref=f1e32]:
+    - generic [ref=f1e33]:
+      - heading "Каталог Belkson" [level=1] [ref=f1e34]
+      - paragraph [ref=f1e35]: Мягкие вещи для малышей — выбирайте по возрасту или листайте всё.
+    - navigation "Категории каталога" [ref=f1e36]:
+      - list [ref=f1e37]:
+        - listitem [ref=f1e38]:
+          - button "Смотреть всё" [ref=f1e39] [cursor=pointer]
+        - listitem [ref=f1e40]:
+          - button "Новинки" [ref=f1e41] [cursor=pointer]
+        - listitem [ref=f1e42]:
+          - button "Любимчики" [ref=f1e43] [cursor=pointer]
+        - listitem [ref=f1e44]:
+          - button "Малыши" [ref=f1e45] [cursor=pointer]
+        - listitem [ref=f1e46]:
+          - button "Девочки" [ref=f1e47] [cursor=pointer]
+        - listitem [ref=f1e48]:
+          - button "Мальчики" [ref=f1e49] [cursor=pointer]
+    - generic [ref=f1e51]:
+      - button "tune Фильтровать" [ref=f1e52] [cursor=pointer]:
+        - generic [ref=f1e53]: tune
+        - text: Фильтровать
+      - generic [ref=f1e54]:
+        - combobox [ref=f1e55] [cursor=pointer]:
+          - option "По популярности" [selected]
+          - option "Сначала дешевле"
+          - option "Сначала дороже"
+          - option "Новинки"
+        - generic [ref=f1e56]:
+          - generic [ref=f1e57]: Вид
+          - button "Мельче (больше колонок)" [disabled] [ref=f1e58]: −
+          - button "Крупнее (меньше колонок)" [ref=f1e59] [cursor=pointer]: +
+    - generic [ref=f1e61]:
+      - paragraph [ref=f1e62]: Ничего не нашли
+      - paragraph [ref=f1e63]: По выбранным фильтрам в каталоге нет товаров.
+      - button "Смотреть всё" [ref=f1e64] [cursor=pointer]
+  - contentinfo [ref=f1e65]:
+    - heading "Belkson" [level=2] [ref=f1e66]
+    - navigation [ref=f1e67]:
+      - link "Каталог" [ref=f1e68] [cursor=pointer]:
+        - /url: /catalog
+      - link "О нас" [ref=f1e69] [cursor=pointer]:
+        - /url: "#"
+      - link "Таблица размеров" [ref=f1e70] [cursor=pointer]:
+        - /url: "#"
+      - link "Доставка и возврат" [ref=f1e71] [cursor=pointer]:
+        - /url: "#"
+      - link "Контакты" [ref=f1e72] [cursor=pointer]:
+        - /url: "#"
+      - link "Политика конфиденциальности" [ref=f1e73] [cursor=pointer]:
+        - /url: "#"
+      - link "Админ" [ref=f1e74] [cursor=pointer]:
+        - /url: /admin
+    - generic [ref=f1e75]:
+      - link "photo_camera Instagram" [ref=f1e76] [cursor=pointer]:
+        - /url: https://instagram.com/belkson
+        - generic [ref=f1e77]: photo_camera
+        - text: Instagram
+      - link "send Telegram" [ref=f1e78] [cursor=pointer]:
+        - /url: https://t.me/belkson
+        - generic [ref=f1e79]: send
+        - text: Telegram
+    - paragraph [ref=f1e80]: © 2026 Belkson Kids. Все права защищены.
+  - generic:
+    - generic:
+      - generic:
+        - heading [level=2]: Меню
+        - button:
+          - generic: close
+      - generic:
+        - link:
+          - /url: /
+          - text: Главная
+        - separator
+        - generic:
+          - heading [level=3]: Категории
+          - link:
+            - /url: /catalog
+            - text: Каталог
+          - link:
+            - /url: /#novinki
+            - text: Новинки
+          - link:
+            - /url: /#lyubimchiki
+            - text: Топ распродаж
+          - link:
+            - /url: /#prochee
+            - text: Прочее
+          - separator
+          - link:
+            - /url: /catalog?category=Малыши
+            - text: Малыши
+          - link:
+            - /url: /catalog?category=Девочки
+            - text: Девочки
+          - link:
+            - /url: /catalog?category=Мальчики
+            - text: Мальчики
+        - separator
+        - generic:
+          - button:
+            - text: Выкуп с официальных сайтов
+            - generic: expand_more
+          - button: Порядок и условия выкупа
+          - link:
+            - /url: https://www.zara.com/es/
+            - text: Zara
+          - link:
+            - /url: https://www2.hm.com/en_gb/index.html
+            - text: H&M
+          - link:
+            - /url: https://www.next.co.uk
+            - text: Next
+        - separator
+        - generic:
+          - heading [level=3]: Соцсети
+          - link:
+            - /url: https://instagram.com/belkson
+            - generic: photo_camera
+            - text: Instagram
+          - link:
+            - /url: https://t.me/belkson
+            - generic: send
+            - text: Telegram
+  - generic:
+    - generic:
+      - generic:
+        - heading [level=2]:
+          - generic: shopping_bag
+          - text: Ваша корзина
+        - button:
+          - generic: close
+      - generic:
+        - generic: shopping_cart
+        - heading [level=3]: Пока здесь пусто
+        - paragraph: Добавьте товары из нашего каталога, чтобы сделать заказ.
+        - link:
+          - /url: /catalog
+          - text: Перейти в каталог
+      - generic:
+        - generic:
+          - paragraph:
+            - text: Ещё
+            - generic: 5 000 ₽
+            - text: до скидки 5%
+        - generic:
+          - generic: Сумма
+          - generic: 0 ₽
+        - generic:
+          - generic: Итого
+          - generic: 0 ₽
+        - button [disabled]: Оформить заказ
