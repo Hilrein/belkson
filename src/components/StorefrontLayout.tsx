@@ -696,17 +696,17 @@ export default function StorefrontLayout() {
               </Link>
             </div>
           ) : cartStep === 'checkout' ? (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 animate-step-next">
               {/* Order summary banner */}
-              <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-dim flex justify-between items-center">
+              <div className="p-4 rounded-2xl bg-surface-container-lowest border border-surface-dim flex justify-between items-center">
                 <div>
-                  <p className="text-xs text-on-surface-variant">Позиций в заказе: <span className="font-semibold text-on-surface">{cartItems.length} шт.</span></p>
+                  <p className="text-xs text-on-surface-variant">Товаров в заказе: <span className="font-semibold text-on-surface">{cartItems.length} шт.</span></p>
                   <p className="font-headline-md text-primary font-bold text-base mt-0.5">К оплате: {format(totalRub)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCartStep('items')}
-                  className="text-xs font-semibold text-primary underline hover:text-on-primary-fixed-variant"
+                  className="text-xs font-semibold text-primary hover:underline"
                 >
                   Изменить
                 </button>
@@ -714,8 +714,8 @@ export default function StorefrontLayout() {
 
               {/* Delivery selection */}
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-2">
-                  1. Способ доставки
+                <label className="block text-xs font-bold text-on-surface uppercase tracking-wider mb-2">
+                  Доставка
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -729,14 +729,14 @@ export default function StorefrontLayout() {
                         key={option.id}
                         type="button"
                         onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
-                        className={`p-3 rounded-2xl border text-center transition-colors flex flex-col items-center gap-1 ${
+                        className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1 ${
                           isSelected
-                            ? 'border-primary bg-primary-container text-on-primary-container font-semibold shadow-sm'
-                            : 'border-surface-dim bg-surface-container-low text-on-surface-variant hover:border-primary/50'
+                            ? 'border-primary bg-primary-container/20 text-primary font-bold shadow-xs'
+                            : 'border-surface-dim bg-surface-container-lowest text-on-surface-variant hover:border-primary/40'
                         }`}
                       >
                         <span className="text-sm font-semibold">{option.name}</span>
-                        <span className="text-xs opacity-80">{option.badge}</span>
+                        <span className="text-[11px] opacity-75 font-normal">{option.badge}</span>
                       </button>
                     )
                   })}
@@ -745,24 +745,24 @@ export default function StorefrontLayout() {
 
               {/* Delivery Address / Notes */}
               <div>
-                <label className="block text-sm font-semibold text-on-surface mb-1.5">
-                  2. Город или адрес ПВЗ <span className="font-normal text-xs text-on-surface-variant">(по желанию)</span>
+                <label className="block text-xs font-bold text-on-surface uppercase tracking-wider mb-1.5">
+                  Адрес ПВЗ или комментарий <span className="font-normal text-xs text-on-surface-variant lowercase">(необязательно)</span>
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Например: г. Москва, ул. Ленина 10 или номер ПВЗ"
+                  placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-surface-dim bg-surface-container-low text-sm text-on-surface focus:outline-none focus:border-primary resize-none"
+                  className="w-full p-3 rounded-2xl border border-surface-dim bg-surface-container-lowest text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none"
                 />
               </div>
 
               {/* Messenger choices */}
-              <div>
-                <label className="block text-sm font-semibold text-on-surface mb-3">
-                  3. Отправить заказ
+              <div className="pt-1">
+                <label className="block text-xs font-bold text-on-surface uppercase tracking-wider mb-2.5">
+                  Отправить заказ
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -780,9 +780,9 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-5 rounded-full bg-[#24A1DE] hover:bg-[#1f8ec4] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                   >
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/>
                     </svg>
                     Оформить через Telegram
@@ -805,9 +805,9 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3.5 px-5 rounded-full bg-primary hover:bg-on-primary-fixed-variant text-on-primary font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
                   >
-                    <span className="material-symbols-outlined text-xl">forum</span>
+                    <span className="material-symbols-outlined text-lg">forum</span>
                     Оформить через Max
                   </button>
                 </div>
