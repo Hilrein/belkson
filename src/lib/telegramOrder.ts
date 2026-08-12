@@ -1,5 +1,7 @@
 import type { CartLine } from '../store/CartContext'
 
+export type DeliveryMethod = 'Ozon' | 'Яндекс Маркет' | '5post'
+
 /**
  * Telegram username for orders (without @).
  * Set in .env: VITE_TELEGRAM_USERNAME=your_shop_account
@@ -11,10 +13,20 @@ export function getTelegramUsername(): string {
   ) || 'belkson'
 }
 
+/**
+ * Max messenger URL for orders.
+ * Set in .env: VITE_MAX_URL=https://max.ru/...
+ */
+export function getMaxUrl(): string {
+  return (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() || 'https://max.ru'
+}
+
 export function buildOrderMessage(
   items: CartLine[],
   totalLabel: string,
   discountLabel?: string,
+  deliveryMethod?: DeliveryMethod,
+  addressNotes?: string,
 ): string {
   const lines = items.map((line, i) => {
     const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
@@ -27,11 +39,22 @@ export function buildOrderMessage(
     ...lines,
     '',
   ]
+
+  if (deliveryMethod) {
+    parts.push(`Способ доставки: ${deliveryMethod}`)
+  }
+  if (addressNotes?.trim()) {
+    parts.push(`Адрес / ПВЗ: ${addressNotes.trim()}`)
+  }
+  if (deliveryMethod || addressNotes?.trim()) {
+    parts.push('')
+  }
+
   if (discountLabel) {
     parts.push(`Скидка: ${discountLabel}`)
     parts.push('')
   }
-  parts.push(`Итого: ${totalLabel}`)
+  parts.push(`Итого к оплате: ${totalLabel}`)
 
   return parts.join('\n')
 }
@@ -41,10 +64,26 @@ export function openTelegramOrder(
   items: CartLine[],
   totalLabel: string,
   discountLabel?: string,
+  deliveryMethod?: DeliveryMethod,
+  addressNotes?: string,
 ) {
   const username = getTelegramUsername()
-  const text = buildOrderMessage(items, totalLabel, discountLabel)
+  const text = buildOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
   const url = `https://t.me/${username}?text=${encodeURIComponent(text)}`
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+/** Open Max messenger chat with prefilled order text */
+export function openMaxOrder(
+  items: CartLine[],
+  totalLabel: string,
+  discountLabel?: string,
+  deliveryMethod?: DeliveryMethod,
+  addressNotes?: string,
+) {
+  const maxUrl = getMaxUrl()
+  const text = buildOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+  const url = `${maxUrl}${maxUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 

@@ -4,7 +4,12 @@ import { useCatalog } from '../store/CatalogContext'
 import { useCart } from '../store/CartContext'
 import { useOfficialStores } from '../store/OfficialStoresContext'
 import { CATEGORIES } from '../store/catalog'
-import { openTelegramOrder, getTelegramProfileUrl } from '../lib/telegramOrder'
+import {
+  openTelegramOrder,
+  openMaxOrder,
+  getTelegramProfileUrl,
+  type DeliveryMethod,
+} from '../lib/telegramOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { LoadingScreen } from './LoadingScreen'
 
@@ -38,6 +43,9 @@ export default function StorefrontLayout() {
 
   const [navOpen, setNavOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+  const [cartStep, setCartStep] = useState<'items' | 'checkout'>('items')
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('Ozon')
+  const [addressNotes, setAddressNotes] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [resaleOpen, setResaleOpen] = useState(false)
@@ -108,7 +116,18 @@ export default function StorefrontLayout() {
   const handleResaleToggle = useCallback(() => {
     setResaleOpen((v) => !v)
   }, [])
-  const toggleCart = useCallback(() => setCartOpen((v) => !v), [])
+  const toggleCart = useCallback(() => {
+    setCartOpen((v) => {
+      if (v) setCartStep('items')
+      return !v
+    })
+  }, [])
+
+  useEffect(() => {
+    if (cartItems.length === 0) {
+      setCartStep('items')
+    }
+  }, [cartItems.length])
   const toggleSearch = useCallback(() => {
     setSearchOpen((open) => {
       if (open) {
@@ -631,10 +650,21 @@ export default function StorefrontLayout() {
         />
         <div className={cartPanelClass} id="cart-panel">
           <div className="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
-            <h2 className="font-headline-md text-primary font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined">shopping_bag</span>
-              Ваша корзина
-            </h2>
+            {cartStep === 'checkout' ? (
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-primary hover:text-[#8a4193] font-semibold text-sm transition-colors"
+                onClick={() => setCartStep('items')}
+              >
+                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                Назад к товарам
+              </button>
+            ) : (
+              <h2 className="font-headline-md text-primary font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined">shopping_bag</span>
+                Ваша корзина
+              </h2>
+            )}
             <button
               type="button"
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors"
@@ -643,6 +673,7 @@ export default function StorefrontLayout() {
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
+
           {cartItems.length === 0 ? (
             <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-4">
               <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/50 mb-4">
@@ -663,6 +694,122 @@ export default function StorefrontLayout() {
               >
                 Перейти в каталог
               </Link>
+            </div>
+          ) : cartStep === 'checkout' ? (
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Order summary banner */}
+              <div className="p-4 rounded-2xl bg-primary-container/20 border border-primary-container/40 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-on-surface-variant">Позиций в заказе: <span className="font-bold text-on-surface">{cartItems.length} шт.</span></p>
+                  <p className="text-base font-extrabold text-primary mt-0.5">К оплате: {format(totalRub)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCartStep('items')}
+                  className="text-xs font-bold text-primary underline hover:text-[#ce7ed5]"
+                >
+                  Изменить
+                </button>
+              </div>
+
+              {/* Delivery selection */}
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-2.5">
+                  1. Способ доставки
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'Ozon', name: 'Ozon', icon: 'local_post_office', badge: 'ПВЗ' },
+                    { id: 'Яндекс Маркет', name: 'Яндекс', icon: 'local_shipping', badge: 'ПВЗ / Курьер' },
+                    { id: '5post', name: '5post', icon: 'store', badge: 'Пятёрочка' },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
+                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+                        deliveryMethod === option.id
+                          ? 'border-primary bg-primary-container/30 text-primary font-bold shadow-sm ring-2 ring-primary/20'
+                          : 'border-surface-dim bg-surface-container-lowest text-on-surface-variant hover:border-primary/40'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-2xl">{option.icon}</span>
+                      <span className="text-xs font-bold leading-tight">{option.name}</span>
+                      <span className="text-[10px] opacity-75">{option.badge}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Delivery Address / Notes */}
+              <div>
+                <label className="block text-sm font-bold text-on-surface mb-1.5">
+                  2. Город или адрес ПВЗ <span className="font-normal text-xs text-on-surface-variant">(по желанию)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Например: г. Москва, ул. Ленина 10 или номер ПВЗ"
+                  value={addressNotes}
+                  onChange={(e) => setAddressNotes(e.target.value)}
+                  className="w-full p-3 rounded-2xl border border-surface-dim bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+                />
+              </div>
+
+              {/* Messenger choices */}
+              <div className="pt-2">
+                <label className="block text-sm font-bold text-on-surface mb-3">
+                  3. Отправить заказ менеджеру
+                </label>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const discountLabel =
+                        activeDiscount && discountRub > 0
+                          ? activeDiscount.type === 'percent'
+                            ? `−${activeDiscount.value}% (${format(discountRub)})`
+                            : `−${format(discountRub)}`
+                          : undefined
+                      openTelegramOrder(
+                        cartItems,
+                        format(totalRub),
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                      )
+                    }}
+                    className="w-full py-3.5 px-5 rounded-full bg-[#24A1DE] hover:bg-[#1f8ec4] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.99]"
+                  >
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/>
+                    </svg>
+                    Оформить через Telegram
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const discountLabel =
+                        activeDiscount && discountRub > 0
+                          ? activeDiscount.type === 'percent'
+                            ? `−${activeDiscount.value}% (${format(discountRub)})`
+                            : `−${format(discountRub)}`
+                          : undefined
+                      openMaxOrder(
+                        cartItems,
+                        format(totalRub),
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                      )
+                    }}
+                    className="w-full py-3.5 px-5 rounded-full bg-[#8A4193] hover:bg-[#783681] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.99]"
+                  >
+                    <span className="material-symbols-outlined text-xl">forum</span>
+                    Оформить через Max
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
@@ -736,88 +883,84 @@ export default function StorefrontLayout() {
               ))}
             </div>
           )}
-          <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
-            {nextDiscount && (
-              <div className="mb-4">
-                <p className="mb-2 text-xs text-on-surface-variant">
-                  Ещё{' '}
-                  <span
-                    key={`${nextNeed}-${needDirection}`}
-                    className={`inline-block font-semibold text-on-surface ${
-                      needDirection === 'up'
-                        ? 'animate-need-up'
-                        : needDirection === 'down'
-                          ? 'animate-need-down'
-                          : ''
-                    }`}
-                  >
-                    {format(nextNeed)}
-                  </span>{' '}
-                  до скидки{' '}
-                  <span className="font-semibold text-primary">
-                    {nextDiscount.type === 'percent'
-                      ? `${nextDiscount.value}%`
-                      : format(nextDiscount.value)}
-                  </span>
-                </p>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
-                  <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        Math.round(
-                          (subtotalRub / nextDiscount.thresholdRub) * 100,
-                        ),
-                      )}%`,
-                    }}
-                  />
+          {cartStep === 'items' && (
+            <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
+              {nextDiscount && (
+                <div className="mb-4">
+                  <p className="mb-2 text-xs text-on-surface-variant">
+                    Ещё{' '}
+                    <span
+                      key={`${nextNeed}-${needDirection}`}
+                      className={`inline-block font-semibold text-on-surface ${
+                        needDirection === 'up'
+                          ? 'animate-need-up'
+                          : needDirection === 'down'
+                            ? 'animate-need-down'
+                            : ''
+                      }`}
+                    >
+                      {format(nextNeed)}
+                    </span>{' '}
+                    до скидки{' '}
+                    <span className="font-semibold text-primary">
+                      {nextDiscount.type === 'percent'
+                        ? `${nextDiscount.value}%`
+                        : format(nextDiscount.value)}
+                    </span>
+                  </p>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(
+                            (subtotalRub / nextDiscount.thresholdRub) * 100,
+                          ),
+                        )}%`,
+                      }}
+                    />
+                  </div>
                 </div>
+              )}
+              <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
+                <span>Сумма</span>
+                <span>{format(subtotalRub)}</span>
               </div>
-            )}
-            <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
-              <span>Сумма</span>
-              <span>{format(subtotalRub)}</span>
-            </div>
-            {activeDiscount && discountRub > 0 && (
-              <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
-                <span>
-                  Скидка{' '}
-                  {activeDiscount.type === 'percent'
-                    ? `${activeDiscount.value}%`
-                    : ''}
+              {activeDiscount && discountRub > 0 && (
+                <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
+                  <span>
+                    Скидка{' '}
+                    {activeDiscount.type === 'percent'
+                      ? `${activeDiscount.value}%`
+                      : ''}
+                  </span>
+                  <span className="font-semibold">−{format(discountRub)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
+                <span>Итого</span>
+                <span className="font-bold text-primary">
+                  {format(totalRub)}
                 </span>
-                <span className="font-semibold">−{format(discountRub)}</span>
               </div>
-            )}
-            <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
-              <span>Итого</span>
-              <span className="font-bold text-primary">
-                {format(totalRub)}
-              </span>
+              <button
+                type="button"
+                disabled={cartItems.length === 0}
+                className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
+                  cartItems.length === 0
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
+                }`}
+                onClick={() => {
+                  if (cartItems.length === 0) return
+                  setCartStep('checkout')
+                }}
+              >
+                Оформить заказ
+              </button>
             </div>
-            <button
-              type="button"
-              disabled={cartItems.length === 0}
-              className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
-                cartItems.length === 0
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
-              }`}
-              onClick={() => {
-                if (cartItems.length === 0) return
-                const discountLabel =
-                  activeDiscount && discountRub > 0
-                    ? activeDiscount.type === 'percent'
-                      ? `−${activeDiscount.value}% (${format(discountRub)})`
-                      : `−${format(discountRub)}`
-                    : undefined
-                openTelegramOrder(cartItems, format(totalRub), discountLabel)
-              }}
-            >
-              Оформить заказ
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </>
