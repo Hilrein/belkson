@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useCatalog } from '../store/CatalogContext'
 import { useCart } from '../store/CartContext'
 import { useOfficialStores } from '../store/OfficialStoresContext'
-import { CATEGORIES, SUBCATEGORIES } from '../store/catalog'
+import { CATEGORIES } from '../store/catalog'
 import { openTelegramOrder, getTelegramProfileUrl } from '../lib/telegramOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { LoadingScreen } from './LoadingScreen'
@@ -243,29 +243,25 @@ export default function StorefrontLayout() {
                     >
                       Прочее
                     </Link>
-                    <div className="grid grid-cols-3 gap-6 py-1">
-                      {CATEGORIES.map((cat) => (
-                        <div key={cat} className="space-y-1.5">
-                          <Link
-                            className="text-[#8a4193] font-bold text-base hover:text-[#ce7ed5] transition-colors block border-b border-[#ce7ed5]/30 pb-1"
-                            to={`/catalog?category=${encodeURIComponent(cat)}`}
-                          >
-                            {cat}
-                          </Link>
-                          <div className="flex flex-col gap-1 pt-1 max-h-[260px] overflow-y-auto hide-scroll pr-1">
-                            {SUBCATEGORIES.map((sub) => (
-                              <Link
-                                key={sub}
-                                className="text-on-surface-variant text-xs hover:text-[#8a4193] transition-colors py-0.5"
-                                to={`/catalog?category=${encodeURIComponent(cat)}&subcategory=${encodeURIComponent(sub)}`}
-                              >
-                                {sub}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <hr className="my-2 border-[#ce7ed5]/30" />
+                    <Link
+                      className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
+                      to="/catalog?category=Девочки"
+                    >
+                      Девочки
+                    </Link>
+                    <Link
+                      className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
+                      to="/catalog?category=Мальчики"
+                    >
+                      Мальчики
+                    </Link>
+                    <Link
+                      className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
+                      to="/catalog?category=Малыши"
+                    >
+                      Малыши
+                    </Link>
                   </div>
                   <div className="w-[240px] xl:w-[280px] relative rounded-3xl overflow-hidden group/promo shrink-0 bg-surface-container-low aspect-[4/5]">
                     <img
@@ -527,27 +523,14 @@ export default function StorefrontLayout() {
               </Link>
               <hr className="border-t border-[#EAE6EE] my-2" />
               {CATEGORIES.map((cat) => (
-                <div key={cat} className="space-y-1 py-1">
-                  <Link
-                    className="text-[#8a4193] font-bold text-base hover:text-[#ce7ed5] transition-colors block"
-                    to={`/catalog?category=${encodeURIComponent(cat)}`}
-                    onClick={toggleNavDrawer}
-                  >
-                    {cat}
-                  </Link>
-                  <div className="pl-3 flex flex-col gap-1.5 border-l-2 border-[#ce7ed5]/20 my-1">
-                    {SUBCATEGORIES.map((sub) => (
-                      <Link
-                        key={sub}
-                        className="text-on-surface-variant text-sm hover:text-[#8a4193] transition-colors"
-                        to={`/catalog?category=${encodeURIComponent(cat)}&subcategory=${encodeURIComponent(sub)}`}
-                        onClick={toggleNavDrawer}
-                      >
-                        {sub}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                <Link
+                  key={cat}
+                  className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
+                  to={`/catalog?category=${cat}`}
+                  onClick={toggleNavDrawer}
+                >
+                  {cat}
+                </Link>
               ))}
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
