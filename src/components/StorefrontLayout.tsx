@@ -52,6 +52,26 @@ export default function StorefrontLayout() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('Ozon')
   const [addressNotes, setAddressNotes] = useState('')
+  const [checkoutTouched, setCheckoutTouched] = useState(false)
+
+  // Phone formatting: keep only digits and leading +
+  const handlePhoneChange = (raw: string) => {
+    // allow only digits, +, (, ), spaces and dashes for flexible input
+    const cleaned = raw.replace(/[^\d+()\s-]/g, '')
+    setCustomerPhone(cleaned)
+  }
+
+  // Validation
+  const phoneDigits = customerPhone.replace(/\D/g, '')
+  const isPhoneValid = phoneDigits.length >= 10 && phoneDigits.length <= 15
+  const isNameValid = customerName.trim().length > 0
+  const isAddressValid = addressNotes.trim().length > 0
+  const isCheckoutValid = isNameValid && isPhoneValid && isAddressValid
+
+  const triggerValidation = (): boolean => {
+    setCheckoutTouched(true)
+    return isCheckoutValid
+  }
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [resaleOpen, setResaleOpen] = useState(false)
@@ -742,26 +762,42 @@ export default function StorefrontLayout() {
 
               {/* Customer Name */}
               <div className="space-y-1.5">
-                <span className="text-xs text-on-surface-variant block font-medium">ФИО получателя</span>
+                <span className="text-xs text-on-surface-variant block font-medium">
+                  ФИО получателя <span className="text-error">*</span>
+                </span>
                 <input
                   type="text"
                   placeholder="Иванов Иван Иванович"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3.5 py-3 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                  className={`w-full px-3.5 py-3 rounded-2xl border bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors ${
+                    checkoutTouched && !isNameValid ? 'border-error' : 'border-surface-dim'
+                  }`}
                 />
+                {checkoutTouched && !isNameValid && (
+                  <span className="text-[11px] text-error">Укажите ФИО получателя</span>
+                )}
               </div>
 
               {/* Customer Phone */}
               <div className="space-y-1.5">
-                <span className="text-xs text-on-surface-variant block font-medium">Номер телефона</span>
+                <span className="text-xs text-on-surface-variant block font-medium">
+                  Номер телефона <span className="text-error">*</span>
+                </span>
                 <input
                   type="tel"
                   placeholder="+7 (999) 000-00-00"
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full px-3.5 py-3 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  className={`w-full px-3.5 py-3 rounded-2xl border bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors ${
+                    checkoutTouched && !isPhoneValid ? 'border-error' : 'border-surface-dim'
+                  }`}
                 />
+                {checkoutTouched && !isPhoneValid && (
+                  <span className="text-[11px] text-error">
+                    {customerPhone.trim().length === 0 ? 'Укажите номер телефона' : 'Некорректный номер телефона'}
+                  </span>
+                )}
               </div>
 
               {/* Segmented delivery picker */}
@@ -794,14 +830,21 @@ export default function StorefrontLayout() {
 
               {/* Single address input */}
               <div className="space-y-1.5">
-                <span className="text-xs text-on-surface-variant block font-medium">Адрес ПВЗ или дома</span>
+                <span className="text-xs text-on-surface-variant block font-medium">
+                  Адрес ПВЗ или дома <span className="text-error">*</span>
+                </span>
                 <textarea
                   rows={3}
                   placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none"
+                  className={`w-full p-3.5 rounded-2xl border bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none ${
+                    checkoutTouched && !isAddressValid ? 'border-error' : 'border-surface-dim'
+                  }`}
                 />
+                {checkoutTouched && !isAddressValid && (
+                  <span className="text-[11px] text-error">Укажите адрес доставки</span>
+                )}
               </div>
             </div>
           ) : (
@@ -884,6 +927,7 @@ export default function StorefrontLayout() {
                   <button
                     type="button"
                     onClick={() => {
+                      if (!triggerValidation()) return
                       const discountLabel =
                         activeDiscount && discountRub > 0
                           ? activeDiscount.type === 'percent'
@@ -929,6 +973,7 @@ export default function StorefrontLayout() {
                       <button
                         type="button"
                         onClick={() => {
+                          if (!triggerValidation()) return
                           const discountLabel =
                             activeDiscount && discountRub > 0
                               ? activeDiscount.type === 'percent'
@@ -972,6 +1017,7 @@ export default function StorefrontLayout() {
                       <button
                         type="button"
                         onClick={() => {
+                          if (!triggerValidation()) return
                           const discountLabel =
                             activeDiscount && discountRub > 0
                               ? activeDiscount.type === 'percent'

@@ -390,17 +390,17 @@ function AdminOrdersView() {
                       <div className="space-y-1">
                         {fio && (
                           <p className="text-on-surface-variant">
-                            <span className="font-medium text-on-surface">👤 {fio}</span>
+                            <span className="font-medium text-on-surface">{fio}</span>
                           </p>
                         )}
                         {tel && (
                           <p className="text-on-surface-variant">
-                            <span className="font-medium text-on-surface">📞 {tel}</span>
+                            <span className="font-medium text-on-surface">{tel}</span>
                           </p>
                         )}
                         {addr && (
                           <p className="text-on-surface-variant">
-                            <span className="font-medium text-on-surface">📍 {addr}</span>
+                            <span className="font-medium text-on-surface">{addr}</span>
                           </p>
                         )}
                       </div>
