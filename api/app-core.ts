@@ -18,6 +18,9 @@ type DbProduct = {
   price_rub: number
   category: string
   color: string
+  brand: string
+  sizes: unknown
+  images: unknown
   status: string
   image: string
   is_new: boolean
@@ -49,6 +52,30 @@ function getSql() {
   return sql
 }
 
+/** Idempotent migration: brand / sizes / images columns on `products`. */
+async function ensureProductColumns(client: NeonQueryFunction<false, false>) {
+  try {
+    await client`
+      ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS brand TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb
+    `
+  } catch (err) {
+    console.warn('ensureProductColumns error:', err)
+  }
+}
+
+function normalizeSizes(raw: unknown): string[] {
+  const list = parseStringArray(raw)
+  return [...new Set(list)].slice(0, 50)
+}
+
+function normalizeImages(raw: unknown): string[] {
+  const list = parseStringArray(raw)
+  return [...new Set(list)].slice(0, 20)
+}
+
 function mapProduct(row: DbProduct) {
   return {
     id: row.id,
@@ -57,6 +84,9 @@ function mapProduct(row: DbProduct) {
     priceRub: Number(row.price_rub),
     category: String(row.category ?? '').trim() || 'Малыши',
     color: row.color,
+    brand: row.brand ?? '',
+    sizes: parseStringArray(row.sizes),
+    images: parseStringArray(row.images),
     status: row.status as 'В наличии' | 'Мало' | 'Нет в наличии',
     image: row.image,
     isNew: Boolean(row.is_new),
@@ -66,6 +96,23 @@ function mapProduct(row: DbProduct) {
         ? undefined
         : (row.badge ?? undefined),
   }
+}
+
+function parseStringArray(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.map((v) => String(v ?? '')).filter((v) => v.trim().length > 0)
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => String(v ?? '')).filter((v) => v.trim().length > 0)
+      }
+    } catch {
+      /* not JSON — ignore */
+    }
+  }
+  return []
 }
 
 /* ─── Images (sharp loaded on demand) ────────────────────────────── */
@@ -121,6 +168,7 @@ app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 
 async function handleCatalogRequest(c: any) {
   const client = getSql()
+  await ensureProductColumns(client)
   const [products, settings] = await Promise.all([
     client`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
     client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
@@ -322,6 +370,7 @@ app.get('/api/external/:shop/:country?', handleExternalShopRequest)
 async function handleCreateProduct(c: any) {
   const body = await c.req.json()
   const client = getSql()
+  await ensureProductColumns(client)
 
   const name = String(body.name ?? '').trim() || 'Без названия'
   const sku =
@@ -333,6 +382,14 @@ async function handleCreateProduct(c: any) {
       .trim()
       .replace(/\s+/g, ' ') || 'Малыши'
   const color = String(body.color ?? '—').trim() || '—'
+  const brand = String(body.brand ?? '').trim()
+  const sizes = normalizeSizes(body.sizes)
+  const rawImages = normalizeImages(body.images)
+  const images: string[] = []
+  for (const img of rawImages) {
+    const normalized = await normalizeProductImage(img)
+    if (normalized) images.push(normalized)
+  }
   const status = String(body.status ?? 'В наличии')
   const image = await normalizeProductImage(String(body.image ?? ''))
   const isNew = Boolean(body.isNew)
@@ -341,9 +398,9 @@ async function handleCreateProduct(c: any) {
 
   const rows = (await client`
     INSERT INTO products
-      (name, sku, price_rub, category, color, status, image, is_new, is_favorite, badge)
+      (name, sku, price_rub, category, color, brand, sizes, images, status, image, is_new, is_favorite, badge)
     VALUES
-      (${name}, ${sku}, ${priceRub}, ${category}, ${color}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
+      (${name}, ${sku}, ${priceRub}, ${category}, ${color}, ${brand}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
     RETURNING *
   `) as DbProduct[]
 
@@ -359,6 +416,7 @@ async function handleUpdateProduct(c: any) {
 
   const body = await c.req.json()
   const client = getSql()
+  await ensureProductColumns(client)
 
   const existing = (await client`
     SELECT * FROM products WHERE id = ${id} LIMIT 1
@@ -381,6 +439,21 @@ async function handleUpdateProduct(c: any) {
     body.color !== undefined
       ? String(body.color).trim() || '—'
       : cur.color
+  const brand =
+    body.brand !== undefined ? String(body.brand).trim() : cur.brand
+  const sizes =
+    body.sizes !== undefined ? normalizeSizes(body.sizes) : parseStringArray(cur.sizes)
+  let images: string[]
+  if (body.images !== undefined) {
+    const normalized: string[] = []
+    for (const img of normalizeImages(body.images)) {
+      const processed = await normalizeProductImage(img)
+      if (processed) normalized.push(processed)
+    }
+    images = normalized
+  } else {
+    images = parseStringArray(cur.images)
+  }
   const status = body.status !== undefined ? String(body.status) : cur.status
   const image =
     body.image !== undefined
@@ -405,6 +478,9 @@ async function handleUpdateProduct(c: any) {
       price_rub = ${priceRub},
       category = ${category},
       color = ${color},
+      brand = ${brand},
+      sizes = ${JSON.stringify(sizes)},
+      images = ${JSON.stringify(images)},
       status = ${status},
       image = ${image},
       is_new = ${isNew},

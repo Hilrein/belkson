@@ -11,6 +11,12 @@ export type CatalogProduct = {
   priceRub: number
   category: string
   color: string
+  /** Brand name (e.g. "Zara", "Belkson") */
+  brand?: string
+  /** Available sizes, e.g. ["74-80", "80-86"] */
+  sizes?: string[]
+  /** Additional photos (main photo stays in `image`) */
+  images?: string[]
   status: ProductStatus
   image: string
   /** Show in «Новинки» */

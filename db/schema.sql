@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS products (
   price_rub   INTEGER NOT NULL CHECK (price_rub >= 0),
   category    TEXT NOT NULL,
   color       TEXT NOT NULL DEFAULT '—',
+  brand       TEXT NOT NULL DEFAULT '',
+  sizes       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  images      JSONB NOT NULL DEFAULT '[]'::jsonb,
   status      TEXT NOT NULL DEFAULT 'В наличии'
                 CHECK (status IN ('В наличии', 'Мало', 'Нет в наличии')),
   image       TEXT NOT NULL,

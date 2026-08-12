@@ -22,11 +22,15 @@ type FormState = {
   price: string
   category: string
   color: string
+  brand: string
+  /** Available sizes; multiple values per product */
+  sizes: string[]
+  sizeInput: string
   status: ProductStatus
   isNew: boolean
   isFavorite: boolean
-  /** Final image value: https URL or data:image/... */
-  image: string
+  /** All photos; first one is the main product photo */
+  photos: string[]
   /** Draft URL field (may not be applied until blur / apply) */
   imageUrlDraft: string
 }
@@ -37,10 +41,13 @@ const emptyForm: FormState = {
   price: '',
   category: CATEGORIES[0],
   color: '',
+  brand: '',
+  sizes: [],
+  sizeInput: '',
   status: 'В наличии',
   isNew: true,
   isFavorite: false,
-  image: '',
+  photos: [],
   imageUrlDraft: '',
 }
 
@@ -593,11 +600,14 @@ export default function AdminPage() {
       price: String(product.priceRub),
       category: product.category,
       color: product.color || '',
+      brand: product.brand || '',
+      sizes: product.sizes || [],
+      sizeInput: '',
       status: product.status,
       isNew: product.isNew,
       isFavorite: product.isFavorite,
-      image: img,
-      imageUrlDraft: img.startsWith('data:') ? '' : img,
+      photos: [img, ...(product.images || [])].filter(Boolean),
+      imageUrlDraft: '',
     })
     setImageError(null)
     setImageBusy(false)
@@ -622,17 +632,27 @@ export default function AdminPage() {
       setImageError('Нужна ссылка http(s)://… или data:image/…')
       return
     }
-    setForm((f) => ({ ...f, image: url, imageUrlDraft: url }))
+    setForm((f) => {
+      if (f.photos.includes(url)) return f
+      return { ...f, photos: [...f.photos, url], imageUrlDraft: '' }
+    })
     setImageError(null)
   }
 
-  const onPickFile = async (file: File | null) => {
-    if (!file) return
+  const addPhotos = async (files: File[] | FileList | null) => {
+    if (!files || files.length === 0) return
     setImageBusy(true)
     setImageError(null)
     try {
-      const dataUrl = await fileToCompressedDataUrl(file)
-      setForm((f) => ({ ...f, image: dataUrl, imageUrlDraft: '' }))
+      const list = Array.from(files).slice(0, 20)
+      const added: string[] = []
+      for (const file of list) {
+        if (form.photos.length + added.length >= 20) break
+        added.push(await fileToCompressedDataUrl(file))
+      }
+      if (added.length > 0) {
+        setForm((f) => ({ ...f, photos: [...f.photos, ...added] }))
+      }
     } catch (e) {
       setImageError(e instanceof Error ? e.message : 'Ошибка загрузки файла')
     } finally {
@@ -641,16 +661,26 @@ export default function AdminPage() {
     }
   }
 
-  const clearImage = () => {
-    setForm((f) => ({ ...f, image: '', imageUrlDraft: '' }))
+  const removePhoto = (index: number) => {
+    setForm((f) => ({ ...f, photos: f.photos.filter((_, i) => i !== index) }))
     setImageError(null)
   }
 
-  const onDropFile = (e: DragEvent<HTMLDivElement>) => {
+  const makeMainPhoto = (index: number) => {
+    setForm((f) => {
+      if (index <= 0 || index >= f.photos.length) return f
+      const photos = [...f.photos]
+      const [photo] = photos.splice(index, 1)
+      photos.unshift(photo)
+      return { ...f, photos }
+    })
+  }
+
+  const onDropFiles = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    const file = e.dataTransfer.files?.[0]
-    if (file) void onPickFile(file)
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) void addPhotos(files)
   }
 
   const confirmDelete = async () => {
@@ -670,13 +700,14 @@ export default function AdminPage() {
   const saveProduct = async () => {
     setSaving(true)
     try {
-      // Apply URL draft if user typed a link but didn't press «Применить»
-      let image = form.image.trim()
+      // First photo is the main one; the rest go into `images`
+      let photos = form.photos.map((p) => p.trim()).filter(Boolean)
       const draft = form.imageUrlDraft.trim()
-      if (!image && draft && isLikelyImageUrl(draft)) {
-        image = draft
+      if (photos.length === 0 && draft && isLikelyImageUrl(draft)) {
+        photos = [draft]
       }
-      if (!image) image = defaultProductImage()
+      const image = photos[0] || defaultProductImage()
+      const images = photos.slice(1)
 
       const priceRub = Math.max(0, Number(form.price) || 0)
       const payload = {
@@ -687,6 +718,9 @@ export default function AdminPage() {
           form.category.replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
           CATEGORIES[0],
         color: form.color.trim() || '—',
+        brand: form.brand.trim(),
+        sizes: form.sizes,
+        images,
         status: form.status,
         image,
         isNew: form.isNew,
@@ -1516,6 +1550,7 @@ export default function AdminPage() {
                             </p>
                             <p className="text-xs text-on-surface-variant mt-0.5">
                               #{product.id} · {product.category}
+                              {product.brand ? ` · ${product.brand}` : ''}
                             </p>
                           </div>
                           <button
@@ -1550,6 +1585,7 @@ export default function AdminPage() {
                       <col className="w-[140px]" />
                       <col className="w-[120px]" />
                       <col className="w-[120px]" />
+                      <col className="w-[120px]" />
                       <col className="w-[88px]" />
                     </colgroup>
                     <thead>
@@ -1562,6 +1598,9 @@ export default function AdminPage() {
                         </th>
                         <th className="p-3 text-label-md font-label-md text-on-surface-variant">
                           Название
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Бренд
                         </th>
                         <th className="p-3 text-label-md font-label-md text-on-surface-variant">
                           Категория
@@ -1597,6 +1636,9 @@ export default function AdminPage() {
                           </td>
                           <td className="p-3 font-medium align-middle truncate">
                             {product.name}
+                          </td>
+                          <td className="p-3 align-middle truncate text-on-surface-variant">
+                            {product.brand || '—'}
                           </td>
                           <td className="p-3 align-middle">{product.category}</td>
                           <td className="p-3 align-middle whitespace-nowrap">
@@ -1657,52 +1699,87 @@ export default function AdminPage() {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
-          {/* Photo: URL / file / drag-drop */}
+          {/* Photos: multiple upload / URL / drag-drop */}
           <div className="space-y-3">
-            <label className="block text-label-md font-label-md text-on-surface">
-              Фото товара
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-label-md font-label-md text-on-surface">
+                Фото товара
+              </label>
+              <span className="text-xs text-on-surface-variant">
+                {form.photos.length > 0 ? `${form.photos.length} шт` : ''}
+              </span>
+            </div>
 
             <div
-              className={`relative w-full rounded-md border border-dashed border-gray-300 bg-surface overflow-hidden transition-colors ${
+              className={`rounded-md border border-dashed border-gray-300 bg-surface p-2 sm:p-3 transition-colors ${
                 imageBusy ? 'opacity-70' : 'hover:bg-surface-variant/60'
               }`}
               onDragOver={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
               }}
-              onDrop={onDropFile}
+              onDrop={onDropFiles}
             >
-              {form.image ? (
-                <div className="relative aspect-[4/3] w-full bg-surface-variant">
-                  <img
-                    src={form.image}
-                    alt="Превью"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={() =>
-                      setImageError(
-                        'Не удалось загрузить превью. Проверьте ссылку.',
-                      )
-                    }
-                  />
-                  <div className="absolute inset-x-0 bottom-0 p-2 flex flex-wrap gap-2 bg-gradient-to-t from-black/50 to-transparent">
+              {form.photos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {form.photos.map((photo, index) => (
+                    <div
+                      key={`${index}-${photo.slice(0, 24)}`}
+                      className="relative aspect-square overflow-hidden rounded-md bg-surface-variant border border-gray-200 group/photo"
+                    >
+                      <img
+                        src={photo}
+                        alt={`Фото ${index + 1}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() =>
+                          setImageError(
+                            'Не удалось загрузить фото. Проверьте ссылку.',
+                          )
+                        }
+                      />
+                      {index === 0 && (
+                        <span className="absolute top-1 left-1 text-[10px] font-semibold bg-white/95 text-on-surface px-1.5 py-0.5 rounded">
+                          Основное
+                        </span>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 p-1 flex justify-between gap-1 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/photo:opacity-100 transition-opacity">
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            title="Сделать основным"
+                            className="w-6 h-6 flex items-center justify-center rounded bg-white/95 text-on-surface hover:text-primary text-xs"
+                            onClick={() => makeMainPhoto(index)}
+                            disabled={index === 0 || imageBusy}
+                          >
+                            <Icon name="star" className="text-xs" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Удалить фото"
+                            className="w-6 h-6 flex items-center justify-center rounded bg-white/95 text-red-700 hover:bg-red-50 text-xs"
+                            onClick={() => removePhoto(index)}
+                            disabled={imageBusy}
+                          >
+                            <Icon name="delete" className="text-xs" />
+                          </button>
+                        </div>
+                        <span className="text-[10px] text-white/90 self-center">
+                          {index + 1}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {form.photos.length < 20 && (
                     <button
                       type="button"
-                      className="text-xs font-medium bg-white/95 text-on-surface px-2.5 py-1.5 rounded-md"
+                      className="aspect-square rounded-md border border-dashed border-gray-300 flex flex-col items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-colors cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={imageBusy}
                     >
-                      Заменить с ПК
+                      <Icon name="add_photo_alternate" className="text-xl mb-0.5" />
+                      <span className="text-[10px] font-medium">Добавить</span>
                     </button>
-                    <button
-                      type="button"
-                      className="text-xs font-medium bg-white/95 text-red-700 px-2.5 py-1.5 rounded-md"
-                      onClick={clearImage}
-                      disabled={imageBusy}
-                    >
-                      Убрать
-                    </button>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -1715,10 +1792,10 @@ export default function AdminPage() {
                   <span className="text-body-sm font-body-sm">
                     {imageBusy
                       ? 'Обработка…'
-                      : 'Перетащите фото или нажмите для выбора'}
+                      : 'Перетащите фото сюда или нажмите для выбора'}
                   </span>
                   <span className="text-xs text-on-surface-variant/80 mt-1">
-                    JPG, PNG, WebP · до 8 МБ
+                    Можно выбрать несколько · JPG, PNG, WebP · до 8 МБ
                   </span>
                 </button>
               )}
@@ -1726,8 +1803,9 @@ export default function AdminPage() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
-                onChange={(e) => void onPickFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => void addPhotos(e.target.files)}
               />
             </div>
 
@@ -1756,7 +1834,7 @@ export default function AdminPage() {
                   className="shrink-0 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors"
                   onClick={applyImageUrl}
                 >
-                  OK
+                  Добавить
                 </button>
               </div>
             </div>
@@ -1843,6 +1921,100 @@ export default function AdminPage() {
                   setForm((f) => ({ ...f, color: e.target.value }))
                 }
               />
+            </div>
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface mb-1">
+                Бренд
+              </label>
+              <input
+                className="w-full p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                type="text"
+                placeholder="Например: Zara, H&M, Belkson"
+                value={form.brand}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, brand: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface mb-1">
+                Размеры
+              </label>
+              {form.sizes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {form.sizes.map((size) => (
+                    <span
+                      key={size}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest border border-gray-200 text-body-sm font-medium text-on-surface"
+                    >
+                      {size}
+                      <button
+                        type="button"
+                        className="text-on-surface-variant hover:text-red-600 cursor-pointer text-sm leading-none"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            sizes: f.sizes.filter((s) => s !== size),
+                          }))
+                        }
+                        aria-label={`Убрать размер ${size}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 min-w-0 p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                  type="text"
+                  placeholder="Например: 74-80 см"
+                  value={form.sizeInput}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, sizeInput: e.target.value }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const value = form.sizeInput.trim()
+                      if (
+                        value &&
+                        !form.sizes.some(
+                          (s) => s.toLowerCase() === value.toLowerCase(),
+                        )
+                      ) {
+                        setForm((f) => ({
+                          ...f,
+                          sizes: [...f.sizes, value],
+                          sizeInput: '',
+                        }))
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="shrink-0 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+                  onClick={() => {
+                    const value = form.sizeInput.trim()
+                    if (
+                      value &&
+                      !form.sizes.some(
+                        (s) => s.toLowerCase() === value.toLowerCase(),
+                      )
+                    ) {
+                      setForm((f) => ({
+                        ...f,
+                        sizes: [...f.sizes, value],
+                        sizeInput: '',
+                      }))
+                    }
+                  }}
+                >
+                  Добавить
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">

@@ -21,7 +21,7 @@ export interface ProductVariant {
 export interface Product {
   id: string
   title: string
-  brand: StoreId
+  brand: string
   region: RegionId
   category: ProductCategory
   originalPrice: number

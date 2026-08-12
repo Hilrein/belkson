@@ -132,21 +132,27 @@ export default function CatalogPage() {
   // Convert CatalogProduct to Product for QuickViewModal
   const modalProduct: Product | null = useMemo(() => {
     if (!quickViewProduct) return null
+    const sizes =
+      quickViewProduct.sizes && quickViewProduct.sizes.length > 0
+        ? quickViewProduct.sizes
+        : ['68-74 см', '74-80 см', '80-86 см', '86-92 см', '92-98 см']
     return {
       id: String(quickViewProduct.id),
       title: quickViewProduct.name,
-      brand: 'belkson',
+      brand: quickViewProduct.brand || 'belkson',
       region: 'spain',
       category: 'girl',
       originalPrice: Math.round(quickViewProduct.priceRub / 100),
       currencySymbol: '€',
       priceRub: quickViewProduct.priceRub,
-      description: `${quickViewProduct.name} из авторской коллекции Belkson. Премиальный комфортный трикотаж для детей. Артикул: ${quickViewProduct.sku}.`,
+      description: `${
+        quickViewProduct.brand ? `Бренд: ${quickViewProduct.brand}. ` : ''
+      }${quickViewProduct.name} из авторской коллекции Belkson. Премиальный комфортный трикотаж для детей. Артикул: ${quickViewProduct.sku}.`,
       composition: '100% органический хлопок',
       sku: quickViewProduct.sku,
       originalUrl: '',
-      images: [quickViewProduct.image],
-      sizes: ['68-74 см', '74-80 см', '80-86 см', '86-92 см', '92-98 см'],
+      images: [quickViewProduct.image, ...(quickViewProduct.images || [])].filter(Boolean),
+      sizes,
       colors: [quickViewProduct.color || 'Стандартный'],
       isNew: quickViewProduct.isNew,
       isBestSeller: quickViewProduct.isFavorite,
@@ -210,9 +216,16 @@ export default function CatalogPage() {
             </div>
             <div className="flex flex-col gap-1 px-0.5">
               <div className="flex items-start justify-between gap-2">
-                <h2 className="text-sm md:text-[15px] font-medium text-on-surface leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                  {product.name}
-                </h2>
+                <div className="flex-1 min-w-0">
+                  {product.brand && (
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-semibold text-on-surface-variant mb-0.5">
+                      {product.brand}
+                    </p>
+                  )}
+                  <h2 className="text-sm md:text-[15px] font-medium text-on-surface leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                    {product.name}
+                  </h2>
+                </div>
                 <span className="text-sm md:text-[15px] font-medium text-primary shrink-0 tabular-nums">
                   {format(product.priceRub)}
                 </span>
@@ -221,6 +234,18 @@ export default function CatalogPage() {
                 {product.color}
                 {product.category ? ` · ${product.category}` : ''}
               </p>
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {product.sizes.slice(0, 5).map((size) => (
+                    <span
+                      key={size}
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-surface-dim text-on-surface-variant"
+                    >
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={(e) => handleAddToCart(product, e)}

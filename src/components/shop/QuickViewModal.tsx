@@ -36,12 +36,15 @@ function getColorHex(colorName: string): string {
 export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModalProps) {
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0)
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0)
+  const [selectedSizeIndex, setSelectedSizeIndex] = useState<number>(0)
   const [quantity, setQuantity] = useState<number>(1)
 
   if (!product) return null
 
   const colorsList = product.colors.length > 0 ? product.colors : ['Стандартный']
   const currentColor = colorsList[selectedColorIndex] || colorsList[0]
+  const sizesList = product.sizes.length > 0 ? product.sizes : ['Стандартный']
+  const currentSize = sizesList[selectedSizeIndex] || sizesList[0]
 
   const activeVariant =
     product.variants?.[selectedColorIndex] ||
@@ -194,6 +197,34 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
               })}
             </div>
           </div>
+
+          {/* Size Selector */}
+          {product.sizes.length > 0 && (
+            <div className="mb-6">
+              <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-on-surface block mb-3">
+                Размер: <span className="text-primary normal-case font-medium">{currentSize}</span>
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {sizesList.map((size, idx) => {
+                  const isActive = selectedSizeIndex === idx
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedSizeIndex(idx)}
+                      className={`py-1.5 px-3 rounded-full text-xs font-medium border transition-all ${
+                        isActive
+                          ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs ring-1 ring-primary'
+                          : 'border-surface-dim text-on-surface-variant hover:border-on-surface-variant'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Quantity Selector & Add to Cart CTA */}
           <div className="mt-auto pt-5 border-t border-surface-dim/60 flex items-center gap-3">
