@@ -11,7 +11,7 @@ import {
   type DeliveryMethod,
 } from '../lib/telegramOrder'
 import { openMaxOrder } from '../lib/maxOrder'
-import { openVkOrder } from '../lib/vkOrder'
+import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { LoadingScreen } from './LoadingScreen'
 
@@ -54,7 +54,25 @@ export default function StorefrontLayout() {
   const [resaleOpen, setResaleOpen] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
+  const [vkModalOpen, setVkModalOpen] = useState(false)
+  const [vkCountdown, setVkCountdown] = useState(3)
+  const [pendingVkUrl, setPendingVkUrl] = useState<string | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!vkModalOpen) return
+    if (vkCountdown <= 0) {
+      if (pendingVkUrl) {
+        window.open(pendingVkUrl, '_blank', 'noopener,noreferrer')
+      }
+      setVkModalOpen(false)
+      return
+    }
+    const timer = setTimeout(() => {
+      setVkCountdown((prev) => prev - 1)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [vkModalOpen, vkCountdown, pendingVkUrl])
 
   // Direction-aware animation for the "Ещё X ₽ до скидки" amount
   const nextNeed = useMemo(
@@ -922,13 +940,22 @@ export default function StorefrontLayout() {
                         messenger: 'VK',
                       })
 
-                      openVkOrder(
+                      const text = buildVkOrderMessage(
                         cartItems,
                         format(totalRub),
                         discountLabel,
                         deliveryMethod,
                         addressNotes,
                       )
+
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => {})
+                      }
+
+                      const url = getVkOrderUrl(text)
+                      setPendingVkUrl(url)
+                      setVkCountdown(3)
+                      setVkModalOpen(true)
                     }}
                     className="w-full bg-[#0077FF] text-white font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
                   >
@@ -1024,6 +1051,55 @@ export default function StorefrontLayout() {
           )}
         </div>
       </div>
+
+      {/* ── VK Redirect & Instructions Modal ──────────────────────── */}
+      {vkModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-surface-container-lowest border border-gray-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5 text-center">
+            <div className="w-12 h-12 rounded-full bg-[#0077FF]/10 text-[#0077FF] flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-2xl">content_paste</span>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-headline-md text-lg font-bold text-on-surface">
+                Заказ скопирован в буфер!
+              </h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                В чате VK зажмите поле ввода сообщения и выберите <strong className="text-on-surface font-semibold">«Вставить»</strong> (или нажмите Ctrl+V).
+              </p>
+            </div>
+
+            <div className="py-2.5 bg-surface-container-low border border-gray-200 rounded-2xl">
+              <span className="text-xs font-semibold text-primary">
+                Переход в VK через {vkCountdown} сек...
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingVkUrl) {
+                    window.open(pendingVkUrl, '_blank', 'noopener,noreferrer')
+                  }
+                  setVkModalOpen(false)
+                }}
+                className="w-full bg-[#0077FF] hover:bg-[#0066CC] text-white py-3 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+              >
+                Перейти в VK сейчас
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVkModalOpen(false)}
+                className="w-full py-2 text-xs text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
