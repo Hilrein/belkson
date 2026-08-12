@@ -145,7 +145,7 @@ async function buildApp() {
   app.get('/health', (c) => c.json({ ok: true, status: 'ok' }))
   app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 
-  async function handleCatalog(c: any) {
+  async function ensureProductColumns() {
     try {
       await sql`
         ALTER TABLE products
@@ -156,6 +156,20 @@ async function buildApp() {
     } catch (e) {
       console.warn('ensure product columns error:', e)
     }
+  }
+
+  function normalizeSizes(raw: unknown): string[] {
+    const list = parseStringArray(raw)
+    return [...new Set(list)].slice(0, 50)
+  }
+
+  function normalizeImages(raw: unknown): string[] {
+    const list = parseStringArray(raw)
+    return [...new Set(list)].slice(0, 20)
+  }
+
+  async function handleCatalog(c: any) {
+    await ensureProductColumns()
     const [products, settings] = await Promise.all([
       sql`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
       sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
@@ -170,6 +184,169 @@ async function buildApp() {
 
   app.get('/catalog', handleCatalog)
   app.get('/api/catalog', handleCatalog)
+
+  async function handleCreateProduct(c: any) {
+    const body = await c.req.json()
+    await ensureProductColumns()
+
+    const name = String(body.name ?? '').trim() || 'Без названия'
+    const sku =
+      String(body.sku ?? '').trim() || `BLK-${Date.now().toString().slice(-6)}`
+    const priceRub = Math.max(0, Math.round(Number(body.priceRub) || 0))
+    const category =
+      String(body.category ?? 'Малыши')
+        .replace(/\u00a0/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ') || 'Малыши'
+    const color = String(body.color ?? '—').trim() || '—'
+    const brand = String(body.brand ?? '').trim()
+    const sizes = normalizeSizes(body.sizes)
+    const rawImages = normalizeImages(body.images)
+    const images: string[] = []
+    for (const img of rawImages) {
+      const normalized = await normalizeProductImage(img)
+      if (normalized) images.push(normalized)
+    }
+    const status = String(body.status ?? 'В наличии')
+    const image = await normalizeProductImage(String(body.image ?? ''))
+    const isNew = Boolean(body.isNew)
+    const isFavorite = Boolean(body.isFavorite)
+    const badge = body.badge ? String(body.badge) : null
+
+    const rows = (await sql`
+      INSERT INTO products
+        (name, sku, price_rub, category, color, brand, sizes, images, status, image, is_new, is_favorite, badge)
+      VALUES
+        (${name}, ${sku}, ${priceRub}, ${category}, ${color}, ${brand}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
+      RETURNING *
+    `) as DbProduct[]
+
+    return c.json(mapProduct(rows[0]), 201)
+  }
+
+  app.post('/products', handleCreateProduct)
+  app.post('/api/products', handleCreateProduct)
+
+  async function handleUpdateProduct(c: any) {
+    const id = Number(c.req.param('id'))
+    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+    const body = await c.req.json()
+    await ensureProductColumns()
+
+    const existing = (await sql`
+      SELECT * FROM products WHERE id = ${id} LIMIT 1
+    `) as DbProduct[]
+    if (!existing[0]) return c.json({ error: 'Not found' }, 404)
+
+    const cur = existing[0]
+    const name = body.name !== undefined ? String(body.name).trim() : cur.name
+    const sku = body.sku !== undefined ? String(body.sku).trim() : cur.sku
+    const priceRub =
+      body.priceRub !== undefined
+        ? Math.max(0, Math.round(Number(body.priceRub) || 0))
+        : Number(cur.price_rub)
+    const category =
+      body.category !== undefined
+        ? String(body.category).replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
+          cur.category
+        : cur.category
+    const color =
+      body.color !== undefined
+        ? String(body.color).trim() || '—'
+        : cur.color
+    const brand =
+      body.brand !== undefined ? String(body.brand).trim() : cur.brand
+    const sizes =
+      body.sizes !== undefined ? normalizeSizes(body.sizes) : parseStringArray(cur.sizes)
+    let images: string[]
+    if (body.images !== undefined) {
+      const normalized: string[] = []
+      for (const img of normalizeImages(body.images)) {
+        const processed = await normalizeProductImage(img)
+        if (processed) normalized.push(processed)
+      }
+      images = normalized
+    } else {
+      images = parseStringArray(cur.images)
+    }
+    const status = body.status !== undefined ? String(body.status) : cur.status
+    const image =
+      body.image !== undefined
+        ? await normalizeProductImage(String(body.image))
+        : cur.image
+    const isNew = body.isNew !== undefined ? Boolean(body.isNew) : cur.is_new
+    const isFavorite =
+      body.isFavorite !== undefined ? Boolean(body.isFavorite) : cur.is_favorite
+    let badge: string | null =
+      body.badge !== undefined
+        ? body.badge
+          ? String(body.badge)
+          : null
+        : cur.badge
+    if (body.isNew === false) badge = null
+    else if (body.isNew === true && !badge) badge = 'NEW'
+
+    const rows = (await sql`
+      UPDATE products SET
+        name = ${name},
+        sku = ${sku},
+        price_rub = ${priceRub},
+        category = ${category},
+        color = ${color},
+        brand = ${brand},
+        sizes = ${JSON.stringify(sizes)},
+        images = ${JSON.stringify(images)},
+        status = ${status},
+        image = ${image},
+        is_new = ${isNew},
+        is_favorite = ${isFavorite},
+        badge = ${badge},
+        updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `) as DbProduct[]
+
+    return c.json(mapProduct(rows[0]))
+  }
+
+  app.put('/products/:id', handleUpdateProduct)
+  app.put('/api/products/:id', handleUpdateProduct)
+
+  async function handleDeleteProduct(c: any) {
+    const id = Number(c.req.param('id'))
+    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+
+    const rows = (await sql`
+      DELETE FROM products WHERE id = ${id} RETURNING id
+    `) as { id: number }[]
+
+    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+    return c.json({ ok: true, id })
+  }
+
+  app.delete('/products/:id', handleDeleteProduct)
+  app.delete('/api/products/:id', handleDeleteProduct)
+
+  async function handleUpdateCurrency(c: any) {
+    const body = await c.req.json()
+    const currency = String(body.currency ?? 'RUB')
+    if (!['RUB', 'EUR', 'USD'].includes(currency)) {
+      return c.json({ error: 'Invalid currency' }, 400)
+    }
+
+    await ensureSiteSettingsTable()
+    await sql`
+      INSERT INTO site_settings (key, value)
+      VALUES ('currency', ${currency})
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+    `
+
+    return c.json({ currency })
+  }
+
+  app.put('/settings/currency', handleUpdateCurrency)
+  app.put('/api/settings/currency', handleUpdateCurrency)
 
   async function handleZaraCatalog(c: any) {
     try {
