@@ -2,31 +2,62 @@ import type { CartLine } from '../store/CartContext'
 import type { DeliveryMethod } from './telegramOrder'
 
 /**
- * Get VK direct chat URL.
- * Official VK messenger deep link: vk.me/username
+ * Get native VK order link with prefilled text support.
+ *
+ * Official VK native prefill link:
+ * - For VK Group / Community: https://vk.com/write-GROUP_ID?text=URLEncodedText
+ * - For VK User: https://vk.com/im?sel=USER_ID
  */
-export function getVkUsername(): string {
-  const rawUsername = (import.meta.env.VITE_VK_USERNAME as string | undefined)?.trim()?.replace(/^@/, '')
-  if (rawUsername) return rawUsername
-
+export function getVkOrderUrl(text: string): string {
+  const groupId = (import.meta.env.VITE_VK_GROUP_ID as string | undefined)?.trim()
   const rawUrl = (import.meta.env.VITE_VK_URL as string | undefined)?.trim()
-  if (rawUrl) {
-    const convoMatch = rawUrl.match(/convo\/(\d+)/) || rawUrl.match(/sel=(\d+)/)
-    if (convoMatch && convoMatch[1]) {
-      return convoMatch[1]
-    }
-    const match = rawUrl.match(/(?:vk\.com|vk\.ru|vk\.me)\/([^/?#]+)/)
-    if (match && match[1] && match[1] !== 'im') {
-      return match[1]
-    }
+  const username = (import.meta.env.VITE_VK_USERNAME as string | undefined)?.trim()?.replace(/^@/, '')
+
+  const encodedText = encodeURIComponent(text)
+
+  // 1. Explicit Group ID in .env
+  if (groupId) {
+    const cleanGroupId = groupId.replace(/^[^\d]+/, '')
+    return `https://vk.com/write-${cleanGroupId}?text=${encodedText}`
   }
 
-  return '94968923'
-}
+  // 2. Parsed Group URL
+  if (rawUrl) {
+    const groupMatch =
+      rawUrl.match(/write-(-?\d+)/) ||
+      rawUrl.match(/(?:club|public|group)(\d+)/)
 
-export function getVkUrl(): string {
-  const username = getVkUsername()
-  return `https://vk.me/${username}`
+    if (groupMatch && groupMatch[1]) {
+      const cleanId = groupMatch[1].replace(/^-/, '')
+      return `https://vk.com/write-${cleanId}?text=${encodedText}`
+    }
+
+    const convoMatch = rawUrl.match(/convo\/(\d+)/) || rawUrl.match(/sel=(\d+)/)
+    if (convoMatch && convoMatch[1]) {
+      return `https://vk.com/im?sel=${convoMatch[1]}`
+    }
+
+    if (rawUrl.includes('vk.com/') && !rawUrl.includes('/im') && !rawUrl.includes('vk.me')) {
+      const match = rawUrl.match(/vk\.com\/([^/?#]+)/)
+      if (match && match[1]) {
+        return `https://vk.com/write-${match[1]}?text=${encodedText}`
+      }
+    }
+
+    return rawUrl
+  }
+
+  // 3. Username or ID
+  if (username) {
+    if (/^\d+$/.test(username) || /^(?:club|public|group)\d+$/.test(username)) {
+      const cleanId = username.replace(/^[^\d]+/, '')
+      return `https://vk.com/write-${cleanId}?text=${encodedText}`
+    }
+    return `https://vk.com/write-${username}?text=${encodedText}`
+  }
+
+  // Default fallback user ID
+  return `https://vk.com/im?sel=94968923`
 }
 
 export function buildVkOrderMessage(
@@ -67,7 +98,7 @@ export function buildVkOrderMessage(
   return parts.join('\n')
 }
 
-/** Open VK chat with fallback clipboard copy */
+/** Open VK chat with native prefilled order text and fallback clipboard copy */
 export function openVkOrder(
   items: CartLine[],
   totalLabel: string,
@@ -81,6 +112,6 @@ export function openVkOrder(
     navigator.clipboard.writeText(text).catch(() => {})
   }
 
-  const url = getVkUrl()
+  const url = getVkOrderUrl(text)
   window.open(url, '_blank', 'noopener,noreferrer')
 }
