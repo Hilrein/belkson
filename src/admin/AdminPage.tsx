@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
+import { CATEGORIES, SUBCATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
 import { useOfficialStores, type OfficialStore } from '../store/OfficialStoresContext'
@@ -21,6 +21,7 @@ type FormState = {
   sku: string
   price: string
   category: string
+  subcategory: string
   color: string
   brand: string
   /** Available sizes; multiple values per product */
@@ -40,6 +41,7 @@ const emptyForm: FormState = {
   sku: '',
   price: '',
   category: CATEGORIES[0],
+  subcategory: '',
   color: '',
   brand: '',
   sizes: [],
@@ -599,6 +601,7 @@ export default function AdminPage() {
       sku: product.sku,
       price: String(product.priceRub),
       category: product.category,
+      subcategory: product.subcategory || '',
       color: product.color || '',
       brand: product.brand || '',
       sizes: product.sizes || [],
@@ -717,6 +720,7 @@ export default function AdminPage() {
         category:
           form.category.replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
           CATEGORIES[0],
+        subcategory: form.subcategory.trim(),
         color: form.color.trim() || '—',
         brand: form.brand.trim(),
         sizes: form.sizes,
@@ -1640,7 +1644,14 @@ export default function AdminPage() {
                           <td className="p-3 align-middle truncate text-on-surface-variant">
                             {product.brand || '—'}
                           </td>
-                          <td className="p-3 align-middle">{product.category}</td>
+                          <td className="p-3 align-middle">
+                            <div>{product.category}</div>
+                            {product.subcategory && (
+                              <div className="text-xs text-on-surface-variant font-normal">
+                                {product.subcategory}
+                              </div>
+                            )}
+                          </td>
                           <td className="p-3 align-middle whitespace-nowrap">
                             {format(product.priceRub)}
                           </td>
@@ -1905,6 +1916,25 @@ export default function AdminPage() {
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-label-md font-label-md text-on-surface mb-1">
+                Подкатегория
+              </label>
+              <select
+                className="w-full p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                value={form.subcategory}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, subcategory: e.target.value }))
+                }
+              >
+                <option value="">Без подкатегории</option>
+                {SUBCATEGORIES.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
                   </option>
                 ))}
               </select>

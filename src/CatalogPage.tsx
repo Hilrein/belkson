@@ -4,6 +4,7 @@ import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
 import {
   CATEGORIES,
+  SUBCATEGORIES,
   categoriesMatch,
   normalizeCategory,
   type CatalogProduct,
@@ -38,6 +39,20 @@ export default function CatalogPage() {
     return decoded.trim() || FILTER_ALL
   }, [rawCategoryParam])
 
+  const rawSubcategoryParam = searchParams.get('subcategory')
+  const activeSubcategory = useMemo(() => {
+    if (!rawSubcategoryParam) return 'all'
+    let decoded = rawSubcategoryParam
+    try {
+      if (/%[0-9A-Fa-f]{2}/.test(decoded)) {
+        decoded = decodeURIComponent(decoded)
+      }
+    } catch {
+      /* keep as-is */
+    }
+    return decoded.trim() || 'all'
+  }, [rawSubcategoryParam])
+
   useEffect(() => {
     const q = searchParams.get('q') ?? ''
     setQuery(q)
@@ -48,6 +63,16 @@ export default function CatalogPage() {
       const next = new URLSearchParams(searchParams)
       if (value === FILTER_ALL) next.delete('category')
       else next.set('category', value)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams]
+  )
+
+  const setSubcategoryFilter = useCallback(
+    (value: string) => {
+      const next = new URLSearchParams(searchParams)
+      if (value === 'all' || !value) next.delete('subcategory')
+      else next.set('subcategory', value)
       setSearchParams(next, { replace: true })
     },
     [searchParams, setSearchParams]
@@ -71,6 +96,11 @@ export default function CatalogPage() {
     } else if (activeFilter !== FILTER_ALL) {
       list = list.filter((p) => categoriesMatch(p.category, activeFilter))
     }
+
+    if (activeSubcategory !== 'all') {
+      list = list.filter((p) => categoriesMatch(p.subcategory, activeSubcategory))
+    }
+
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
@@ -78,7 +108,8 @@ export default function CatalogPage() {
           p.name.toLowerCase().includes(q) ||
           p.color.toLowerCase().includes(q) ||
           p.sku.toLowerCase().includes(q) ||
-          normalizeCategory(p.category).includes(q)
+          normalizeCategory(p.category).includes(q) ||
+          (p.subcategory && normalizeCategory(p.subcategory).includes(q))
       )
     }
 
@@ -91,7 +122,7 @@ export default function CatalogPage() {
     }
 
     return list
-  }, [products, activeFilter, query, sortBy])
+  }, [products, activeFilter, activeSubcategory, query, sortBy])
 
   const navItems = useMemo(() => {
     const fixed: { id: string; label: string }[] = [
@@ -115,6 +146,13 @@ export default function CatalogPage() {
     ]
   }, [products])
 
+  const subcategoryItems = useMemo(() => {
+    return [
+      { id: 'all', label: 'Все подкатегории' },
+      ...SUBCATEGORIES.map((sub) => ({ id: sub, label: sub })),
+    ]
+  }, [])
+
   const onQueryChange = (value: string) => {
     setQuery(value)
     const next = new URLSearchParams(searchParams)
@@ -126,6 +164,7 @@ export default function CatalogPage() {
   const handleResetAll = () => {
     onQueryChange('')
     setFilter(FILTER_ALL)
+    setSubcategoryFilter('all')
     setSortBy('featured')
   }
 
@@ -177,6 +216,9 @@ export default function CatalogPage() {
         categoryTabs={navItems}
         activeCategory={activeFilter}
         onSelectCategory={setFilter}
+        subcategories={subcategoryItems}
+        activeSubcategory={activeSubcategory}
+        onSelectSubcategory={setSubcategoryFilter}
         searchQuery={query}
         onSearchChange={onQueryChange}
         sortBy={sortBy}

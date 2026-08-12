@@ -2,6 +2,7 @@
 
 export {
   CATEGORIES,
+  SUBCATEGORIES,
   CURRENCIES,
   type CatalogProduct as Product,
   type CurrencyCode,

@@ -28,6 +28,7 @@ type DbProduct = {
   sku: string
   price_rub: number
   category: string
+  subcategory?: string | null
   color: string
   brand: string
   sizes: unknown
@@ -67,6 +68,7 @@ function mapProduct(row: DbProduct) {
     sku: row.sku,
     priceRub: Number(row.price_rub),
     category: String(row.category ?? '').trim() || 'Малыши',
+    subcategory: row.subcategory ? String(row.subcategory).trim() : '',
     color: row.color,
     brand: row.brand ?? '',
     sizes: parseStringArray(row.sizes),
@@ -150,6 +152,7 @@ async function buildApp() {
       await sql`
         ALTER TABLE products
           ADD COLUMN IF NOT EXISTS brand TEXT NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS subcategory TEXT NOT NULL DEFAULT '',
           ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
           ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb
       `
@@ -198,6 +201,7 @@ async function buildApp() {
         .replace(/\u00a0/g, ' ')
         .trim()
         .replace(/\s+/g, ' ') || 'Малыши'
+    const subcategory = String(body.subcategory ?? '').trim()
     const color = String(body.color ?? '—').trim() || '—'
     const brand = String(body.brand ?? '').trim()
     const sizes = normalizeSizes(body.sizes)
@@ -215,9 +219,9 @@ async function buildApp() {
 
     const rows = (await sql`
       INSERT INTO products
-        (name, sku, price_rub, category, color, brand, sizes, images, status, image, is_new, is_favorite, badge)
+        (name, sku, price_rub, category, subcategory, color, brand, sizes, images, status, image, is_new, is_favorite, badge)
       VALUES
-        (${name}, ${sku}, ${priceRub}, ${category}, ${color}, ${brand}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
+        (${name}, ${sku}, ${priceRub}, ${category}, ${subcategory}, ${color}, ${brand}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
       RETURNING *
     `) as DbProduct[]
 
@@ -251,6 +255,10 @@ async function buildApp() {
         ? String(body.category).replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
           cur.category
         : cur.category
+    const subcategory =
+      body.subcategory !== undefined
+        ? String(body.subcategory).trim()
+        : (cur.subcategory ?? '')
     const color =
       body.color !== undefined
         ? String(body.color).trim() || '—'
@@ -293,6 +301,7 @@ async function buildApp() {
         sku = ${sku},
         price_rub = ${priceRub},
         category = ${category},
+        subcategory = ${subcategory},
         color = ${color},
         brand = ${brand},
         sizes = ${JSON.stringify(sizes)},

@@ -10,6 +10,7 @@ export type CatalogProduct = {
   /** Price amount in RUB (base currency for storage) */
   priceRub: number
   category: string
+  subcategory?: string
   color: string
   /** Brand name (e.g. "Zara", "Belkson") */
   brand?: string
@@ -32,6 +33,22 @@ export const CATEGORIES = [
   'Девочки',
   'Мальчики',
 ] as const
+
+export const SUBCATEGORIES = [
+  'Комбинезоны и боди',
+  'Костюмы',
+  'Платья и юбки',
+  'Футболки',
+  'Кофты и свитшоты',
+  'Брюки, джинсы, шорты',
+  'Нижнее белье и пижамы',
+  'Верхняя одежда',
+  'Обувь',
+  'Головные уборы',
+  'Носки и колготки',
+] as const
+
+export type Subcategory = (typeof SUBCATEGORIES)[number]
 
 /** Normalize category for compare / URL (trim, collapse spaces, casefold). */
 export function normalizeCategory(value: string | null | undefined): string {
