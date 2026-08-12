@@ -252,7 +252,7 @@ export default function StorefrontLayout() {
                           >
                             {cat}
                           </Link>
-                          <div className="flex flex-col gap-1 pt-1 max-h-[260px] overflow-y-auto pr-1">
+                          <div className="flex flex-col gap-1 pt-1 max-h-[260px] overflow-y-auto hide-scroll pr-1">
                             {SUBCATEGORIES.map((sub) => (
                               <Link
                                 key={sub}
