@@ -870,69 +870,71 @@ export default function StorefrontLayout() {
                   Оформить через Telegram
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const discountLabel =
-                      activeDiscount && discountRub > 0
-                        ? activeDiscount.type === 'percent'
-                          ? `−${activeDiscount.value}% (${format(discountRub)})`
-                          : `−${format(discountRub)}`
-                        : undefined
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const discountLabel =
+                        activeDiscount && discountRub > 0
+                          ? activeDiscount.type === 'percent'
+                            ? `−${activeDiscount.value}% (${format(discountRub)})`
+                            : `−${format(discountRub)}`
+                          : undefined
 
-                    createOrder({
-                      items: cartItems,
-                      totalRub,
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                      messenger: 'Max',
-                    })
+                      createOrder({
+                        items: cartItems,
+                        totalRub,
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                        messenger: 'Max',
+                      })
 
-                    openMaxOrder(
-                      cartItems,
-                      format(totalRub),
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                    )
-                  }}
-                  className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
-                >
-                  Оформить через Max
-                </button>
+                      openMaxOrder(
+                        cartItems,
+                        format(totalRub),
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                      )
+                    }}
+                    className="w-full bg-primary text-on-primary font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
+                  >
+                    Оформить через Max
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const discountLabel =
-                      activeDiscount && discountRub > 0
-                        ? activeDiscount.type === 'percent'
-                          ? `−${activeDiscount.value}% (${format(discountRub)})`
-                          : `−${format(discountRub)}`
-                        : undefined
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const discountLabel =
+                        activeDiscount && discountRub > 0
+                          ? activeDiscount.type === 'percent'
+                            ? `−${activeDiscount.value}% (${format(discountRub)})`
+                            : `−${format(discountRub)}`
+                          : undefined
 
-                    createOrder({
-                      items: cartItems,
-                      totalRub,
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                      messenger: 'VK',
-                    })
+                      createOrder({
+                        items: cartItems,
+                        totalRub,
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                        messenger: 'VK',
+                      })
 
-                    openVkOrder(
-                      cartItems,
-                      format(totalRub),
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                    )
-                  }}
-                  className="w-full bg-[#0077FF] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
-                >
-                  Оформить через VK
-                </button>
+                      openVkOrder(
+                        cartItems,
+                        format(totalRub),
+                        discountLabel,
+                        deliveryMethod,
+                        addressNotes,
+                      )
+                    }}
+                    className="w-full bg-[#0077FF] text-white font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
+                  >
+                    Оформить через VK
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
