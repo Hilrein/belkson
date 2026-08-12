@@ -13,6 +13,7 @@ import {
 import { openMaxOrder } from '../lib/maxOrder'
 import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
+import { useMessengerSettings } from '../store/MessengerSettingsContext'
 import { LoadingScreen } from './LoadingScreen'
 
 const LOGO_SRC =
@@ -55,24 +56,21 @@ export default function StorefrontLayout() {
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const [vkModalOpen, setVkModalOpen] = useState(false)
-  const [vkCountdown, setVkCountdown] = useState(3)
   const [pendingVkUrl, setPendingVkUrl] = useState<string | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (!vkModalOpen) return
-    if (vkCountdown <= 0) {
-      if (pendingVkUrl) {
-        window.open(pendingVkUrl, '_blank', 'noopener,noreferrer')
-      }
-      setVkModalOpen(false)
-      return
-    }
-    const timer = setTimeout(() => {
-      setVkCountdown((prev) => prev - 1)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [vkModalOpen, vkCountdown, pendingVkUrl])
+  const { getSetting } = useMessengerSettings()
+  const tgSetting = getSetting('telegram')
+  const maxSetting = getSetting('max')
+  const vkSetting = getSetting('vk')
+
+  const tgActive = tgSetting ? tgSetting.isActive : true
+  const maxActive = maxSetting ? maxSetting.isActive : true
+  const vkActive = vkSetting ? vkSetting.isActive : true
+
+  const tgValue = tgSetting?.value || 'belkson'
+  const maxValue = maxSetting?.value || 'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
+  const vkValue = vkSetting?.value || '94968923'
 
   // Direction-aware animation for the "Ещё X ₽ до скидки" amount
   const nextNeed = useMemo(
@@ -856,39 +854,7 @@ export default function StorefrontLayout() {
           {cartItems.length > 0 && (
             cartStep === 'checkout' ? (
               <div className="p-6 border-t border-surface-dim bg-surface-container-lowest space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const discountLabel =
-                      activeDiscount && discountRub > 0
-                        ? activeDiscount.type === 'percent'
-                          ? `−${activeDiscount.value}% (${format(discountRub)})`
-                          : `−${format(discountRub)}`
-                        : undefined
-
-                    createOrder({
-                      items: cartItems,
-                      totalRub,
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                      messenger: 'Telegram',
-                    })
-
-                    openTelegramOrder(
-                      cartItems,
-                      format(totalRub),
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                    )
-                  }}
-                  className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
-                >
-                  Оформить через Telegram
-                </button>
-
-                <div className="grid grid-cols-2 gap-3">
+                {tgActive && (
                   <button
                     type="button"
                     onClick={() => {
@@ -905,63 +871,104 @@ export default function StorefrontLayout() {
                         discountLabel,
                         deliveryMethod,
                         addressNotes,
-                        messenger: 'Max',
+                        messenger: 'Telegram',
                       })
 
-                      openMaxOrder(
+                      openTelegramOrder(
                         cartItems,
                         format(totalRub),
                         discountLabel,
                         deliveryMethod,
                         addressNotes,
+                        tgValue,
                       )
                     }}
-                    className="w-full bg-primary text-on-primary font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
+                    className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                   >
-                    Оформить через Max
+                    Оформить через Telegram
                   </button>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const discountLabel =
-                        activeDiscount && discountRub > 0
-                          ? activeDiscount.type === 'percent'
-                            ? `−${activeDiscount.value}% (${format(discountRub)})`
-                            : `−${format(discountRub)}`
-                          : undefined
+                {(maxActive || vkActive) && (
+                  <div className={`grid ${maxActive && vkActive ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                    {maxActive && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const discountLabel =
+                            activeDiscount && discountRub > 0
+                              ? activeDiscount.type === 'percent'
+                                ? `−${activeDiscount.value}% (${format(discountRub)})`
+                                : `−${format(discountRub)}`
+                              : undefined
 
-                      createOrder({
-                        items: cartItems,
-                        totalRub,
-                        discountLabel,
-                        deliveryMethod,
-                        addressNotes,
-                        messenger: 'VK',
-                      })
+                          createOrder({
+                            items: cartItems,
+                            totalRub,
+                            discountLabel,
+                            deliveryMethod,
+                            addressNotes,
+                            messenger: 'Max',
+                          })
 
-                      const text = buildVkOrderMessage(
-                        cartItems,
-                        format(totalRub),
-                        discountLabel,
-                        deliveryMethod,
-                        addressNotes,
-                      )
+                          openMaxOrder(
+                            cartItems,
+                            format(totalRub),
+                            discountLabel,
+                            deliveryMethod,
+                            addressNotes,
+                            maxValue,
+                          )
+                        }}
+                        className="w-full bg-primary text-on-primary font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
+                      >
+                        Оформить через Max
+                      </button>
+                    )}
 
-                      if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(text).catch(() => {})
-                      }
+                    {vkActive && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const discountLabel =
+                            activeDiscount && discountRub > 0
+                              ? activeDiscount.type === 'percent'
+                                ? `−${activeDiscount.value}% (${format(discountRub)})`
+                                : `−${format(discountRub)}`
+                              : undefined
 
-                      const url = getVkOrderUrl(text)
-                      setPendingVkUrl(url)
-                      setVkCountdown(3)
-                      setVkModalOpen(true)
-                    }}
-                    className="w-full bg-[#0077FF] text-white font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
-                  >
-                    Оформить через VK
-                  </button>
-                </div>
+                          createOrder({
+                            items: cartItems,
+                            totalRub,
+                            discountLabel,
+                            deliveryMethod,
+                            addressNotes,
+                            messenger: 'VK',
+                          })
+
+                          const text = buildVkOrderMessage(
+                            cartItems,
+                            format(totalRub),
+                            discountLabel,
+                            deliveryMethod,
+                            addressNotes,
+                          )
+
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(text).catch(() => {})
+                          }
+
+                          const url = getVkOrderUrl(text, vkValue)
+                          setPendingVkUrl(url)
+                          setVkModalOpen(true)
+                        }}
+                        className="w-full bg-[#0077FF] text-white font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
+                      >
+                        Оформить через VK
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
@@ -1067,12 +1074,6 @@ export default function StorefrontLayout() {
               <p className="text-xs text-on-surface-variant leading-relaxed">
                 В чате VK зажмите поле ввода сообщения и выберите <strong className="text-on-surface font-semibold">«Вставить»</strong> (или нажмите Ctrl+V).
               </p>
-            </div>
-
-            <div className="py-2.5 bg-surface-container-low border border-gray-200 rounded-2xl">
-              <span className="text-xs font-semibold text-primary">
-                Переход в VK через {vkCountdown} сек...
-              </span>
             </div>
 
             <div className="flex flex-col gap-2">

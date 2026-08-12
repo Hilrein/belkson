@@ -61,8 +61,9 @@ export function openTelegramOrder(
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
+  customUsername?: string,
 ) {
-  const username = getTelegramUsername()
+  const username = (customUsername || getTelegramUsername()).replace(/^@/, '')
   const text = buildTelegramOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -73,6 +74,7 @@ export function openTelegramOrder(
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-export function getTelegramProfileUrl(): string {
-  return `https://t.me/${getTelegramUsername()}`
+export function getTelegramProfileUrl(customUsername?: string): string {
+  const username = (customUsername || getTelegramUsername()).replace(/^@/, '')
+  return `https://t.me/${username}`
 }

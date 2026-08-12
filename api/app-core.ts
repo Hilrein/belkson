@@ -1120,6 +1120,92 @@ app.patch('/api/orders/:id', handlePatchOrder)
 app.delete('/orders/:id', handleDeleteOrder)
 app.delete('/api/orders/:id', handleDeleteOrder)
 
+/* ─── MESSENGER SETTINGS ─────────────────────────────────────────── */
+
+type DbMessengerSettingRow = {
+  id: string
+  label: string
+  value: string
+  is_active: boolean
+  updated_at: string
+}
+
+async function ensureMessengerSettingsTable() {
+  const client = getSql()
+  try {
+    await client`
+      CREATE TABLE IF NOT EXISTS messenger_settings (
+        id TEXT PRIMARY KEY,
+        label TEXT NOT NULL DEFAULT '',
+        value TEXT NOT NULL DEFAULT '',
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `
+    await client`
+      INSERT INTO messenger_settings (id, label, value, is_active)
+      VALUES 
+        ('telegram', 'Telegram', 'belkson', true),
+        ('max', 'Max', 'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', true),
+        ('vk', 'VK', '94968923', true)
+      ON CONFLICT (id) DO NOTHING
+    `
+  } catch (err) {
+    console.warn('ensureMessengerSettingsTable error:', err)
+  }
+}
+
+function mapMessengerSetting(r: DbMessengerSettingRow) {
+  return {
+    id: r.id,
+    label: r.label,
+    value: r.value,
+    isActive: Boolean(r.is_active),
+    updatedAt: r.updated_at,
+  }
+}
+
+async function handleGetMessengerSettings(c: any) {
+  const client = getSql()
+  await ensureMessengerSettingsTable()
+  const rows = (await client`SELECT * FROM messenger_settings ORDER BY id ASC`) as DbMessengerSettingRow[]
+  return c.json({ settings: rows.map(mapMessengerSetting) })
+}
+
+async function handlePutMessengerSettings(c: any) {
+  const body = await c.req.json()
+  const client = getSql()
+  await ensureMessengerSettingsTable()
+
+  const list = Array.isArray(body) ? body : Array.isArray(body.settings) ? body.settings : [body]
+
+  for (const item of list) {
+    if (!item || !item.id) continue
+    const id = String(item.id)
+    const label = item.label !== undefined ? String(item.label) : id.toUpperCase()
+    const value = item.value !== undefined ? String(item.value).trim() : ''
+    const isActive = item.isActive !== undefined ? Boolean(item.isActive) : true
+
+    await client`
+      INSERT INTO messenger_settings (id, label, value, is_active, updated_at)
+      VALUES (${id}, ${label}, ${value}, ${isActive}, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        label = EXCLUDED.label,
+        value = EXCLUDED.value,
+        is_active = EXCLUDED.is_active,
+        updated_at = NOW()
+    `
+  }
+
+  const rows = (await client`SELECT * FROM messenger_settings ORDER BY id ASC`) as DbMessengerSettingRow[]
+  return c.json({ settings: rows.map(mapMessengerSetting) })
+}
+
+app.get('/messenger-settings', handleGetMessengerSettings)
+app.get('/api/messenger-settings', handleGetMessengerSettings)
+app.put('/messenger-settings', handlePutMessengerSettings)
+app.put('/api/messenger-settings', handlePutMessengerSettings)
+
 app.onError((err, c) => {
   console.error(err)
   return c.json(

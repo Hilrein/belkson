@@ -57,9 +57,15 @@ export function openMaxOrder(
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
+  customMaxUrl?: string,
 ) {
-  const maxUrl = getMaxUrl()
+  const maxUrl = customMaxUrl || getMaxUrl()
   const text = buildMaxOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {})
+  }
+
   const url = `${maxUrl}${maxUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
 }
