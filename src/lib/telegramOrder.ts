@@ -19,6 +19,8 @@ export function buildTelegramOrderMessage(
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
+  customerName?: string,
+  customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
     const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
@@ -32,13 +34,19 @@ export function buildTelegramOrderMessage(
     '',
   ]
 
+  if (customerName?.trim()) {
+    parts.push(`ФИО получателя: ${customerName.trim()}`)
+  }
+  if (customerPhone?.trim()) {
+    parts.push(`Телефон: ${customerPhone.trim()}`)
+  }
   if (deliveryMethod) {
     parts.push(`Способ доставки: ${deliveryMethod}`)
   }
   if (addressNotes?.trim()) {
     parts.push(`Адрес / ПВЗ: ${addressNotes.trim()}`)
   }
-  if (deliveryMethod || addressNotes?.trim()) {
+  if (customerName?.trim() || customerPhone?.trim() || deliveryMethod || addressNotes?.trim()) {
     parts.push('')
   }
 
@@ -62,9 +70,11 @@ export function openTelegramOrder(
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
   customUsername?: string,
+  customerName?: string,
+  customerPhone?: string,
 ) {
   const username = (customUsername || getTelegramUsername()).replace(/^@/, '')
-  const text = buildTelegramOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+  const text = buildTelegramOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes, customerName, customerPhone)
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(() => {})

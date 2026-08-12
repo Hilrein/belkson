@@ -18,6 +18,8 @@ export function buildMaxOrderMessage(
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
+  customerName?: string,
+  customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
     const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
@@ -31,13 +33,19 @@ export function buildMaxOrderMessage(
     '',
   ]
 
+  if (customerName?.trim()) {
+    parts.push(`ФИО получателя: ${customerName.trim()}`)
+  }
+  if (customerPhone?.trim()) {
+    parts.push(`Телефон: ${customerPhone.trim()}`)
+  }
   if (deliveryMethod) {
     parts.push(`Способ доставки: ${deliveryMethod}`)
   }
   if (addressNotes?.trim()) {
     parts.push(`Адрес / ПВЗ: ${addressNotes.trim()}`)
   }
-  if (deliveryMethod || addressNotes?.trim()) {
+  if (customerName?.trim() || customerPhone?.trim() || deliveryMethod || addressNotes?.trim()) {
     parts.push('')
   }
 
@@ -58,9 +66,11 @@ export function openMaxOrder(
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
   customMaxUrl?: string,
+  customerName?: string,
+  customerPhone?: string,
 ) {
   const maxUrl = customMaxUrl || getMaxUrl()
-  const text = buildMaxOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+  const text = buildMaxOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes, customerName, customerPhone)
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(() => {})

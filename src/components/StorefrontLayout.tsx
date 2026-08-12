@@ -48,6 +48,8 @@ export default function StorefrontLayout() {
   const [navOpen, setNavOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [cartStep, setCartStep] = useState<'items' | 'checkout'>('items')
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('Ozon')
   const [addressNotes, setAddressNotes] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -738,6 +740,30 @@ export default function StorefrontLayout() {
                 </button>
               </div>
 
+              {/* Customer Name */}
+              <div className="space-y-1.5">
+                <span className="text-xs text-on-surface-variant block font-medium">ФИО получателя</span>
+                <input
+                  type="text"
+                  placeholder="Иванов Иван Иванович"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full px-3.5 py-3 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+
+              {/* Customer Phone */}
+              <div className="space-y-1.5">
+                <span className="text-xs text-on-surface-variant block font-medium">Номер телефона</span>
+                <input
+                  type="tel"
+                  placeholder="+7 (999) 000-00-00"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="w-full px-3.5 py-3 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+
               {/* Segmented delivery picker */}
               <div className="space-y-2">
                 <span className="text-xs text-on-surface-variant block font-medium">Способ доставки</span>
@@ -865,12 +891,18 @@ export default function StorefrontLayout() {
                             : `−${format(discountRub)}`
                           : undefined
 
+                      const fullNotes = [
+                        customerName ? `ФИО: ${customerName}` : '',
+                        customerPhone ? `Тел: ${customerPhone}` : '',
+                        addressNotes ? `Адрес: ${addressNotes}` : '',
+                      ].filter(Boolean).join(' | ')
+
                       createOrder({
                         items: cartItems,
                         totalRub,
                         discountLabel,
                         deliveryMethod,
-                        addressNotes,
+                        addressNotes: fullNotes,
                         messenger: 'Telegram',
                       })
 
@@ -881,6 +913,8 @@ export default function StorefrontLayout() {
                         deliveryMethod,
                         addressNotes,
                         tgValue,
+                        customerName,
+                        customerPhone,
                       )
                     }}
                     className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
@@ -902,12 +936,18 @@ export default function StorefrontLayout() {
                                 : `−${format(discountRub)}`
                               : undefined
 
+                          const fullNotes = [
+                            customerName ? `ФИО: ${customerName}` : '',
+                            customerPhone ? `Тел: ${customerPhone}` : '',
+                            addressNotes ? `Адрес: ${addressNotes}` : '',
+                          ].filter(Boolean).join(' | ')
+
                           createOrder({
                             items: cartItems,
                             totalRub,
                             discountLabel,
                             deliveryMethod,
-                            addressNotes,
+                            addressNotes: fullNotes,
                             messenger: 'Max',
                           })
 
@@ -918,6 +958,8 @@ export default function StorefrontLayout() {
                             deliveryMethod,
                             addressNotes,
                             maxValue,
+                            customerName,
+                            customerPhone,
                           )
                         }}
                         className="w-full bg-primary text-on-primary font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
@@ -937,12 +979,18 @@ export default function StorefrontLayout() {
                                 : `−${format(discountRub)}`
                               : undefined
 
+                          const fullNotes = [
+                            customerName ? `ФИО: ${customerName}` : '',
+                            customerPhone ? `Тел: ${customerPhone}` : '',
+                            addressNotes ? `Адрес: ${addressNotes}` : '',
+                          ].filter(Boolean).join(' | ')
+
                           createOrder({
                             items: cartItems,
                             totalRub,
                             discountLabel,
                             deliveryMethod,
-                            addressNotes,
+                            addressNotes: fullNotes,
                             messenger: 'VK',
                           })
 
@@ -952,6 +1000,8 @@ export default function StorefrontLayout() {
                             discountLabel,
                             deliveryMethod,
                             addressNotes,
+                            customerName,
+                            customerPhone,
                           )
 
                           if (navigator.clipboard && navigator.clipboard.writeText) {

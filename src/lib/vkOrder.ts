@@ -46,6 +46,8 @@ export function buildVkOrderMessage(
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
+  customerName?: string,
+  customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
     const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
@@ -59,13 +61,19 @@ export function buildVkOrderMessage(
     '',
   ]
 
+  if (customerName?.trim()) {
+    parts.push(`ФИО получателя: ${customerName.trim()}`)
+  }
+  if (customerPhone?.trim()) {
+    parts.push(`Телефон: ${customerPhone.trim()}`)
+  }
   if (deliveryMethod) {
     parts.push(`Способ доставки: ${deliveryMethod}`)
   }
   if (addressNotes?.trim()) {
     parts.push(`Адрес / ПВЗ: ${addressNotes.trim()}`)
   }
-  if (deliveryMethod || addressNotes?.trim()) {
+  if (customerName?.trim() || customerPhone?.trim() || deliveryMethod || addressNotes?.trim()) {
     parts.push('')
   }
 
@@ -86,8 +94,10 @@ export function openVkOrder(
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
   customVkValue?: string,
+  customerName?: string,
+  customerPhone?: string,
 ) {
-  const text = buildVkOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+  const text = buildVkOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes, customerName, customerPhone)
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(() => {})
