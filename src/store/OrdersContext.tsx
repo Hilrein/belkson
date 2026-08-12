@@ -41,32 +41,11 @@ type OrdersContextValue = {
   deleteOrder: (id: number) => Promise<void>
 }
 
-const STORAGE_KEY = 'belkson.orders.v1'
-
 const OrdersContext = createContext<OrdersContextValue | null>(null)
 
 export function OrdersProvider({ children }: { children: ReactNode }) {
-  const [orders, setOrders] = useState<Order[]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      return raw ? JSON.parse(raw) : []
-    } catch {
-      return []
-    }
-  })
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(false)
-
-  const updateOrdersState = (updater: (prev: Order[]) => Order[]) => {
-    setOrders((prev) => {
-      const next = updater(prev)
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      } catch {
-        /* ignore storage quota */
-      }
-      return next
-    })
-  }
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -75,11 +54,11 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data.orders)) {
-          updateOrdersState(() => data.orders)
+          setOrders(data.orders)
         }
       }
     } catch (err) {
-      console.warn('Failed to fetch orders from backend API:', err)
+      console.warn('Failed to fetch orders from database API:', err)
     } finally {
       setLoading(false)
     }
@@ -87,6 +66,19 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchOrders()
+    // Auto-refresh orders every 20 seconds for live admin updates
+    const interval = setInterval(() => {
+      fetch('/api/orders')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.orders)) {
+            setOrders(data.orders)
+          }
+        })
+        .catch(() => {})
+    }, 20000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const createOrder = async (payload: {
@@ -115,8 +107,6 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       messenger: payload.messenger,
     }
 
-    let created: Order | null = null
-
     try {
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -126,56 +116,54 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         if (data.order) {
-          created = data.order
+          const newOrder: Order = data.order
+          setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)])
+          return newOrder
         }
       }
     } catch (err) {
-      console.warn('Failed to send order to backend API:', err)
+      console.warn('Failed to send order to database API:', err)
     }
 
-    if (!created) {
-      // Fallback local order object
-      created = {
-        id: Date.now(),
-        createdAt: new Date().toISOString(),
-        items: formattedItems,
-        totalRub: payload.totalRub,
-        discountLabel: payload.discountLabel,
-        deliveryMethod: payload.deliveryMethod,
-        addressNotes: payload.addressNotes,
-        messenger: payload.messenger,
-        status: 'new',
-      }
-    }
-
-    const newOrder = created
-    updateOrdersState((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)])
-    return newOrder
+    return null
   }
 
   const updateOrderStatus = async (id: number, status: OrderStatus) => {
-    updateOrdersState((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)))
+    // Optimistic UI update
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)))
 
     try {
-      await fetch(`/api/orders/${id}`, {
+      const res = await fetch(`/api/orders/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.order) {
+          setOrders((prev) => prev.map((o) => (o.id === id ? data.order : o)))
+        }
+      }
     } catch (err) {
       console.warn(`Failed to update order ${id} status:`, err)
     }
   }
 
   const deleteOrder = async (id: number) => {
-    updateOrdersState((prev) => prev.filter((o) => o.id !== id))
+    // Optimistic UI update
+    setOrders((prev) => prev.filter((o) => o.id !== id))
 
     try {
-      await fetch(`/api/orders/${id}`, {
+      const res = await fetch(`/api/orders/${id}`, {
         method: 'DELETE',
       })
+      if (!res.ok) {
+        // If server deletion failed, re-fetch orders from DB to remain accurate
+        void fetchOrders()
+      }
     } catch (err) {
-      console.warn(`Failed to delete order ${id}:`, err)
+      console.warn(`Failed to delete order ${id} from database:`, err)
+      void fetchOrders()
     }
   }
 
