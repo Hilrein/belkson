@@ -18,7 +18,10 @@ export function getTelegramUsername(): string {
  * Set in .env: VITE_MAX_URL=https://max.ru/...
  */
 export function getMaxUrl(): string {
-  return (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() || 'https://max.ru'
+  return (
+    (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() ||
+    'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
+  )
 }
 
 export function buildOrderMessage(
@@ -73,7 +76,7 @@ export function openTelegramOrder(
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-/** Open Max messenger chat with prefilled order text */
+/** Open Max messenger chat with prefilled order text and fallback clipboard copy */
 export function openMaxOrder(
   items: CartLine[],
   totalLabel: string,
@@ -83,6 +86,12 @@ export function openMaxOrder(
 ) {
   const maxUrl = getMaxUrl()
   const text = buildOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+
+  // Copy text to clipboard so user can instantly paste if mobile app doesn't auto-parse text param
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {})
+  }
+
   const url = `${maxUrl}${maxUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
 }
