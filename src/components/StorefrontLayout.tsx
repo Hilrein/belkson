@@ -11,6 +11,7 @@ import {
   type DeliveryMethod,
 } from '../lib/telegramOrder'
 import { openMaxOrder } from '../lib/maxOrder'
+import { openVkOrder } from '../lib/vkOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { LoadingScreen } from './LoadingScreen'
 
@@ -899,6 +900,38 @@ export default function StorefrontLayout() {
                   className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                 >
                   Оформить через Max
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const discountLabel =
+                      activeDiscount && discountRub > 0
+                        ? activeDiscount.type === 'percent'
+                          ? `−${activeDiscount.value}% (${format(discountRub)})`
+                          : `−${format(discountRub)}`
+                        : undefined
+
+                    createOrder({
+                      items: cartItems,
+                      totalRub,
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                      messenger: 'VK',
+                    })
+
+                    openVkOrder(
+                      cartItems,
+                      format(totalRub),
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                    )
+                  }}
+                  className="w-full bg-[#0077FF] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
+                >
+                  Оформить через VK
                 </button>
               </div>
             ) : (

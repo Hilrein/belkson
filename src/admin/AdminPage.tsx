@@ -155,7 +155,7 @@ function AdminOrdersView() {
   const { orders, loading, fetchOrders, updateOrderStatus, deleteOrder } = useOrders()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'completed' | 'cancelled'>('all')
-  const [messengerFilter, setMessengerFilter] = useState<'all' | 'Telegram' | 'Max'>('all')
+  const [messengerFilter, setMessengerFilter] = useState<'all' | 'Telegram' | 'Max' | 'VK'>('all')
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
@@ -274,7 +274,7 @@ function AdminOrdersView() {
           </div>
 
           <div className="flex rounded-lg bg-surface-container-low p-1 border border-gray-200 text-xs">
-            {(['all', 'Telegram', 'Max'] as const).map((ms) => (
+            {(['all', 'Telegram', 'Max', 'VK'] as const).map((ms) => (
               <button
                 key={ms}
                 type="button"

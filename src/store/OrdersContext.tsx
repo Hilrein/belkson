@@ -20,7 +20,7 @@ export type Order = {
   discountLabel?: string
   deliveryMethod?: string
   addressNotes?: string
-  messenger: 'Telegram' | 'Max'
+  messenger: 'Telegram' | 'Max' | 'VK'
   status: OrderStatus
 }
 
@@ -35,7 +35,7 @@ type OrdersContextValue = {
     discountLabel?: string
     deliveryMethod?: string
     addressNotes?: string
-    messenger: 'Telegram' | 'Max'
+    messenger: 'Telegram' | 'Max' | 'VK'
   }) => Promise<Order | null>
   updateOrderStatus: (id: number, status: OrderStatus) => Promise<void>
   deleteOrder: (id: number) => Promise<void>
@@ -87,7 +87,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     discountLabel?: string
     deliveryMethod?: string
     addressNotes?: string
-    messenger: 'Telegram' | 'Max'
+    messenger: 'Telegram' | 'Max' | 'VK'
   }): Promise<Order | null> => {
     const formattedItems: OrderItem[] = payload.items.map((line) => ({
       productId: line.productId,

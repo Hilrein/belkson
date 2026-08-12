@@ -1051,7 +1051,7 @@ function mapOrder(r: DbOrderRow) {
     discountLabel: r.discount_label ?? undefined,
     deliveryMethod: r.delivery_method ?? undefined,
     addressNotes: r.address_notes ?? undefined,
-    messenger: r.messenger as 'Telegram' | 'Max',
+    messenger: r.messenger as 'Telegram' | 'Max' | 'VK',
     status: r.status as 'new' | 'completed' | 'cancelled',
   }
 }
@@ -1073,7 +1073,7 @@ async function handlePostOrder(c: any) {
   const discountLabel = String(body.discountLabel ?? '')
   const deliveryMethod = String(body.deliveryMethod ?? '')
   const addressNotes = String(body.addressNotes ?? '')
-  const messenger = body.messenger === 'Max' ? 'Max' : 'Telegram'
+  const messenger = body.messenger === 'VK' ? 'VK' : body.messenger === 'Max' ? 'Max' : 'Telegram'
 
   const rows = (await client`
     INSERT INTO orders (items, total_rub, discount_label, delivery_method, address_notes, messenger, status)
