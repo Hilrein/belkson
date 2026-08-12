@@ -649,69 +649,64 @@ export default function StorefrontLayout() {
           onClick={toggleCart}
         />
         <div className={cartPanelClass} id="cart-panel">
-          <div className="px-5 py-4 border-b border-[#eae6ee] flex justify-between items-center bg-white sticky top-0 z-10">
+          <div className="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
             {cartStep === 'checkout' ? (
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-700 transition-colors"
-                  onClick={() => setCartStep('items')}
-                  aria-label="Назад к корзине"
-                >
-                  <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                </button>
-                <h2 className="font-semibold text-slate-900 text-base">
-                  Оформление заказа
-                </h2>
-              </div>
+              <button
+                type="button"
+                className="flex items-center gap-2 text-primary hover:text-on-primary-fixed-variant font-headline-md text-base transition-colors"
+                onClick={() => setCartStep('items')}
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+                Назад к товарам
+              </button>
             ) : (
-              <h2 className="font-semibold text-slate-900 text-base flex items-center gap-2">
-                <span className="material-symbols-outlined text-xl text-[#8a4193]">shopping_bag</span>
-                Корзина
+              <h2 className="font-headline-md text-primary font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined">shopping_bag</span>
+                Ваша корзина
               </h2>
             )}
             <button
               type="button"
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors"
               onClick={toggleCart}
             >
-              <span className="material-symbols-outlined text-xl">close</span>
+              <span className="material-symbols-outlined">close</span>
             </button>
           </div>
 
           {cartItems.length === 0 ? (
-            <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-3">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-1">
-                <span className="material-symbols-outlined text-3xl">
+            <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-4">
+              <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/50 mb-4">
+                <span className="material-symbols-outlined text-5xl">
                   shopping_cart
                 </span>
               </div>
-              <h3 className="font-medium text-slate-900 text-base">
-                Ваша корзина пуста
+              <h3 className="font-headline-md text-on-surface">
+                Пока здесь пусто
               </h3>
-              <p className="text-slate-500 text-xs max-w-[240px]">
-                Выберите понравившиеся вещи в каталоге, чтобы сделать заказ.
+              <p className="font-body-md text-on-surface-variant max-w-[250px]">
+                Добавьте товары из нашего каталога, чтобы сделать заказ.
               </p>
               <Link
                 to="/catalog"
-                className="mt-3 px-6 py-2.5 bg-[#8a4193] text-white rounded-full text-xs font-medium hover:bg-[#783681] transition-colors"
+                className="mt-4 px-8 py-3 bg-primary-container text-on-primary-container rounded-full font-label-sm hover:bg-primary hover:text-white transition-colors"
                 onClick={toggleCart}
               >
                 Перейти в каталог
               </Link>
             </div>
           ) : cartStep === 'checkout' ? (
-            <div key="step-checkout" className="flex-1 overflow-y-auto p-5 space-y-5 animate-step-next">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               {/* Order summary banner */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-dim flex justify-between items-center">
                 <div>
-                  <p className="text-xs text-slate-500">Товаров: <span className="font-medium text-slate-900">{cartItems.length} шт.</span></p>
-                  <p className="text-base font-bold text-slate-900 mt-0.5">К оплате: {format(totalRub)}</p>
+                  <p className="text-xs text-on-surface-variant">Позиций в заказе: <span className="font-semibold text-on-surface">{cartItems.length} шт.</span></p>
+                  <p className="font-headline-md text-primary font-bold text-base mt-0.5">К оплате: {format(totalRub)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCartStep('items')}
-                  className="text-xs font-medium text-[#8a4193] hover:underline"
+                  className="text-xs font-semibold text-primary underline hover:text-on-primary-fixed-variant"
                 >
                   Изменить
                 </button>
@@ -719,8 +714,8 @@ export default function StorefrontLayout() {
 
               {/* Delivery selection */}
               <div>
-                <label className="block text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2">
-                  Доставка
+                <label className="block text-sm font-semibold text-on-surface mb-2">
+                  1. Способ доставки
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -734,14 +729,14 @@ export default function StorefrontLayout() {
                         key={option.id}
                         type="button"
                         onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
-                        className={`p-3 rounded-xl border text-center transition-all text-xs flex flex-col items-center gap-1 ${
+                        className={`p-3 rounded-2xl border text-center transition-colors flex flex-col items-center gap-1 ${
                           isSelected
-                            ? 'border-[#8a4193] bg-[#8a4193]/5 text-[#8a4193] font-semibold'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                            ? 'border-primary bg-primary-container text-on-primary-container font-semibold shadow-sm'
+                            : 'border-surface-dim bg-surface-container-low text-on-surface-variant hover:border-primary/50'
                         }`}
                       >
-                        <span className="font-medium text-sm">{option.name}</span>
-                        <span className="text-[11px] text-slate-400 font-normal">{option.badge}</span>
+                        <span className="text-sm font-semibold">{option.name}</span>
+                        <span className="text-xs opacity-80">{option.badge}</span>
                       </button>
                     )
                   })}
@@ -750,24 +745,24 @@ export default function StorefrontLayout() {
 
               {/* Delivery Address / Notes */}
               <div>
-                <label className="block text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2">
-                  Адрес ПВЗ или комментарий <span className="font-normal text-slate-400 lowercase">(опционально)</span>
+                <label className="block text-sm font-semibold text-on-surface mb-1.5">
+                  2. Город или адрес ПВЗ <span className="font-normal text-xs text-on-surface-variant">(по желанию)</span>
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ"
+                  placeholder="Например: г. Москва, ул. Ленина 10 или номер ПВЗ"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#8a4193] transition-colors resize-none"
+                  className="w-full p-3 rounded-2xl border border-surface-dim bg-surface-container-low text-sm text-on-surface focus:outline-none focus:border-primary resize-none"
                 />
               </div>
 
               {/* Messenger choices */}
-              <div className="pt-1">
-                <label className="block text-xs font-semibold text-slate-900 uppercase tracking-wider mb-2.5">
-                  Отправить заказ
+              <div>
+                <label className="block text-sm font-semibold text-on-surface mb-3">
+                  3. Отправить заказ
                 </label>
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -785,9 +780,9 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full py-3 px-4 rounded-full bg-[#24A1DE] hover:bg-[#1f8ec4] text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                    className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                   >
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/>
                     </svg>
                     Оформить через Telegram
@@ -810,56 +805,56 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full py-3 px-4 rounded-full bg-[#8a4193] hover:bg-[#783681] text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                    className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                   >
-                    <span className="material-symbols-outlined text-lg">forum</span>
+                    <span className="material-symbols-outlined text-xl">forum</span>
                     Оформить через Max
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            <div key="step-items" className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 animate-step-back">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {cartItems.map((line) => (
                 <div
                   key={line.productId}
-                  className="flex gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-colors"
+                  className="flex gap-3 p-3 rounded-2xl bg-surface-container-low border border-surface-dim"
                 >
-                  <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-surface-variant">
                     <img
                       src={line.image}
                       alt={line.name}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div className="flex-1 min-w-0 flex flex-col">
                     <div className="flex justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-900 text-xs sm:text-sm line-clamp-1">
+                        <p className="font-semibold text-on-surface text-sm sm:text-base line-clamp-2 leading-snug">
                           {line.name}
                         </p>
                         {line.sizes && line.sizes.length > 0 && (
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-xs text-on-surface-variant mt-0.5">
                             {line.sizes.join(', ')}
                           </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        className="shrink-0 text-slate-400 hover:text-red-500 transition-colors p-1"
+                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-surface-variant"
                         onClick={() => removeFromCart(line.productId)}
                         aria-label="Удалить"
                       >
-                        <span className="material-symbols-outlined text-base">
+                        <span className="material-symbols-outlined text-[18px]">
                           delete
                         </span>
                       </button>
                     </div>
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <div className="flex items-center border border-slate-200 rounded-full bg-white">
+                    <div className="mt-auto pt-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 border border-surface-dim rounded-full bg-surface">
                         <button
                           type="button"
-                          className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors text-xs"
+                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
                           onClick={() =>
                             setQuantity(line.productId, line.quantity - 1)
                           }
@@ -867,12 +862,12 @@ export default function StorefrontLayout() {
                         >
                           −
                         </button>
-                        <span className="w-5 text-center text-xs font-semibold tabular-nums text-slate-900">
+                        <span className="w-6 text-center text-sm font-semibold tabular-nums">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors text-xs"
+                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
                           onClick={() =>
                             setQuantity(line.productId, line.quantity + 1)
                           }
@@ -881,7 +876,7 @@ export default function StorefrontLayout() {
                           +
                         </button>
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 tabular-nums">
+                      <span className="text-sm sm:text-base font-bold text-primary tabular-nums">
                         {format(line.priceRub * line.quantity)}
                       </span>
                     </div>
@@ -891,14 +886,14 @@ export default function StorefrontLayout() {
             </div>
           )}
           {cartStep === 'items' && (
-            <div className="p-5 border-t border-slate-200 bg-white">
+            <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
               {nextDiscount && (
-                <div className="mb-3">
-                  <p className="mb-1.5 text-[11px] text-slate-500">
+                <div className="mb-4">
+                  <p className="mb-2 text-xs text-on-surface-variant">
                     Ещё{' '}
                     <span
                       key={`${nextNeed}-${needDirection}`}
-                      className={`inline-block font-semibold text-slate-900 ${
+                      className={`inline-block font-semibold text-on-surface ${
                         needDirection === 'up'
                           ? 'animate-need-up'
                           : needDirection === 'down'
@@ -909,15 +904,15 @@ export default function StorefrontLayout() {
                       {format(nextNeed)}
                     </span>{' '}
                     до скидки{' '}
-                    <span className="font-semibold text-[#8a4193]">
+                    <span className="font-semibold text-primary">
                       {nextDiscount.type === 'percent'
                         ? `${nextDiscount.value}%`
                         : format(nextDiscount.value)}
                     </span>
                   </p>
-                  <div className="h-1 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
                     <div
-                      className="h-full rounded-full bg-[#8a4193] transition-[width] duration-300 ease-out"
+                      className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
                       style={{
                         width: `${Math.min(
                           100,
@@ -930,12 +925,12 @@ export default function StorefrontLayout() {
                   </div>
                 </div>
               )}
-              <div className="flex justify-between items-center mb-1 text-xs text-slate-500">
+              <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
                 <span>Сумма</span>
-                <span className="text-slate-900 font-medium">{format(subtotalRub)}</span>
+                <span>{format(subtotalRub)}</span>
               </div>
               {activeDiscount && discountRub > 0 && (
-                <div className="flex justify-between items-center mb-1 text-xs text-emerald-600">
+                <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
                   <span>
                     Скидка{' '}
                     {activeDiscount.type === 'percent'
@@ -945,19 +940,19 @@ export default function StorefrontLayout() {
                   <span className="font-semibold">−{format(discountRub)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center mb-4 text-sm font-bold text-slate-900">
+              <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
                 <span>Итого</span>
-                <span className="text-base text-[#8a4193]">
+                <span className="font-bold text-primary">
                   {format(totalRub)}
                 </span>
               </div>
               <button
                 type="button"
                 disabled={cartItems.length === 0}
-                className={`w-full bg-[#8a4193] text-white text-xs font-semibold py-3 rounded-full shadow-xs transition-colors ${
+                className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
                   cartItems.length === 0
                     ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-[#783681] active:scale-[0.99]'
+                    : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
                 }`}
                 onClick={() => {
                   if (cartItems.length === 0) return
