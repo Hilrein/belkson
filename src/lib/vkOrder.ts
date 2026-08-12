@@ -82,8 +82,5 @@ export function openVkOrder(
   }
 
   const url = getVkUrl()
-  const win = window.open(url, '_blank', 'noopener,noreferrer')
-  if (!win) {
-    window.location.href = url
-  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
