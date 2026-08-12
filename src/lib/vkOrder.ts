@@ -2,9 +2,8 @@ import type { CartLine } from '../store/CartContext'
 import type { DeliveryMethod } from './telegramOrder'
 
 /**
- * Get VK conversation ID or username.
- * Supports direct links like https://vk.ru/im/convo/94968923?tab=all
- * Set in .env: VITE_VK_USERNAME=94968923 or VITE_VK_URL=https://vk.ru/im/convo/94968923
+ * Get VK direct chat URL.
+ * Official VK messenger deep link: vk.me/username
  */
 export function getVkUsername(): string {
   const rawUsername = (import.meta.env.VITE_VK_USERNAME as string | undefined)?.trim()?.replace(/^@/, '')
@@ -27,7 +26,7 @@ export function getVkUsername(): string {
 
 export function getVkUrl(): string {
   const username = getVkUsername()
-  return `https://vk.com/im?sel=${username}`
+  return `https://vk.me/${username}`
 }
 
 export function buildVkOrderMessage(
@@ -68,7 +67,7 @@ export function buildVkOrderMessage(
   return parts.join('\n')
 }
 
-/** Open VK direct chat with user/convo 94968923 with prefilled order text and fallback clipboard copy */
+/** Open VK chat with fallback clipboard copy */
 export function openVkOrder(
   items: CartLine[],
   totalLabel: string,
@@ -76,14 +75,13 @@ export function openVkOrder(
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
 ) {
-  const username = getVkUsername()
   const text = buildVkOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(() => {})
   }
 
-  const url = `https://vk.com/im?sel=${username}&text=${encodeURIComponent(text)}`
+  const url = getVkUrl()
   const win = window.open(url, '_blank', 'noopener,noreferrer')
   if (!win) {
     window.location.href = url
