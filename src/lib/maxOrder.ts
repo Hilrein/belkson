@@ -1,19 +1,18 @@
 import type { CartLine } from '../store/CartContext'
-
-export type DeliveryMethod = 'Ozon' | 'Яндекс Маркет' | '5post'
+import type { DeliveryMethod } from './telegramOrder'
 
 /**
- * Telegram username for orders (without @).
- * Set in .env: VITE_TELEGRAM_USERNAME=your_shop_account
+ * Max messenger URL for orders.
+ * Set in .env: VITE_MAX_URL=https://max.ru/...
  */
-export function getTelegramUsername(): string {
-  return (import.meta.env.VITE_TELEGRAM_USERNAME as string | undefined)?.replace(
-    /^@/,
-    '',
-  ) || 'belkson'
+export function getMaxUrl(): string {
+  return (
+    (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() ||
+    'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
+  )
 }
 
-export function buildTelegramOrderMessage(
+export function buildMaxOrderMessage(
   items: CartLine[],
   totalLabel: string,
   discountLabel?: string,
@@ -26,7 +25,7 @@ export function buildTelegramOrderMessage(
   })
 
   const parts = [
-    'Здравствуйте! Хочу оформить заказ:',
+    'Здравствуйте! Хочу оформить заказ в MAX:',
     '',
     ...lines,
     '',
@@ -51,23 +50,16 @@ export function buildTelegramOrderMessage(
   return parts.join('\n')
 }
 
-// Backward compatibility alias for buildTelegramOrderMessage
-export const buildOrderMessage = buildTelegramOrderMessage
-
-/** Open Telegram chat with prefilled order text */
-export function openTelegramOrder(
+/** Open Max messenger chat with prefilled order text */
+export function openMaxOrder(
   items: CartLine[],
   totalLabel: string,
   discountLabel?: string,
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
 ) {
-  const username = getTelegramUsername()
-  const text = buildTelegramOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
-  const url = `https://t.me/${username}?text=${encodeURIComponent(text)}`
+  const maxUrl = getMaxUrl()
+  const text = buildMaxOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
+  const url = `${maxUrl}${maxUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
-}
-
-export function getTelegramProfileUrl(): string {
-  return `https://t.me/${getTelegramUsername()}`
 }

@@ -6,10 +6,10 @@ import { useOfficialStores } from '../store/OfficialStoresContext'
 import { CATEGORIES } from '../store/catalog'
 import {
   openTelegramOrder,
-  openMaxOrder,
   getTelegramProfileUrl,
   type DeliveryMethod,
 } from '../lib/telegramOrder'
+import { openMaxOrder } from '../lib/maxOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { LoadingScreen } from './LoadingScreen'
 
