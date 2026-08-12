@@ -86,16 +86,8 @@ export function openMaxOrder(
 ) {
   const maxUrl = getMaxUrl()
   const text = buildOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => {})
-  }
-
-  // Open clean MAX profile link directly without query params that break max.ru profile routes
-  const win = window.open(maxUrl, '_blank', 'noopener,noreferrer')
-  if (!win) {
-    window.location.href = maxUrl
-  }
+  const url = `${maxUrl}${maxUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 export function getTelegramProfileUrl(): string {
