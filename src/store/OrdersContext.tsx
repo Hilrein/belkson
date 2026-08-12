@@ -56,13 +56,16 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   })
   const [loading, setLoading] = useState(false)
 
-  const saveLocal = (next: Order[]) => {
-    setOrders(next)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      /* ignore storage quota */
-    }
+  const updateOrdersState = (updater: (prev: Order[]) => Order[]) => {
+    setOrders((prev) => {
+      const next = updater(prev)
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      } catch {
+        /* ignore storage quota */
+      }
+      return next
+    })
   }
 
   const fetchOrders = async () => {
@@ -72,7 +75,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data.orders)) {
-          saveLocal(data.orders)
+          updateOrdersState(() => data.orders)
         }
       }
     } catch (err) {
@@ -145,12 +148,13 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    saveLocal([created, ...orders.filter((o) => o.id !== created!.id)])
-    return created
+    const newOrder = created
+    updateOrdersState((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)])
+    return newOrder
   }
 
   const updateOrderStatus = async (id: number, status: OrderStatus) => {
-    saveLocal(orders.map((o) => (o.id === id ? { ...o, status } : o)))
+    updateOrdersState((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)))
 
     try {
       await fetch(`/api/orders/${id}`, {
@@ -164,7 +168,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteOrder = async (id: number) => {
-    saveLocal(orders.filter((o) => o.id !== id))
+    updateOrdersState((prev) => prev.filter((o) => o.id !== id))
 
     try {
       await fetch(`/api/orders/${id}`, {
