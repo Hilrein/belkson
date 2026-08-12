@@ -749,10 +749,10 @@ export default function StorefrontLayout() {
 
               {/* Single address input */}
               <div className="space-y-1.5">
-                <span className="text-xs text-on-surface-variant block font-medium">Адрес ПВЗ или комментарий</span>
+                <span className="text-xs text-on-surface-variant block font-medium">Адрес ПВЗ или дома</span>
                 <textarea
                   rows={3}
-                  placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ (необязательно)"
+                  placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
                   className="w-full p-3.5 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none"
@@ -854,11 +854,6 @@ export default function StorefrontLayout() {
                   }}
                   className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                 >
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Telegram_2019_Logo.svg/1280px-Telegram_2019_Logo.svg.png?utm_source=ru.wikipedia.org&utm_campaign=index&utm_content=thumbnail"
-                    alt="Telegram"
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
                   Оформить через Telegram
                 </button>
 
@@ -881,11 +876,6 @@ export default function StorefrontLayout() {
                   }}
                   className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
                 >
-                  <img
-                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0jKEhWprI3PFKMia50fNYuK21R8EkhQsaqkfuH5xF0e2WYcMvb_pgtTB1&s=10"
-                    alt="Max"
-                    className="w-5 h-5 rounded-full object-cover shrink-0"
-                  />
                   Оформить через Max
                 </button>
               </div>
