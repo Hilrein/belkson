@@ -16,6 +16,7 @@ export type CartLine = {
   image: string
   priceRub: number
   color: string
+  sizes?: string[]
   quantity: number
 }
 
@@ -78,6 +79,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             image: product.image,
             priceRub: product.priceRub,
             color: product.color,
+            sizes: product.sizes,
             quantity: n,
           },
         ]

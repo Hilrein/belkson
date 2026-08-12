@@ -701,9 +701,11 @@ export default function StorefrontLayout() {
                         <p className="font-semibold text-on-surface text-sm sm:text-base line-clamp-2 leading-snug">
                           {line.name}
                         </p>
-                        <p className="text-xs text-on-surface-variant mt-0.5">
-                          {line.color}
-                        </p>
+                        {line.sizes && line.sizes.length > 0 && (
+                          <p className="text-xs text-on-surface-variant mt-0.5">
+                            {line.sizes.join(', ')}
+                          </p>
+                        )}
                       </div>
                       <button
                         type="button"

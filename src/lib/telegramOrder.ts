@@ -17,7 +17,8 @@ export function buildOrderMessage(
   discountLabel?: string,
 ): string {
   const lines = items.map((line, i) => {
-    return `${i + 1}. ${line.name}${line.color ? ` (${line.color})` : ''} × ${line.quantity}`
+    const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
+    return `${i + 1}. ${line.name}${sizesStr} × ${line.quantity}`
   })
 
   const parts = [
