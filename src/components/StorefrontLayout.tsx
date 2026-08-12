@@ -649,64 +649,77 @@ export default function StorefrontLayout() {
           onClick={toggleCart}
         />
         <div className={cartPanelClass} id="cart-panel">
-          <div className="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
+          <div className="px-6 py-4 border-b border-surface-dim/80 flex justify-between items-center bg-surface-container-low/90 backdrop-blur-md sticky top-0 z-10">
             {cartStep === 'checkout' ? (
-              <button
-                type="button"
-                className="flex items-center gap-1.5 text-primary hover:text-[#8a4193] font-semibold text-sm transition-colors"
-                onClick={() => setCartStep('items')}
-              >
-                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-                Назад к товарам
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-variant/60 hover:bg-surface-variant text-primary active:scale-95 transition-all"
+                  onClick={() => setCartStep('items')}
+                  aria-label="Назад к корзине"
+                >
+                  <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                </button>
+                <div>
+                  <h2 className="font-headline-md text-primary font-bold text-base sm:text-lg leading-tight">
+                    Оформление заказа
+                  </h2>
+                  <p className="text-[11px] text-on-surface-variant font-medium">Шаг 2 из 2 — Способ доставки</p>
+                </div>
+              </div>
             ) : (
-              <h2 className="font-headline-md text-primary font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined">shopping_bag</span>
-                Ваша корзина
-              </h2>
+              <div>
+                <h2 className="font-headline-md text-primary font-bold text-lg flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xl">shopping_bag</span>
+                  Ваша корзина
+                </h2>
+                {cartItems.length > 0 && (
+                  <p className="text-[11px] text-on-surface-variant font-medium">Шаг 1 из 2 — Просмотр товаров</p>
+                )}
+              </div>
             )}
             <button
               type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error active:scale-95 transition-all"
               onClick={toggleCart}
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
 
           {cartItems.length === 0 ? (
             <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-4">
-              <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/50 mb-4">
+              <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/40 mb-2 shadow-inner">
                 <span className="material-symbols-outlined text-5xl">
                   shopping_cart
                 </span>
               </div>
-              <h3 className="font-headline-md text-on-surface">
+              <h3 className="font-headline-md text-on-surface font-semibold text-lg">
                 Пока здесь пусто
               </h3>
-              <p className="font-body-md text-on-surface-variant max-w-[250px]">
-                Добавьте товары из нашего каталога, чтобы сделать заказ.
+              <p className="font-body-md text-on-surface-variant max-w-[250px] text-sm leading-relaxed">
+                Добавьте товары из нашего каталога, чтобы сформировать заказ.
               </p>
               <Link
                 to="/catalog"
-                className="mt-4 px-8 py-3 bg-primary-container text-on-primary-container rounded-full font-label-sm hover:bg-primary hover:text-white transition-colors"
+                className="mt-3 px-8 py-3 bg-primary text-on-primary rounded-full font-label-sm hover:bg-on-primary-fixed-variant shadow-md active:scale-95 transition-all"
                 onClick={toggleCart}
               >
                 Перейти в каталог
               </Link>
             </div>
           ) : cartStep === 'checkout' ? (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div key="step-checkout" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 animate-step-next">
               {/* Order summary banner */}
-              <div className="p-4 rounded-2xl bg-primary-container/20 border border-primary-container/40 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-[#8a4193]/10 to-[#ce7ed5]/15 border border-[#8a4193]/20 flex items-center justify-between shadow-sm">
                 <div>
-                  <p className="text-xs text-on-surface-variant">Позиций в заказе: <span className="font-bold text-on-surface">{cartItems.length} шт.</span></p>
-                  <p className="text-base font-extrabold text-primary mt-0.5">К оплате: {format(totalRub)}</p>
+                  <p className="text-xs text-on-surface-variant font-medium">Выбрано товаров: <span className="font-bold text-on-surface">{cartItems.length} шт.</span></p>
+                  <p className="text-lg font-black text-primary mt-0.5 tracking-tight">К оплате: {format(totalRub)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCartStep('items')}
-                  className="text-xs font-bold text-primary underline hover:text-[#ce7ed5]"
+                  className="px-3 py-1.5 rounded-full bg-surface/80 hover:bg-surface text-xs font-bold text-primary shadow-xs border border-primary/20 active:scale-95 transition-all"
                 >
                   Изменить
                 </button>
@@ -714,51 +727,65 @@ export default function StorefrontLayout() {
 
               {/* Delivery selection */}
               <div>
-                <label className="block text-sm font-bold text-on-surface mb-2.5">
-                  1. Способ доставки
-                </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="text-sm font-bold text-on-surface flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">1</span>
+                    Способ доставки
+                  </label>
+                  <span className="text-[11px] text-primary font-semibold">ПВЗ / Доставка</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
                   {[
-                    { id: 'Ozon', name: 'Ozon', icon: 'local_post_office', badge: 'ПВЗ' },
-                    { id: 'Яндекс Маркет', name: 'Яндекс', icon: 'local_shipping', badge: 'ПВЗ / Курьер' },
-                    { id: '5post', name: '5post', icon: 'store', badge: 'Пятёрочка' },
-                  ].map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
-                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
-                        deliveryMethod === option.id
-                          ? 'border-primary bg-primary-container/30 text-primary font-bold shadow-sm ring-2 ring-primary/20'
-                          : 'border-surface-dim bg-surface-container-lowest text-on-surface-variant hover:border-primary/40'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-2xl">{option.icon}</span>
-                      <span className="text-xs font-bold leading-tight">{option.name}</span>
-                      <span className="text-[10px] opacity-75">{option.badge}</span>
-                    </button>
-                  ))}
+                    { id: 'Ozon', name: 'Ozon', icon: 'local_post_office', badge: 'Пункт выдачи', activeClass: 'border-[#005bff] bg-[#005bff]/10 text-[#005bff] ring-2 ring-[#005bff]/30' },
+                    { id: 'Яндекс Маркет', name: 'Яндекс', icon: 'local_shipping', badge: 'ПВЗ / Курьер', activeClass: 'border-[#fc3f1d] bg-[#fc3f1d]/10 text-[#fc3f1d] ring-2 ring-[#fc3f1d]/30' },
+                    { id: '5post', name: '5post', icon: 'store', badge: 'Пятёрочка', activeClass: 'border-[#1da853] bg-[#1da853]/10 text-[#1da853] ring-2 ring-[#1da853]/30' },
+                  ].map((option) => {
+                    const isSelected = deliveryMethod === option.id
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
+                        className={`p-3 rounded-2xl border text-center transition-all duration-200 flex flex-col items-center gap-1.5 relative overflow-hidden active:scale-95 ${
+                          isSelected
+                            ? option.activeClass
+                            : 'border-surface-dim bg-surface-container-lowest text-on-surface-variant hover:border-primary/40 hover:bg-surface-container-low'
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-current flex items-center justify-center">
+                            <span className="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+                          </div>
+                        )}
+                        <span className="material-symbols-outlined text-2xl">{option.icon}</span>
+                        <span className="text-xs font-bold leading-tight">{option.name}</span>
+                        <span className="text-[10px] opacity-75 font-medium">{option.badge}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               {/* Delivery Address / Notes */}
               <div>
-                <label className="block text-sm font-bold text-on-surface mb-1.5">
-                  2. Город или адрес ПВЗ <span className="font-normal text-xs text-on-surface-variant">(по желанию)</span>
+                <label className="block text-sm font-bold text-on-surface mb-1.5 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">2</span>
+                  Город или адрес ПВЗ <span className="font-normal text-xs text-on-surface-variant ml-auto">(необязательно)</span>
                 </label>
                 <textarea
                   rows={2}
                   placeholder="Например: г. Москва, ул. Ленина 10 или номер ПВЗ"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-surface-dim bg-surface-container-lowest text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none"
+                  className="w-full p-3.5 rounded-2xl border border-surface-dim bg-surface-container-lowest text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-[#8a4193]/30 focus:border-[#8a4193] transition-all resize-none shadow-xs"
                 />
               </div>
 
               {/* Messenger choices */}
-              <div className="pt-2">
-                <label className="block text-sm font-bold text-on-surface mb-3">
-                  3. Отправить заказ менеджеру
+              <div className="pt-1">
+                <label className="block text-sm font-bold text-on-surface mb-3 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-bold">3</span>
+                  Отправить заказ менеджеру
                 </label>
                 <div className="space-y-3">
                   <button
@@ -778,7 +805,7 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full py-3.5 px-5 rounded-full bg-[#24A1DE] hover:bg-[#1f8ec4] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.99]"
+                    className="w-full py-3.5 px-5 rounded-full bg-[#24A1DE] hover:bg-[#1f8ec4] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
                   >
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/>
@@ -803,7 +830,7 @@ export default function StorefrontLayout() {
                         addressNotes,
                       )
                     }}
-                    className="w-full py-3.5 px-5 rounded-full bg-[#8A4193] hover:bg-[#783681] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.99]"
+                    className="w-full py-3.5 px-5 rounded-full bg-[#8A4193] hover:bg-[#783681] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
                   >
                     <span className="material-symbols-outlined text-xl">forum</span>
                     Оформить через Max
@@ -812,17 +839,17 @@ export default function StorefrontLayout() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div key="step-items" className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 animate-step-back">
               {cartItems.map((line) => (
                 <div
                   key={line.productId}
-                  className="flex gap-3 p-3 rounded-2xl bg-surface-container-low border border-surface-dim"
+                  className="flex gap-3 p-3.5 rounded-2xl bg-surface-container-low border border-surface-dim hover:border-primary/20 transition-all duration-200 group"
                 >
                   <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-surface-variant">
                     <img
                       src={line.image}
                       alt={line.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                     />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col">
@@ -832,14 +859,14 @@ export default function StorefrontLayout() {
                           {line.name}
                         </p>
                         {line.sizes && line.sizes.length > 0 && (
-                          <p className="text-xs text-on-surface-variant mt-0.5">
-                            {line.sizes.join(', ')}
+                          <p className="text-xs text-on-surface-variant font-medium mt-0.5">
+                            Размер: {line.sizes.join(', ')}
                           </p>
                         )}
                       </div>
                       <button
                         type="button"
-                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-surface-variant"
+                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-error/10 active:scale-95 transition-all"
                         onClick={() => removeFromCart(line.productId)}
                         aria-label="Удалить"
                       >
@@ -849,10 +876,10 @@ export default function StorefrontLayout() {
                       </button>
                     </div>
                     <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1 border border-surface-dim rounded-full bg-surface">
+                      <div className="flex items-center gap-1 border border-surface-dim rounded-full bg-surface shadow-2xs">
                         <button
                           type="button"
-                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
+                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant active:scale-90 transition-transform font-bold"
                           onClick={() =>
                             setQuantity(line.productId, line.quantity - 1)
                           }
@@ -860,12 +887,12 @@ export default function StorefrontLayout() {
                         >
                           −
                         </button>
-                        <span className="w-6 text-center text-sm font-semibold tabular-nums">
+                        <span className="w-6 text-center text-sm font-bold tabular-nums text-on-surface">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
+                          className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant active:scale-90 transition-transform font-bold"
                           onClick={() =>
                             setQuantity(line.productId, line.quantity + 1)
                           }
@@ -874,7 +901,7 @@ export default function StorefrontLayout() {
                           +
                         </button>
                       </div>
-                      <span className="text-sm sm:text-base font-bold text-primary tabular-nums">
+                      <span className="text-sm sm:text-base font-extrabold text-primary tabular-nums">
                         {format(line.priceRub * line.quantity)}
                       </span>
                     </div>
