@@ -858,6 +858,120 @@ async function buildApp() {
   app.delete('/discounts/:id', handleDeleteDiscount)
   app.delete('/api/discounts/:id', handleDeleteDiscount)
 
+  /* ─── ORDERS ─────────────────────────────────────────────────────────── */
+
+  type DbOrderRow = {
+    id: number
+    created_at: string
+    items: unknown
+    total_rub: number
+    discount_label: string | null
+    delivery_method: string | null
+    address_notes: string | null
+    messenger: string
+    status: string
+  }
+
+  async function ensureOrdersTable() {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS orders (
+          id SERIAL PRIMARY KEY,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          items JSONB NOT NULL DEFAULT '[]'::jsonb,
+          total_rub NUMERIC NOT NULL DEFAULT 0,
+          discount_label TEXT NOT NULL DEFAULT '',
+          delivery_method TEXT NOT NULL DEFAULT '',
+          address_notes TEXT NOT NULL DEFAULT '',
+          messenger TEXT NOT NULL DEFAULT 'Telegram',
+          status TEXT NOT NULL DEFAULT 'new'
+        )
+      `
+    } catch (err) {
+      console.warn('ensureOrdersTable error:', err)
+    }
+  }
+
+  function mapOrder(r: DbOrderRow) {
+    let items = []
+    try {
+      items = typeof r.items === 'string' ? JSON.parse(r.items) : (r.items ?? [])
+    } catch {
+      items = []
+    }
+    return {
+      id: r.id,
+      createdAt: r.created_at,
+      items,
+      totalRub: Number(r.total_rub ?? 0),
+      discountLabel: r.discount_label ?? undefined,
+      deliveryMethod: r.delivery_method ?? undefined,
+      addressNotes: r.address_notes ?? undefined,
+      messenger: r.messenger as 'Telegram' | 'Max',
+      status: r.status as 'new' | 'completed' | 'cancelled',
+    }
+  }
+
+  async function handleGetOrders(c: any) {
+    await ensureOrdersTable()
+    const rows = (await sql`SELECT * FROM orders ORDER BY created_at DESC LIMIT 500`) as DbOrderRow[]
+    return c.json({ orders: rows.map(mapOrder) })
+  }
+
+  async function handlePostOrder(c: any) {
+    const body = await c.req.json()
+    await ensureOrdersTable()
+
+    const items = Array.isArray(body.items) ? body.items : []
+    const totalRub = Number(body.totalRub ?? 0)
+    const discountLabel = String(body.discountLabel ?? '')
+    const deliveryMethod = String(body.deliveryMethod ?? '')
+    const addressNotes = String(body.addressNotes ?? '')
+    const messenger = body.messenger === 'Max' ? 'Max' : 'Telegram'
+
+    const rows = (await sql`
+      INSERT INTO orders (items, total_rub, discount_label, delivery_method, address_notes, messenger, status)
+      VALUES (${JSON.stringify(items)}::jsonb, ${totalRub}, ${discountLabel}, ${deliveryMethod}, ${addressNotes}, ${messenger}, 'new')
+      RETURNING *
+    `) as DbOrderRow[]
+
+    return c.json({ order: mapOrder(rows[0]) }, 201)
+  }
+
+  async function handlePatchOrder(c: any) {
+    const id = Number(c.req.param('id'))
+    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+    const body = await c.req.json()
+    await ensureOrdersTable()
+
+    const status = ['new', 'completed', 'cancelled'].includes(body.status) ? body.status : 'new'
+
+    const rows = (await sql`
+      UPDATE orders SET status = ${status} WHERE id = ${id} RETURNING *
+    `) as DbOrderRow[]
+
+    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+    return c.json({ order: mapOrder(rows[0]) })
+  }
+
+  async function handleDeleteOrder(c: any) {
+    const id = Number(c.req.param('id'))
+    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+    await ensureOrdersTable()
+    const rows = (await sql`DELETE FROM orders WHERE id = ${id} RETURNING id`) as { id: number }[]
+    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+    return c.json({ ok: true, id })
+  }
+
+  app.get('/orders', handleGetOrders)
+  app.get('/api/orders', handleGetOrders)
+  app.post('/orders', handlePostOrder)
+  app.post('/api/orders', handlePostOrder)
+  app.patch('/orders/:id', handlePatchOrder)
+  app.patch('/api/orders/:id', handlePatchOrder)
+  app.delete('/orders/:id', handleDeleteOrder)
+  app.delete('/api/orders/:id', handleDeleteOrder)
+
   app.onError((err, c) => {
     console.error(err)
     return c.json(

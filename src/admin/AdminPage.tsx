@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, SUBCATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
@@ -11,6 +11,7 @@ import {
   type PurchaseVariant,
   DEFAULT_DYNAMIC_VARIANTS,
 } from '../store/PurchaseTermsContext'
+import { useOrders, type Order, type OrderItem, type OrderStatus } from '../store/OrdersContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -150,6 +151,266 @@ const ICON_CATEGORIES = [
   },
 ]
 
+function AdminOrdersView() {
+  const { orders, loading, fetchOrders, updateOrderStatus, deleteOrder } = useOrders()
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'completed' | 'cancelled'>('all')
+  const [messengerFilter, setMessengerFilter] = useState<'all' | 'Telegram' | 'Max'>('all')
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      if (statusFilter !== 'all' && o.status !== statusFilter) return false
+      if (messengerFilter !== 'all' && o.messenger !== messengerFilter) return false
+
+      if (search.trim()) {
+        const q = search.toLowerCase().trim()
+        const matchId = String(o.id).includes(q)
+        const matchNotes = o.addressNotes?.toLowerCase().includes(q)
+        const matchItems = o.items.some((i) => i.name.toLowerCase().includes(q))
+        if (!matchId && !matchNotes && !matchItems) return false
+      }
+
+      return true
+    })
+  }, [orders, statusFilter, messengerFilter, search])
+
+  const totalRevenue = useMemo(() => {
+    return orders
+      .filter((o) => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + (o.totalRub || 0), 0)
+  }, [orders])
+
+  const newCount = useMemo(() => orders.filter((o) => o.status === 'new').length, [orders])
+  const completedCount = useMemo(() => orders.filter((o) => o.status === 'completed').length, [orders])
+
+  const formatPrice = (val: number) =>
+    new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val)
+
+  const formatDate = (iso: string) => {
+    try {
+      const d = new Date(iso)
+      return d.toLocaleString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    } catch {
+      return iso
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
+        <div>
+          <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+            Заказы покупателей
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Все заказы, оформленные через Telegram и Max
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void fetchOrders()}
+          className="self-start md:self-auto px-4 py-2 bg-surface-container-low border border-surface-dim hover:bg-surface-variant text-on-surface rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+        >
+          <Icon name="refresh" className="text-base" /> Obnovit list ({loading ? '...' : orders.length})
+        </button>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-2xl bg-surface-container-lowest border border-surface-dim shadow-xs">
+          <p className="text-xs text-on-surface-variant">Всего заказов</p>
+          <p className="text-xl font-bold text-on-surface mt-1">{orders.length} шт.</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">Новые заказы</p>
+          <p className="text-xl font-bold text-amber-900 dark:text-amber-200 mt-1">{newCount} шт.</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Выполнено</p>
+          <p className="text-xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">{completedCount} шт.</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-primary-container/20 border border-primary/20">
+          <p className="text-xs text-primary font-medium">Общая выручка</p>
+          <p className="text-xl font-bold text-primary mt-1">{formatPrice(totalRevenue)}</p>
+        </div>
+      </div>
+
+      {/* Filter toolbar */}
+      <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Icon name="search" className="absolute left-3 top-2.5 text-on-surface-variant text-lg" />
+          <input
+            type="text"
+            placeholder="Поиск по № заказа, товару или адресу..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-surface-dim rounded-xl text-xs bg-surface-container-lowest focus:outline-none focus:border-primary"
+          />
+        </div>
+
+        {/* Status & Messenger Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim text-xs">
+            {(['all', 'new', 'completed', 'cancelled'] as const).map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1 rounded-full font-medium transition-all ${
+                  statusFilter === st ? 'bg-surface text-primary font-bold shadow-xs' : 'text-on-surface-variant'
+                }`}
+              >
+                {st === 'all' ? 'Все' : st === 'new' ? 'Новые' : st === 'completed' ? 'Выполнены' : 'Отменены'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim text-xs">
+            {(['all', 'Telegram', 'Max'] as const).map((ms) => (
+              <button
+                key={ms}
+                type="button"
+                onClick={() => setMessengerFilter(ms)}
+                className={`px-3 py-1 rounded-full font-medium transition-all ${
+                  messengerFilter === ms ? 'bg-surface text-primary font-bold shadow-xs' : 'text-on-surface-variant'
+                }`}
+              >
+                {ms}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Orders List */}
+      {filteredOrders.length === 0 ? (
+        <div className="p-12 text-center bg-surface-container-lowest rounded-2xl border border-surface-dim space-y-2">
+          <Icon name="inbox" className="text-4xl text-on-surface-variant/40 mb-1" />
+          <p className="text-sm font-semibold text-on-surface">Заказы не найдены</p>
+          <p className="text-xs text-on-surface-variant">Попробуйте изменить параметры фильтра или поиска.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredOrders.map((order: Order) => (
+            <div
+              key={order.id}
+              className={`p-5 rounded-2xl border transition-all bg-surface-container-lowest ${
+                order.status === 'new'
+                  ? 'border-amber-300 dark:border-amber-700/60 shadow-sm'
+                  : 'border-surface-dim'
+              }`}
+            >
+              {/* Order Header info */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-dim">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-bold text-base text-on-surface">Заказ #{order.id}</span>
+                  <span className="text-xs text-on-surface-variant">{formatDate(order.createdAt)}</span>
+
+                  <span
+                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
+                      order.messenger === 'Telegram'
+                        ? 'bg-[#24A1DE]/15 text-[#24A1DE]'
+                        : 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                    }`}
+                  >
+                    через {order.messenger}
+                  </span>
+
+                  {order.deliveryMethod && (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-surface-container-low border border-surface-dim text-on-surface">
+                      Доставка: {order.deliveryMethod}
+                    </span>
+                  )}
+                </div>
+
+                {/* Status Dropdown & Delete */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={order.status}
+                    onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer focus:outline-none ${
+                      order.status === 'new'
+                        ? 'bg-amber-100 border-amber-300 text-amber-900'
+                        : order.status === 'completed'
+                          ? 'bg-emerald-100 border-emerald-300 text-emerald-900'
+                          : 'bg-rose-100 border-rose-300 text-rose-900'
+                    }`}
+                  >
+                    <option value="new">🟡 Новый</option>
+                    <option value="completed">🟢 Выполнен</option>
+                    <option value="cancelled">🔴 Отменён</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => void deleteOrder(order.id)}
+                    className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-variant transition-colors cursor-pointer"
+                    title="Удалить заказ"
+                  >
+                    <Icon name="delete" className="text-lg" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="py-4 space-y-3">
+                {order.items.map((item: OrderItem, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-surface-variant border border-surface-dim">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-on-surface truncate">{item.name}</p>
+                        {item.sizes && item.sizes.length > 0 && (
+                          <span className="text-[11px] text-on-surface-variant">
+                            Размер: {item.sizes.join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-medium text-on-surface-variant">{item.quantity} шт. × {formatPrice(item.priceRub)}</span>
+                      <span className="font-bold text-on-surface block">{formatPrice(item.priceRub * item.quantity)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Delivery Notes & Total Footer */}
+              <div className="pt-3 border-t border-surface-dim flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+                <div>
+                  {order.addressNotes && (
+                    <p className="text-on-surface-variant">
+                      <span className="font-semibold text-on-surface">Адрес ПВЗ / Комментарий:</span> {order.addressNotes}
+                    </p>
+                  )}
+                  {order.discountLabel && (
+                    <p className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      Скидка: {order.discountLabel}
+                    </p>
+                  )}
+                </div>
+                <div className="self-end sm:self-auto text-right">
+                  <span className="text-on-surface-variant">Итого к оплате: </span>
+                  <span className="font-bold text-primary text-base">{formatPrice(order.totalRub)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /**
  * Port of static-admin/admin.html — responsive products admin.
  */
@@ -184,8 +445,9 @@ export default function AdminPage() {
   } = useDiscounts()
 
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
+  const { newOrdersCount } = useOrders()
 
-  const [activeTab, setActiveTab] = useState<'products' | 'official-stores' | 'purchase-terms' | 'discounts'>('products')
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
 
   // Dynamic variants state
   const [localVariants, setLocalVariants] = useState<PurchaseVariant[]>(DEFAULT_DYNAMIC_VARIANTS)
@@ -801,14 +1063,21 @@ export default function AdminPage() {
             <li key={item.id}>
               <button
                 type="button"
-                className={`w-full text-left cursor-pointer ${navLinkClass(isActive)}`}
+                className={`w-full text-left cursor-pointer flex items-center justify-between ${navLinkClass(isActive)}`}
                 onClick={() => {
-                  setActiveTab(item.id as 'products' | 'official-stores' | 'purchase-terms' | 'discounts')
+                  setActiveTab(item.id as 'orders' | 'products' | 'official-stores' | 'purchase-terms' | 'discounts')
                   closeNav()
                 }}
               >
-                <Icon name={item.icon} />
-                <span className="text-button font-button">{item.label}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon name={item.icon} />
+                  <span className="text-button font-button truncate">{item.label}</span>
+                </div>
+                {item.id === 'orders' && newOrdersCount > 0 && (
+                  <span className="px-2 py-0.5 text-[11px] font-bold bg-amber-500 text-white rounded-full shrink-0">
+                    {newOrdersCount}
+                  </span>
+                )}
               </button>
             </li>
           )
@@ -893,7 +1162,9 @@ export default function AdminPage() {
           {loading && (
             <p className="text-sm text-on-surface-variant">Загрузка из Neon…</p>
           )}
-          {activeTab === 'purchase-terms' ? (
+          {activeTab === 'orders' ? (
+            <AdminOrdersView />
+          ) : activeTab === 'purchase-terms' ? (
             <div className="space-y-6 max-w-4xl">
               {/* Header */}
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">

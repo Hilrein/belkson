@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useCatalog } from '../store/CatalogContext'
 import { useCart } from '../store/CartContext'
+import { useOrders } from '../store/OrdersContext'
 import { useOfficialStores } from '../store/OfficialStoresContext'
 import { CATEGORIES } from '../store/catalog'
 import {
@@ -38,6 +39,7 @@ export default function StorefrontLayout() {
     removeFromCart,
     setQuantity,
   } = useCart()
+  const { createOrder } = useOrders()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -844,6 +846,16 @@ export default function StorefrontLayout() {
                           ? `−${activeDiscount.value}% (${format(discountRub)})`
                           : `−${format(discountRub)}`
                         : undefined
+
+                    createOrder({
+                      items: cartItems,
+                      totalRub,
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                      messenger: 'Telegram',
+                    })
+
                     openTelegramOrder(
                       cartItems,
                       format(totalRub),
@@ -866,6 +878,16 @@ export default function StorefrontLayout() {
                           ? `−${activeDiscount.value}% (${format(discountRub)})`
                           : `−${format(discountRub)}`
                         : undefined
+
+                    createOrder({
+                      items: cartItems,
+                      totalRub,
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                      messenger: 'Max',
+                    })
+
                     openMaxOrder(
                       cartItems,
                       format(totalRub),
