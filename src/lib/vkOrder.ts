@@ -2,29 +2,27 @@ import type { CartLine } from '../store/CartContext'
 import type { DeliveryMethod } from './telegramOrder'
 
 /**
- * Get direct VK chat URL for orders.
- * Automatically converts profile links (vk.com/username) to direct chat links (vk.me/username).
- * Set in .env: VITE_VK_URL=https://vk.com/... or VITE_VK_USERNAME=your_username
+ * Get VK username or id.
+ * Set in .env: VITE_VK_USERNAME=your_username or VITE_VK_URL=https://vk.com/your_username
  */
-export function getVkUrl(): string {
+export function getVkUsername(): string {
+  const rawUsername = (import.meta.env.VITE_VK_USERNAME as string | undefined)?.trim()?.replace(/^@/, '')
+  if (rawUsername) return rawUsername
+
   const rawUrl = (import.meta.env.VITE_VK_URL as string | undefined)?.trim()
-  const username = (import.meta.env.VITE_VK_USERNAME as string | undefined)?.trim()?.replace(/^@/, '')
-
   if (rawUrl) {
-    if (rawUrl.includes('vk.com/') && !rawUrl.includes('/im') && !rawUrl.includes('vk.me')) {
-      const match = rawUrl.match(/vk\.com\/([^/?#]+)/)
-      if (match && match[1]) {
-        return `https://vk.me/${match[1]}`
-      }
+    const match = rawUrl.match(/vk\.com\/([^/?#]+)/) || rawUrl.match(/vk\.me\/([^/?#]+)/)
+    if (match && match[1]) {
+      return match[1]
     }
-    return rawUrl
   }
 
-  if (username) {
-    return `https://vk.me/${username}`
-  }
+  return 'belkson'
+}
 
-  return 'https://vk.me/belkson'
+export function getVkUrl(): string {
+  const username = getVkUsername()
+  return `https://vk.me/${username}`
 }
 
 export function buildVkOrderMessage(
@@ -65,7 +63,7 @@ export function buildVkOrderMessage(
   return parts.join('\n')
 }
 
-/** Open VK direct chat with prefilled order text and clipboard backup */
+/** Open VK chat with prefilled order text and fallback clipboard copy */
 export function openVkOrder(
   items: CartLine[],
   totalLabel: string,
@@ -73,13 +71,15 @@ export function openVkOrder(
   deliveryMethod?: DeliveryMethod,
   addressNotes?: string,
 ) {
-  const vkUrl = getVkUrl()
+  const username = getVkUsername()
   const text = buildVkOrderMessage(items, totalLabel, discountLabel, deliveryMethod, addressNotes)
 
+  // 1. Copy text to clipboard so user can instantly paste if mobile VK app doesn't auto-fill URL parameter
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).catch(() => {})
   }
 
-  const url = `${vkUrl}${vkUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}`
+  // 2. Open VK web chat with text query param
+  const url = `https://vk.com/im?sel=${username}&text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'noopener,noreferrer')
 }
