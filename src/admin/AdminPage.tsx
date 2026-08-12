@@ -381,9 +381,16 @@ function AdminOrdersView() {
                     // fallback: if it doesn't match the pattern, show as-is
                     if (!fio && !tel && !addr) {
                       return (
-                        <p className="text-on-surface-variant">
-                          {order.addressNotes}
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant">
+                            {order.addressNotes}
+                          </p>
+                          {order.discountLabel && (
+                            <p className="text-on-surface-variant font-medium">
+                              Скидка: {order.discountLabel}
+                            </p>
+                          )}
+                        </div>
                       )
                     }
                     return (
@@ -403,10 +410,16 @@ function AdminOrdersView() {
                             <span className="font-medium text-on-surface">{addr}</span>
                           </p>
                         )}
+                        {order.discountLabel && (
+                          <p className="text-on-surface-variant font-medium">
+                            Скидка: {order.discountLabel}
+                          </p>
+                        )}
                       </div>
                     )
                   })()}
-                  {order.discountLabel && (
+                  {/* Discount for old-format orders (fallback) */}
+                  {!order.addressNotes && order.discountLabel && (
                     <p className="text-on-surface-variant font-medium">
                       Скидка: {order.discountLabel}
                     </p>
