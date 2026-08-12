@@ -201,70 +201,71 @@ function AdminOrdersView() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
+    <div className="space-y-6 max-w-6xl">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
-          <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
+          <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-1">
             Заказы покупателей
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Все заказы, оформленные через Telegram и Max
+            Управление поступающими заказами из Telegram и Max.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void fetchOrders()}
-          className="self-start md:self-auto px-4 py-2 bg-surface-container-low border border-surface-dim hover:bg-surface-variant text-on-surface rounded-lg text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+          className="self-start md:self-auto px-4 py-2 bg-surface-container-low border border-gray-200 hover:bg-surface-variant text-on-surface rounded-lg text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer"
         >
-          <Icon name="refresh" className="text-base" /> Obnovit list ({loading ? '...' : orders.length})
+          <Icon name="refresh" className="text-base" />
+          <span>Обновить ({loading ? '...' : orders.length})</span>
         </button>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-surface-container-lowest border border-surface-dim shadow-xs">
-          <p className="text-xs text-on-surface-variant">Всего заказов</p>
-          <p className="text-xl font-bold text-on-surface mt-1">{orders.length} шт.</p>
+      {/* Stats summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-4 shadow-xs">
+          <p className="text-xs text-on-surface-variant font-medium">Всего заказов</p>
+          <p className="text-xl font-bold text-on-surface mt-1">{orders.length}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
-          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">Новые заказы</p>
-          <p className="text-xl font-bold text-amber-900 dark:text-amber-200 mt-1">{newCount} шт.</p>
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-4 shadow-xs">
+          <p className="text-xs text-on-surface-variant font-medium">Новые</p>
+          <p className="text-xl font-bold text-on-surface mt-1">{newCount}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
-          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">Выполнено</p>
-          <p className="text-xl font-bold text-emerald-900 dark:text-emerald-200 mt-1">{completedCount} шт.</p>
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-4 shadow-xs">
+          <p className="text-xs text-on-surface-variant font-medium">Выполнено</p>
+          <p className="text-xl font-bold text-on-surface mt-1">{completedCount}</p>
         </div>
-        <div className="p-4 rounded-2xl bg-primary-container/20 border border-primary/20">
-          <p className="text-xs text-primary font-medium">Общая выручка</p>
-          <p className="text-xl font-bold text-primary mt-1">{formatPrice(totalRevenue)}</p>
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-xl p-4 shadow-xs">
+          <p className="text-xs text-on-surface-variant font-medium">Общая выручка</p>
+          <p className="text-xl font-bold text-[#8a4193] mt-1">{formatPrice(totalRevenue)}</p>
         </div>
       </div>
 
-      {/* Filter toolbar */}
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Icon name="search" className="absolute left-3 top-2.5 text-on-surface-variant text-lg" />
+      {/* Toolbar filters */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-sm">
+          <Icon name="search" className="absolute left-3 top-2.5 text-gray-400 text-lg" />
           <input
             type="text"
             placeholder="Поиск по № заказа, товару или адресу..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-surface-dim rounded-xl text-xs bg-surface-container-lowest focus:outline-none focus:border-primary"
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-xs bg-surface-container-lowest focus:outline-none focus:border-[#ce7ed5]"
           />
         </div>
 
-        {/* Status & Messenger Filter Pills */}
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim text-xs">
+          <div className="flex rounded-lg bg-surface-container-low p-1 border border-gray-200 text-xs">
             {(['all', 'new', 'completed', 'cancelled'] as const).map((st) => (
               <button
                 key={st}
                 type="button"
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 rounded-full font-medium transition-all ${
-                  statusFilter === st ? 'bg-surface text-primary font-bold shadow-xs' : 'text-on-surface-variant'
+                className={`px-3 py-1 rounded-md font-medium transition-all ${
+                  statusFilter === st ? 'bg-white text-on-surface shadow-xs font-semibold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 {st === 'all' ? 'Все' : st === 'new' ? 'Новые' : st === 'completed' ? 'Выполнены' : 'Отменены'}
@@ -272,14 +273,14 @@ function AdminOrdersView() {
             ))}
           </div>
 
-          <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim text-xs">
+          <div className="flex rounded-lg bg-surface-container-low p-1 border border-gray-200 text-xs">
             {(['all', 'Telegram', 'Max'] as const).map((ms) => (
               <button
                 key={ms}
                 type="button"
                 onClick={() => setMessengerFilter(ms)}
-                className={`px-3 py-1 rounded-full font-medium transition-all ${
-                  messengerFilter === ms ? 'bg-surface text-primary font-bold shadow-xs' : 'text-on-surface-variant'
+                className={`px-3 py-1 rounded-md font-medium transition-all ${
+                  messengerFilter === ms ? 'bg-white text-on-surface shadow-xs font-semibold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
                 {ms}
@@ -291,70 +292,54 @@ function AdminOrdersView() {
 
       {/* Orders List */}
       {filteredOrders.length === 0 ? (
-        <div className="p-12 text-center bg-surface-container-lowest rounded-2xl border border-surface-dim space-y-2">
-          <Icon name="inbox" className="text-4xl text-on-surface-variant/40 mb-1" />
-          <p className="text-sm font-semibold text-on-surface">Заказы не найдены</p>
-          <p className="text-xs text-on-surface-variant">Попробуйте изменить параметры фильтра или поиска.</p>
+        <div className="p-12 text-center bg-surface-container-lowest rounded-xl border border-gray-200 space-y-2">
+          <Icon name="inbox" className="text-4xl text-gray-300 mb-1" />
+          <p className="text-sm font-medium text-on-surface">Заказы не найдены</p>
+          <p className="text-xs text-on-surface-variant">Попробуйте изменить условия поиска или сбросить фильтр.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order: Order) => (
             <div
               key={order.id}
-              className={`p-5 rounded-2xl border transition-all bg-surface-container-lowest ${
-                order.status === 'new'
-                  ? 'border-amber-300 dark:border-amber-700/60 shadow-sm'
-                  : 'border-surface-dim'
-              }`}
+              className="bg-surface-container-lowest border border-gray-200 rounded-xl p-5 shadow-xs hover:border-gray-300 transition-colors"
             >
-              {/* Order Header info */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-surface-dim">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-bold text-base text-on-surface">Заказ #{order.id}</span>
-                  <span className="text-xs text-on-surface-variant">{formatDate(order.createdAt)}</span>
+              {/* Order Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3 flex-wrap text-xs">
+                  <span className="font-semibold text-sm text-on-surface">Заказ #{order.id}</span>
+                  <span className="text-on-surface-variant">{formatDate(order.createdAt)}</span>
 
-                  <span
-                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                      order.messenger === 'Telegram'
-                        ? 'bg-[#24A1DE]/15 text-[#24A1DE]'
-                        : 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
-                    }`}
-                  >
-                    через {order.messenger}
+                  <span className="px-2.5 py-1 rounded-md bg-surface-container-low border border-gray-200 text-on-surface font-medium">
+                    {order.messenger}
                   </span>
 
                   {order.deliveryMethod && (
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-surface-container-low border border-surface-dim text-on-surface">
+                    <span className="px-2.5 py-1 rounded-md bg-surface-container-low border border-gray-200 text-on-surface-variant">
                       Доставка: {order.deliveryMethod}
                     </span>
                   )}
                 </div>
 
-                {/* Status Dropdown & Delete */}
+                {/* Status Switcher & Delete */}
                 <div className="flex items-center gap-2">
                   <select
                     value={order.status}
                     onChange={(e) => updateOrderStatus(order.id, e.target.value as OrderStatus)}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer focus:outline-none ${
-                      order.status === 'new'
-                        ? 'bg-amber-100 border-amber-300 text-amber-900'
-                        : order.status === 'completed'
-                          ? 'bg-emerald-100 border-emerald-300 text-emerald-900'
-                          : 'bg-rose-100 border-rose-300 text-rose-900'
-                    }`}
+                    className="px-3 py-1.5 rounded-md border border-gray-200 bg-white text-xs font-medium text-on-surface cursor-pointer focus:outline-none focus:border-[#ce7ed5]"
                   >
-                    <option value="new">🟡 Новый</option>
-                    <option value="completed">🟢 Выполнен</option>
-                    <option value="cancelled">🔴 Отменён</option>
+                    <option value="new">Новый</option>
+                    <option value="completed">Выполнен</option>
+                    <option value="cancelled">Отменён</option>
                   </select>
 
                   <button
                     type="button"
                     onClick={() => void deleteOrder(order.id)}
-                    className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-surface-variant transition-colors cursor-pointer"
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
                     title="Удалить заказ"
                   >
-                    <Icon name="delete" className="text-lg" />
+                    <Icon name="delete" className="text-base" />
                   </button>
                 </div>
               </div>
@@ -364,11 +349,11 @@ function AdminOrdersView() {
                 {order.items.map((item: OrderItem, idx: number) => (
                   <div key={idx} className="flex items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-surface-variant border border-surface-dim">
+                      <div className="w-10 h-10 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-on-surface truncate">{item.name}</p>
+                        <p className="font-medium text-on-surface truncate">{item.name}</p>
                         {item.sizes && item.sizes.length > 0 && (
                           <span className="text-[11px] text-on-surface-variant">
                             Размер: {item.sizes.join(', ')}
@@ -377,30 +362,30 @@ function AdminOrdersView() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="font-medium text-on-surface-variant">{item.quantity} шт. × {formatPrice(item.priceRub)}</span>
-                      <span className="font-bold text-on-surface block">{formatPrice(item.priceRub * item.quantity)}</span>
+                      <span className="text-on-surface-variant">{item.quantity} шт. × {formatPrice(item.priceRub)}</span>
+                      <span className="font-semibold text-on-surface block">{formatPrice(item.priceRub * item.quantity)}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Delivery Notes & Total Footer */}
-              <div className="pt-3 border-t border-surface-dim flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+              {/* Delivery Notes & Total */}
+              <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                 <div>
                   {order.addressNotes && (
                     <p className="text-on-surface-variant">
-                      <span className="font-semibold text-on-surface">Адрес ПВЗ / Комментарий:</span> {order.addressNotes}
+                      <span className="font-medium text-on-surface">Адрес / Комментарий:</span> {order.addressNotes}
                     </p>
                   )}
                   {order.discountLabel && (
-                    <p className="text-emerald-600 dark:text-emerald-400 font-medium">
+                    <p className="text-on-surface-variant font-medium">
                       Скидка: {order.discountLabel}
                     </p>
                   )}
                 </div>
                 <div className="self-end sm:self-auto text-right">
-                  <span className="text-on-surface-variant">Итого к оплате: </span>
-                  <span className="font-bold text-primary text-base">{formatPrice(order.totalRub)}</span>
+                  <span className="text-on-surface-variant">К оплате: </span>
+                  <span className="font-bold text-[#8a4193] text-base">{formatPrice(order.totalRub)}</span>
                 </div>
               </div>
             </div>
