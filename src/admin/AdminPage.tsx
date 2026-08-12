@@ -373,11 +373,39 @@ function AdminOrdersView() {
               {/* Delivery Notes & Total */}
               <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                 <div>
-                  {order.addressNotes && (
-                    <p className="text-on-surface-variant">
-                      <span className="font-medium text-on-surface">Адрес / Комментарий:</span> {order.addressNotes}
-                    </p>
-                  )}
+                  {order.addressNotes && (() => {
+                    const parts = order.addressNotes.split(' | ')
+                    const fio = parts.find((p: string) => p.startsWith('ФИО:'))
+                    const tel = parts.find((p: string) => p.startsWith('Тел:'))
+                    const addr = parts.find((p: string) => p.startsWith('Адрес:'))
+                    // fallback: if it doesn't match the pattern, show as-is
+                    if (!fio && !tel && !addr) {
+                      return (
+                        <p className="text-on-surface-variant">
+                          {order.addressNotes}
+                        </p>
+                      )
+                    }
+                    return (
+                      <div className="space-y-1">
+                        {fio && (
+                          <p className="text-on-surface-variant">
+                            <span className="font-medium text-on-surface">👤 {fio}</span>
+                          </p>
+                        )}
+                        {tel && (
+                          <p className="text-on-surface-variant">
+                            <span className="font-medium text-on-surface">📞 {tel}</span>
+                          </p>
+                        )}
+                        {addr && (
+                          <p className="text-on-surface-variant">
+                            <span className="font-medium text-on-surface">📍 {addr}</span>
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {order.discountLabel && (
                     <p className="text-on-surface-variant font-medium">
                       Скидка: {order.discountLabel}
