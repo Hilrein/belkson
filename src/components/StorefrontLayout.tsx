@@ -714,7 +714,7 @@ export default function StorefrontLayout() {
 
               {/* Segmented delivery picker */}
               <div className="space-y-2">
-                <span className="text-xs text-on-surface-variant block">Способ доставки</span>
+                <span className="text-xs text-on-surface-variant block font-medium">Способ доставки</span>
                 <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim">
                   {[
                     { id: 'Ozon', name: 'Ozon' },
@@ -727,7 +727,7 @@ export default function StorefrontLayout() {
                         key={option.id}
                         type="button"
                         onClick={() => setDeliveryMethod(option.id as DeliveryMethod)}
-                        className={`flex-1 py-2 text-xs font-medium rounded-full transition-all text-center ${
+                        className={`flex-1 py-2.5 text-xs font-medium rounded-full transition-all text-center ${
                           isSelected
                             ? 'bg-surface text-primary font-bold shadow-xs'
                             : 'text-on-surface-variant hover:text-on-surface'
@@ -742,61 +742,14 @@ export default function StorefrontLayout() {
 
               {/* Single address input */}
               <div className="space-y-1.5">
-                <span className="text-xs text-on-surface-variant block">Адрес ПВЗ или комментарий</span>
-                <input
-                  type="text"
-                  placeholder="г. Москва, ул. Ленина 10 (необязательно)"
+                <span className="text-xs text-on-surface-variant block font-medium">Адрес ПВЗ или комментарий</span>
+                <textarea
+                  rows={3}
+                  placeholder="г. Москва, ул. Ленина 10 или номер ПВЗ (необязательно)"
                   value={addressNotes}
                   onChange={(e) => setAddressNotes(e.target.value)}
-                  className="w-full py-2.5 px-3.5 rounded-xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors"
+                  className="w-full p-3.5 rounded-2xl border border-surface-dim bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary transition-colors resize-none"
                 />
-              </div>
-
-              {/* Clean messenger buttons */}
-              <div className="pt-2 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const discountLabel =
-                      activeDiscount && discountRub > 0
-                        ? activeDiscount.type === 'percent'
-                          ? `−${activeDiscount.value}% (${format(discountRub)})`
-                          : `−${format(discountRub)}`
-                        : undefined
-                    openTelegramOrder(
-                      cartItems,
-                      format(totalRub),
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                    )
-                  }}
-                  className="w-full py-3 px-4 rounded-full bg-[#24A1DE] text-white font-medium text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99] transition-all"
-                >
-                  Telegram
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const discountLabel =
-                      activeDiscount && discountRub > 0
-                        ? activeDiscount.type === 'percent'
-                          ? `−${activeDiscount.value}% (${format(discountRub)})`
-                          : `−${format(discountRub)}`
-                        : undefined
-                    openMaxOrder(
-                      cartItems,
-                      format(totalRub),
-                      discountLabel,
-                      deliveryMethod,
-                      addressNotes,
-                    )
-                  }}
-                  className="w-full py-3 px-4 rounded-full bg-primary text-on-primary font-medium text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.99] transition-all"
-                >
-                  Max (мессенджер)
-                </button>
               </div>
             </div>
           ) : (
@@ -871,83 +824,136 @@ export default function StorefrontLayout() {
               ))}
             </div>
           )}
-          {cartStep === 'items' && (
-            <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
-              {nextDiscount && (
-                <div className="mb-4">
-                  <p className="mb-2 text-xs text-on-surface-variant">
-                    Ещё{' '}
-                    <span
-                      key={`${nextNeed}-${needDirection}`}
-                      className={`inline-block font-semibold text-on-surface ${
-                        needDirection === 'up'
-                          ? 'animate-need-up'
-                          : needDirection === 'down'
-                            ? 'animate-need-down'
-                            : ''
-                      }`}
-                    >
-                      {format(nextNeed)}
-                    </span>{' '}
-                    до скидки{' '}
-                    <span className="font-semibold text-primary">
-                      {nextDiscount.type === 'percent'
-                        ? `${nextDiscount.value}%`
-                        : format(nextDiscount.value)}
-                    </span>
-                  </p>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
-                    <div
-                      className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          Math.round(
-                            (subtotalRub / nextDiscount.thresholdRub) * 100,
-                          ),
-                        )}%`,
-                      }}
-                    />
+
+          {cartItems.length > 0 && (
+            cartStep === 'checkout' ? (
+              <div className="p-6 border-t border-surface-dim bg-surface-container-lowest space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const discountLabel =
+                      activeDiscount && discountRub > 0
+                        ? activeDiscount.type === 'percent'
+                          ? `−${activeDiscount.value}% (${format(discountRub)})`
+                          : `−${format(discountRub)}`
+                        : undefined
+                    openTelegramOrder(
+                      cartItems,
+                      format(totalRub),
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                    )
+                  }}
+                  className="w-full bg-[#24A1DE] text-white font-label-sm py-4 rounded-full shadow-md hover:bg-[#1f8ec4] active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.37-.26-2.04-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.46 3.81-1.6 4.6-1.88 5.12-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/>
+                  </svg>
+                  Оформить через Telegram
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const discountLabel =
+                      activeDiscount && discountRub > 0
+                        ? activeDiscount.type === 'percent'
+                          ? `−${activeDiscount.value}% (${format(discountRub)})`
+                          : `−${format(discountRub)}`
+                        : undefined
+                    openMaxOrder(
+                      cartItems,
+                      format(totalRub),
+                      discountLabel,
+                      deliveryMethod,
+                      addressNotes,
+                    )
+                  }}
+                  className="w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-xl">forum</span>
+                  Оформить через Max
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 border-t border-surface-dim bg-surface-container-lowest">
+                {nextDiscount && (
+                  <div className="mb-4">
+                    <p className="mb-2 text-xs text-on-surface-variant">
+                      Ещё{' '}
+                      <span
+                        key={`${nextNeed}-${needDirection}`}
+                        className={`inline-block font-semibold text-on-surface ${
+                          needDirection === 'up'
+                            ? 'animate-need-up'
+                            : needDirection === 'down'
+                              ? 'animate-need-down'
+                              : ''
+                        }`}
+                      >
+                        {format(nextNeed)}
+                      </span>{' '}
+                      до скидки{' '}
+                      <span className="font-semibold text-primary">
+                        {nextDiscount.type === 'percent'
+                          ? `${nextDiscount.value}%`
+                          : format(nextDiscount.value)}
+                      </span>
+                    </p>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary-container/25">
+                      <div
+                        className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.round(
+                              (subtotalRub / nextDiscount.thresholdRub) * 100,
+                            ),
+                          )}%`,
+                        }}
+                      />
+                    </div>
                   </div>
+                )}
+                <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
+                  <span>Сумма</span>
+                  <span>{format(subtotalRub)}</span>
                 </div>
-              )}
-              <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
-                <span>Сумма</span>
-                <span>{format(subtotalRub)}</span>
-              </div>
-              {activeDiscount && discountRub > 0 && (
-                <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
-                  <span>
-                    Скидка{' '}
-                    {activeDiscount.type === 'percent'
-                      ? `${activeDiscount.value}%`
-                      : ''}
+                {activeDiscount && discountRub > 0 && (
+                  <div className="flex justify-between items-center mb-2 text-sm text-green-700 dark:text-green-400">
+                    <span>
+                      Скидка{' '}
+                      {activeDiscount.type === 'percent'
+                        ? `${activeDiscount.value}%`
+                        : ''}
+                    </span>
+                    <span className="font-semibold">−{format(discountRub)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
+                  <span>Итого</span>
+                  <span className="font-bold text-primary">
+                    {format(totalRub)}
                   </span>
-                  <span className="font-semibold">−{format(discountRub)}</span>
                 </div>
-              )}
-              <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
-                <span>Итого</span>
-                <span className="font-bold text-primary">
-                  {format(totalRub)}
-                </span>
+                <button
+                  type="button"
+                  disabled={cartItems.length === 0}
+                  className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
+                    cartItems.length === 0
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
+                  }`}
+                  onClick={() => {
+                    if (cartItems.length === 0) return
+                    setCartStep('checkout')
+                  }}
+                >
+                  Оформить заказ
+                </button>
               </div>
-              <button
-                type="button"
-                disabled={cartItems.length === 0}
-                className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
-                  cartItems.length === 0
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
-                }`}
-                onClick={() => {
-                  if (cartItems.length === 0) return
-                  setCartStep('checkout')
-                }}
-              >
-                Оформить заказ
-              </button>
-            </div>
+            )
           )}
         </div>
       </div>
