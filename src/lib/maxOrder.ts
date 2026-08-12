@@ -37,7 +37,7 @@ export function buildMaxOrderMessage(
     parts.push(`ФИО получателя: ${customerName.trim()}`)
   }
   if (customerPhone?.trim()) {
-    parts.push(`Телефон: ${customerPhone.trim()}`)
+    parts.push(`Номер телефона: ${customerPhone.trim()}`)
   }
   if (deliveryMethod) {
     parts.push(`Способ доставки: ${deliveryMethod}`)

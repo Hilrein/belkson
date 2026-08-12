@@ -376,7 +376,7 @@ function AdminOrdersView() {
                   {order.addressNotes && (() => {
                     const parts = order.addressNotes.split(' | ')
                     const fio = parts.find((p: string) => p.startsWith('ФИО:'))
-                    const tel = parts.find((p: string) => p.startsWith('Тел:'))
+                    const tel = parts.find((p: string) => p.startsWith('Номер телефона:'))
                     const addr = parts.find((p: string) => p.startsWith('Адрес:'))
                     // fallback: if it doesn't match the pattern, show as-is
                     if (!fio && !tel && !addr) {

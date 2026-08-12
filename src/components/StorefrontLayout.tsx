@@ -737,7 +737,7 @@ export default function StorefrontLayout() {
               </Link>
             </div>
           ) : cartStep === 'checkout' ? (
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {/* Order total summary */}
               <div className="pb-4 border-b border-surface-dim flex items-baseline justify-between">
                 <div>
@@ -801,7 +801,7 @@ export default function StorefrontLayout() {
               </div>
 
               {/* Segmented delivery picker */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <span className="text-xs text-on-surface-variant block font-medium">Способ доставки</span>
                 <div className="flex rounded-full bg-surface-container-low p-1 border border-surface-dim">
                   {[
@@ -937,7 +937,7 @@ export default function StorefrontLayout() {
 
                       const fullNotes = [
                         customerName ? `ФИО: ${customerName}` : '',
-                        customerPhone ? `Тел: ${customerPhone}` : '',
+                        customerPhone ? `Номер телефона: ${customerPhone}` : '',
                         addressNotes ? `Адрес: ${addressNotes}` : '',
                       ].filter(Boolean).join(' | ')
 
@@ -983,7 +983,7 @@ export default function StorefrontLayout() {
 
                           const fullNotes = [
                             customerName ? `ФИО: ${customerName}` : '',
-                            customerPhone ? `Тел: ${customerPhone}` : '',
+                            customerPhone ? `Номер телефона: ${customerPhone}` : '',
                             addressNotes ? `Адрес: ${addressNotes}` : '',
                           ].filter(Boolean).join(' | ')
 
@@ -1027,7 +1027,7 @@ export default function StorefrontLayout() {
 
                           const fullNotes = [
                             customerName ? `ФИО: ${customerName}` : '',
-                            customerPhone ? `Тел: ${customerPhone}` : '',
+                            customerPhone ? `Номер телефона: ${customerPhone}` : '',
                             addressNotes ? `Адрес: ${addressNotes}` : '',
                           ].filter(Boolean).join(' | ')
 
