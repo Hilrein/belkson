@@ -54,13 +54,7 @@ export default function StorefrontLayout() {
   const [resaleOpen, setResaleOpen] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
-  const [orderCopiedToast, setOrderCopiedToast] = useState<string | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
-
-  const triggerToast = (msg: string) => {
-    setOrderCopiedToast(msg)
-    setTimeout(() => setOrderCopiedToast(null), 4000)
-  }
 
   // Direction-aware animation for the "Ещё X ₽ до скидки" amount
   const nextNeed = useMemo(
@@ -928,8 +922,6 @@ export default function StorefrontLayout() {
                         messenger: 'VK',
                       })
 
-                      triggerToast('Текст заказа скопирован! Вставьте его в чат (Ctrl+V или Долгое нажатие → Вставить)')
-
                       openVkOrder(
                         cartItems,
                         format(totalRub),
@@ -1032,13 +1024,6 @@ export default function StorefrontLayout() {
           )}
         </div>
       </div>
-
-      {orderCopiedToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-on-surface text-surface px-5 py-3 rounded-full shadow-lg text-xs font-medium flex items-center gap-2 max-w-xs text-center border border-surface-dim">
-          <span className="material-symbols-outlined text-base text-emerald-400 shrink-0">content_paste</span>
-          <span>{orderCopiedToast}</span>
-        </div>
-      )}
     </>
   )
 }
