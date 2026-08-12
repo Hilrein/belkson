@@ -701,12 +701,19 @@ export default function StorefrontLayout() {
               <div className="pb-4 border-b border-surface-dim flex items-baseline justify-between">
                 <div>
                   <span className="text-xs text-on-surface-variant">К оплате ({cartItems.length} поз.)</span>
-                  <p className="font-headline-md text-primary font-bold text-xl mt-0.5">{format(totalRub)}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <p className="font-headline-md text-primary font-bold text-xl">{format(totalRub)}</p>
+                    {activeDiscount && discountRub > 0 && (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        Действует скидка {activeDiscount.type === 'percent' ? `${activeDiscount.value}%` : format(discountRub)}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setCartStep('items')}
-                  className="text-xs text-on-surface-variant hover:text-primary transition-colors underline"
+                  className="text-xs text-on-surface-variant hover:text-primary transition-colors underline shrink-0"
                 >
                   Изменить товары
                 </button>
@@ -815,9 +822,16 @@ export default function StorefrontLayout() {
                           +
                         </button>
                       </div>
-                      <span className="text-sm sm:text-base font-bold text-primary tabular-nums">
-                        {format(line.priceRub * line.quantity)}
-                      </span>
+                      <div className="text-right">
+                        <span className="text-sm sm:text-base font-bold text-primary tabular-nums block">
+                          {format(line.priceRub * line.quantity)}
+                        </span>
+                        {activeDiscount && discountRub > 0 && (
+                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 block">
+                            Действует скидка
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -931,9 +945,16 @@ export default function StorefrontLayout() {
                     <span className="font-semibold">−{format(discountRub)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center mb-6 font-headline-md text-on-surface">
-                  <span>Итого</span>
-                  <span className="font-bold text-primary">
+                <div className="flex justify-between items-start mb-6 font-headline-md text-on-surface">
+                  <div>
+                    <span className="block font-bold">Итого</span>
+                    {activeDiscount && discountRub > 0 && (
+                      <span className="inline-block mt-0.5 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-sans">
+                        Действует скидка {activeDiscount.type === 'percent' ? `${activeDiscount.value}%` : format(discountRub)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-bold text-primary text-right text-lg">
                     {format(totalRub)}
                   </span>
                 </div>
