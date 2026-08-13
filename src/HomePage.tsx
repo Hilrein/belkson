@@ -47,7 +47,8 @@ export default function HomePage() {
     (product: CatalogProduct, e?: MouseEvent) => {
       e?.stopPropagation()
       e?.preventDefault()
-      openAddToCartModal(product)
+      const finalProduct = product.isSale && product.salePriceRub ? { ...product, priceRub: product.salePriceRub } : product
+      openAddToCartModal(finalProduct)
     },
     [openAddToCartModal],
   )
@@ -246,14 +247,25 @@ export default function HomePage() {
       <h3 className="font-body-lg text-body-lg text-on-surface font-semibold line-clamp-2 leading-snug">{product.name}</h3>
       <p className="text-on-surface-variant text-sm truncate">{product.color}</p>
       <div className="mt-auto pt-2 flex items-center justify-between gap-2">
-      <span className="font-body-lg text-body-lg text-primary font-bold">{format(product.priceRub)}</span>
-      <button
-        type="button"
-        onClick={(e) => handleAddToCart(product, e)}
-        className="md:hidden shrink-0 text-[11px] tracking-[0.12em] uppercase font-semibold text-primary border-b border-primary/40 pb-0.5"
-      >
-        В корзину
-      </button>
+        {product.isSale && product.salePriceRub ? (
+          <div className="flex flex-col items-start tabular-nums">
+            <span className="text-[11px] font-normal text-on-surface-variant/70 line-through">
+              {format(product.priceRub)}
+            </span>
+            <span className="font-bold text-[#6f2879] text-base">
+              {format(product.salePriceRub)}
+            </span>
+          </div>
+        ) : (
+          <span className="font-body-lg text-body-lg text-primary font-bold">{format(product.priceRub)}</span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => handleAddToCart(product, e)}
+          className="md:hidden shrink-0 text-[11px] tracking-[0.12em] uppercase font-semibold text-primary border-b border-primary/40 pb-0.5"
+        >
+          В корзину
+        </button>
       </div>
       </div>
       </div>
@@ -302,7 +314,18 @@ export default function HomePage() {
       <h3 className="font-body-lg text-body-lg text-on-surface font-semibold mb-1 line-clamp-2">{product.name}</h3>
       <p className="font-body-md text-body-md text-on-surface-variant text-sm">{product.color}</p>
       </div>
-      <span className="font-body-lg text-body-lg text-primary font-bold shrink-0">{format(product.priceRub)}</span>
+      {product.isSale && product.salePriceRub ? (
+        <div className="flex flex-col items-end shrink-0 tabular-nums">
+          <span className="text-[11px] font-normal text-on-surface-variant/70 line-through">
+            {format(product.priceRub)}
+          </span>
+          <span className="font-bold text-[#6f2879] text-base">
+            {format(product.salePriceRub)}
+          </span>
+        </div>
+      ) : (
+        <span className="font-body-lg text-body-lg text-primary font-bold shrink-0">{format(product.priceRub)}</span>
+      )}
       </div>
       <button
         type="button"
