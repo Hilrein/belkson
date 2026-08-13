@@ -315,10 +315,10 @@ export default function CatalogPage() {
                   {product.color}
                   {product.category ? ` · ${product.category}` : ''}
                 </p>
-                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
+                {/* <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span>В наличии: {product.stock != null ? product.stock : 10} шт.</span>
-                </span>
+                </span> */}
               </div>
               {product.sizes && product.sizes.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
