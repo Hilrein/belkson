@@ -1100,6 +1100,162 @@ function StockInlineEditor({
   )
 }
 
+const PROMO_CATEGORY_OPTIONS = [
+  { label: 'Все разделы', value: '' },
+  { label: 'Малыши', value: 'Малыши' },
+  { label: 'Девочки', value: 'Девочки' },
+  { label: 'Мальчики', value: 'Мальчики' },
+  { label: 'Sale %', value: 'sale' },
+  { label: 'Новинки', value: 'new' },
+  { label: 'Любимчики', value: 'favorite' },
+] as const
+
+function findCategoryValue(rawCat: string): string {
+  if (!rawCat) return ''
+  const catLower = rawCat.toLowerCase().trim()
+  if (catLower === 'sale %' || catLower === 'sale' || catLower === 'скидки') return 'sale'
+  if (catLower === 'новинки' || catLower === 'new') return 'new'
+  if (catLower === 'любимчики' || catLower === 'favorite') return 'favorite'
+  const matched = PROMO_CATEGORY_OPTIONS.find(
+    (opt) => opt.value.toLowerCase() === catLower || opt.label.toLowerCase() === catLower
+  )
+  return matched ? matched.value : rawCat
+}
+
+function parseCatalogLink(url: string): { category: string; subcategories: string[] } {
+  if (!url) return { category: '', subcategories: [] }
+  try {
+    const qIndex = url.indexOf('?')
+    if (qIndex === -1) return { category: '', subcategories: [] }
+    const queryString = url.slice(qIndex + 1)
+    const params = new URLSearchParams(queryString)
+
+    let category = params.get('category') || ''
+    try {
+      if (/%[0-9A-Fa-f]{2}/.test(category)) {
+        category = decodeURIComponent(category)
+      }
+    } catch {}
+
+    let subcategoryRaw = params.get('subcategory') || ''
+    try {
+      if (/%[0-9A-Fa-f]{2}/.test(subcategoryRaw)) {
+        subcategoryRaw = decodeURIComponent(subcategoryRaw)
+      }
+    } catch {}
+
+    const subcategories = subcategoryRaw
+      ? subcategoryRaw.split(',').map((s) => s.trim()).filter(Boolean)
+      : []
+
+    return { category: findCategoryValue(category), subcategories }
+  } catch {
+    return { category: '', subcategories: [] }
+  }
+}
+
+function generateCatalogLink(category: string, subcategories: string[]): string {
+  const params = new URLSearchParams()
+  if (category) {
+    params.set('category', category)
+  }
+  if (subcategories.length > 0) {
+    params.set('subcategory', subcategories.join(','))
+  }
+  const qs = params.toString()
+  return qs ? `/catalog?${decodeURIComponent(qs)}` : '/catalog'
+}
+
+function PromoCardLinkSelector({
+  linkValue,
+  onLinkChange,
+  linkLabel,
+}: {
+  linkValue: string
+  onLinkChange: (newLink: string) => void
+  linkLabel: string
+}) {
+  const parsed = useMemo(() => parseCatalogLink(linkValue), [linkValue])
+
+  const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCat = e.target.value
+    const newUrl = generateCatalogLink(newCat, parsed.subcategories)
+    onLinkChange(newUrl)
+  }
+
+  const handleToggleSubcategory = (sub: string) => {
+    const exists = parsed.subcategories.includes(sub)
+    const nextSubs = exists
+      ? parsed.subcategories.filter((s) => s !== sub)
+      : [...parsed.subcategories, sub]
+    const newUrl = generateCatalogLink(parsed.category, nextSubs)
+    onLinkChange(newUrl)
+  }
+
+  return (
+    <div className="space-y-3 pt-3 border-t border-gray-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-on-surface-variant mb-1">
+            Категория каталога
+          </label>
+          <select
+            value={parsed.category}
+            onChange={handleCategorySelect}
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors cursor-pointer"
+          >
+            {PROMO_CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-on-surface-variant mb-1">
+            {linkLabel}
+          </label>
+          <input
+            type="text"
+            value={linkValue}
+            onChange={(e) => onLinkChange(e.target.value)}
+            placeholder="/catalog"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
+          Подкатегории (мультивыбор)
+        </label>
+        <div className="p-3 bg-surface-container-low/50 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+          {SUBCATEGORIES.map((sub) => {
+            const checked = parsed.subcategories.includes(sub)
+            return (
+              <label
+                key={sub}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs cursor-pointer select-none transition-colors ${
+                  checked ? 'bg-[#8a4193]/10 text-[#8a4193] font-medium' : 'text-on-surface hover:bg-gray-100/70'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => handleToggleSubcategory(sub)}
+                  className="rounded border-gray-300 text-[#8a4193] focus:ring-[#8a4193] w-4 h-4 cursor-pointer"
+                />
+                <span className="truncate">{sub}</span>
+              </label>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AdminPromoBlockView() {
   const { data, loading, updateData } = usePromoBlock()
   const [formData, setFormData] = useState<PromoBlockData>(data)
@@ -1307,32 +1463,24 @@ function AdminPromoBlockView() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                Текст кнопки (buttonText)
-              </label>
-              <input
-                type="text"
-                value={formData?.mainCard?.buttonText || ''}
-                onChange={(e) => handleMainCardChange('buttonText', e.target.value)}
-                placeholder="Смотреть коллекцию"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                Ссылка кнопки (buttonLink)
-              </label>
-              <input
-                type="text"
-                value={formData?.mainCard?.buttonLink || ''}
-                onChange={(e) => handleMainCardChange('buttonLink', e.target.value)}
-                placeholder="/catalog"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              Текст кнопки (buttonText)
+            </label>
+            <input
+              type="text"
+              value={formData?.mainCard?.buttonText || ''}
+              onChange={(e) => handleMainCardChange('buttonText', e.target.value)}
+              placeholder="Смотреть коллекцию"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+            />
           </div>
+
+          <PromoCardLinkSelector
+            linkValue={formData?.mainCard?.buttonLink || ''}
+            onLinkChange={(newLink) => handleMainCardChange('buttonLink', newLink)}
+            linkLabel="Ссылка кнопки (buttonLink)"
+          />
         </div>
 
         {/* Right Column: Section 2 & Section 3 */}
@@ -1447,32 +1595,24 @@ function AdminPromoBlockView() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                  Текст ссылки (linkText)
-                </label>
-                <input
-                  type="text"
-                  value={formData?.secondaryCard?.linkText || ''}
-                  onChange={(e) => handleSecondaryCardChange('linkText', e.target.value)}
-                  placeholder="Купить"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                  Ссылка (linkUrl)
-                </label>
-                <input
-                  type="text"
-                  value={formData?.secondaryCard?.linkUrl || ''}
-                  onChange={(e) => handleSecondaryCardChange('linkUrl', e.target.value)}
-                  placeholder="/catalog"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Текст ссылки (linkText)
+              </label>
+              <input
+                type="text"
+                value={formData?.secondaryCard?.linkText || ''}
+                onChange={(e) => handleSecondaryCardChange('linkText', e.target.value)}
+                placeholder="Купить"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+              />
             </div>
+
+            <PromoCardLinkSelector
+              linkValue={formData?.secondaryCard?.linkUrl || ''}
+              onLinkChange={(newLink) => handleSecondaryCardChange('linkUrl', newLink)}
+              linkLabel="Ссылка (linkUrl)"
+            />
           </div>
         </div>
       </div>
