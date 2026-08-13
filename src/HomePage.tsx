@@ -108,7 +108,7 @@ export default function HomePage() {
                   <div className="hero-actions">
                     <Link
                       to="/catalog?category=new"
-                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#5a2063] text-on-primary text-xs tracking-[0.14em] uppercase font-semibold py-3.5 px-7 rounded-full shadow-md hover:shadow-lg active:scale-98 transition-all duration-200 group/btn"
+                      className="btn-hero group/btn"
                     >
                       <span>Смотреть новинки</span>
                       <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
@@ -141,7 +141,7 @@ export default function HomePage() {
                   <div className="hero-actions">
                     <Link
                       to="/catalog"
-                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#5a2063] text-on-primary text-xs tracking-[0.14em] uppercase font-semibold py-3.5 px-7 rounded-full shadow-md hover:shadow-lg active:scale-98 transition-all duration-200 group/btn"
+                      className="btn-hero group/btn"
                     >
                       <span>В каталог</span>
                       <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
