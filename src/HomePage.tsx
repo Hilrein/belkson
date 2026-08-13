@@ -98,12 +98,12 @@ export default function HomePage() {
                 alt={slide.title}
                 src={slide.image}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute inset-0 flex items-end">
-                <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
+                <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-8 md:pb-12">
                   <div className="hero-copy">
                     {slide.badge && (
-                      <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-white/80 block mb-2">
+                      <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-white/80 block mb-1.5">
                         {slide.badge}
                       </span>
                     )}
