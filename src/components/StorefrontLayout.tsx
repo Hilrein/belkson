@@ -899,14 +899,6 @@ export default function StorefrontLayout() {
                         <p className="font-semibold text-on-surface text-sm sm:text-base line-clamp-2 leading-snug">
                           {line.name}
                         </p>
-                        {(() => {
-                          const display = line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes
-                          return display && display.length > 0 ? (
-                            <p className="text-xs text-on-surface-variant mt-0.5">
-                              Размеры: {display.join(', ')}
-                            </p>
-                          ) : null
-                        })()}
                       </div>
                       <button
                         type="button"
@@ -919,6 +911,28 @@ export default function StorefrontLayout() {
                         </span>
                       </button>
                     </div>
+                    {/* Size chips */}
+                    {line.sizes && line.sizes.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {line.sizes.map((size) => {
+                          const selected = (line.selectedSizes || []).includes(size)
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => toggleSize(line.productId, size)}
+                              className={`px-2.5 py-1 text-[10px] rounded-full border transition-all ${
+                                selected
+                                  ? 'bg-primary text-on-primary border-primary font-semibold'
+                                  : 'bg-surface text-on-surface-variant border-surface-dim hover:border-primary/50'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                     <div className="mt-auto pt-2 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1 border border-surface-dim rounded-full bg-surface">
                         <button
