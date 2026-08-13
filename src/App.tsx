@@ -18,6 +18,7 @@ import { ContactsSettingsProvider } from './store/ContactsSettingsContext'
 import { AboutSettingsProvider } from './store/AboutSettingsContext'
 
 import { HeroBannersProvider } from './store/HeroBannersContext'
+import { PromoBlockProvider } from './store/PromoBlockContext'
 
 import SizeGuidePage from './SizeGuidePage'
 import DeliveryPage from './DeliveryPage'
@@ -30,35 +31,37 @@ function App() {
           <OfficialStoresProvider>
             <PurchaseTermsProvider>
               <HeroBannersProvider>
-                <OrdersProvider>
-                  <MessengerSettingsProvider>
-                    <ContactsSettingsProvider>
-                      <AboutSettingsProvider>
-                        <BrowserRouter>
-                          <Routes>
-                          {/* Storefront pages inherit shared navbar / footer / cart */}
-                          <Route element={<StorefrontLayout />}>
-                            <Route path="/" element={<HomePage />} />
-                            <Route path="/catalog" element={<CatalogPage />} />
-                            <Route path="/about" element={<AboutPage />} />
-                            <Route path="/contacts" element={<ContactsPage />} />
-                            <Route path="/size-guide" element={<SizeGuidePage />} />
-                            <Route path="/size" element={<SizeGuidePage />} />
-                            <Route path="/delivery" element={<DeliveryPage />} />
-                            <Route path="/shipping" element={<DeliveryPage />} />
-                            <Route path="/shop/:shop" element={<ExternalShopPage />} />
-                            <Route path="/shop/:shop/:country" element={<ExternalShopPage />} />
-                            {/* Future shop pages: nest under StorefrontLayout */}
-                          </Route>
+                <PromoBlockProvider>
+                  <OrdersProvider>
+                    <MessengerSettingsProvider>
+                      <ContactsSettingsProvider>
+                        <AboutSettingsProvider>
+                          <BrowserRouter>
+                            <Routes>
+                              {/* Storefront pages inherit shared navbar / footer / cart */}
+                              <Route element={<StorefrontLayout />}>
+                                <Route path="/" element={<HomePage />} />
+                                <Route path="/catalog" element={<CatalogPage />} />
+                                <Route path="/about" element={<AboutPage />} />
+                                <Route path="/contacts" element={<ContactsPage />} />
+                                <Route path="/size-guide" element={<SizeGuidePage />} />
+                                <Route path="/size" element={<SizeGuidePage />} />
+                                <Route path="/delivery" element={<DeliveryPage />} />
+                                <Route path="/shipping" element={<DeliveryPage />} />
+                                <Route path="/shop/:shop" element={<ExternalShopPage />} />
+                                <Route path="/shop/:shop/:country" element={<ExternalShopPage />} />
+                                {/* Future shop pages: nest under StorefrontLayout */}
+                              </Route>
 
-                          <Route path="/admin" element={<AdminPage />} />
-                          <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
-                        </Routes>
-                      </BrowserRouter>
-                    </AboutSettingsProvider>
-                  </ContactsSettingsProvider>
-                </MessengerSettingsProvider>
-                </OrdersProvider>
+                              <Route path="/admin" element={<AdminPage />} />
+                              <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+                            </Routes>
+                          </BrowserRouter>
+                        </AboutSettingsProvider>
+                      </ContactsSettingsProvider>
+                    </MessengerSettingsProvider>
+                  </OrdersProvider>
+                </PromoBlockProvider>
               </HeroBannersProvider>
             </PurchaseTermsProvider>
           </OfficialStoresProvider>
