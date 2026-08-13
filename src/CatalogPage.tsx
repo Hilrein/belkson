@@ -130,7 +130,10 @@ export default function CatalogPage() {
     }
 
     if (activeSubcategory !== 'all') {
-      list = list.filter((p) => categoriesMatch(p.subcategory, activeSubcategory))
+      const selectedSubcats = activeSubcategory.split(',').map((s) => s.trim()).filter(Boolean)
+      list = list.filter((p) =>
+        selectedSubcats.some((sub) => categoriesMatch(p.subcategory, sub))
+      )
     }
 
     if (selectedSize !== 'all') {
