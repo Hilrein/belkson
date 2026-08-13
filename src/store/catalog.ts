@@ -14,6 +14,8 @@ export type CatalogProduct = {
   color: string
   /** Brand name (e.g. "Zara", "Belkson") */
   brand?: string
+  /** Available stock quantity in pieces (e.g. 10, 30) */
+  stock?: number
   /** Available sizes, e.g. ["74-80", "80-86"] */
   sizes?: string[]
   /** Additional photos (main photo stays in `image`) */

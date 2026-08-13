@@ -185,9 +185,16 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
                 <h3 className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2">
                   {productToConfigure.name}
                 </h3>
-                <p className="text-sm sm:text-base font-bold text-primary mt-1 tabular-nums">
-                  {format(productToConfigure.priceRub)}
-                </p>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <p className="text-sm sm:text-base font-bold text-primary tabular-nums">
+                    {format(productToConfigure.priceRub)}
+                  </p>
+                  {productToConfigure.stock != null && (
+                    <span className="text-[11px] font-medium text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                      Остаток: {productToConfigure.stock} шт.
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Color Selector */}

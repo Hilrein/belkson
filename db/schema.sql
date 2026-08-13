@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS products (
   category    TEXT NOT NULL,
   color       TEXT NOT NULL DEFAULT '—',
   brand       TEXT NOT NULL DEFAULT '',
+  stock       INTEGER NOT NULL DEFAULT 10 CHECK (stock >= 0),
   sizes       JSONB NOT NULL DEFAULT '[]'::jsonb,
   images      JSONB NOT NULL DEFAULT '[]'::jsonb,
   status      TEXT NOT NULL DEFAULT 'В наличии'

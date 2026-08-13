@@ -53,13 +53,13 @@ function getSql() {
   return sql
 }
 
-/** Idempotent migration: brand / sizes / images columns on `products`. */
 async function ensureProductColumns(client: NeonQueryFunction<false, false>) {
   try {
     await client`
       ALTER TABLE products
         ADD COLUMN IF NOT EXISTS brand TEXT NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS subcategory TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 10,
         ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
         ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb
     `
@@ -88,6 +88,7 @@ function mapProduct(row: DbProduct) {
     subcategory: row.subcategory ? String(row.subcategory).trim() : '',
     color: row.color,
     brand: row.brand ?? '',
+    stock: row.stock != null ? Number(row.stock) : 10,
     sizes: parseStringArray(row.sizes),
     images: parseStringArray(row.images),
     status: row.status as 'В наличии' | 'Мало' | 'Нет в наличии',
@@ -387,6 +388,7 @@ async function handleCreateProduct(c: any) {
   const subcategory = String(body.subcategory ?? '').trim()
   const color = String(body.color ?? '—').trim() || '—'
   const brand = String(body.brand ?? '').trim()
+  const stock = body.stock !== undefined ? Math.max(0, Math.round(Number(body.stock) || 0)) : 10
   const sizes = normalizeSizes(body.sizes)
   const rawImages = normalizeImages(body.images)
   const images: string[] = []
@@ -394,7 +396,7 @@ async function handleCreateProduct(c: any) {
     const normalized = await normalizeProductImage(img)
     if (normalized) images.push(normalized)
   }
-  const status = String(body.status ?? 'В наличии')
+  const status = String(body.status ?? (stock === 0 ? 'Нет в наличии' : 'В наличии'))
   const image = await normalizeProductImage(String(body.image ?? ''))
   const isNew = Boolean(body.isNew)
   const isFavorite = Boolean(body.isFavorite)
@@ -402,9 +404,9 @@ async function handleCreateProduct(c: any) {
 
   const rows = (await client`
     INSERT INTO products
-      (name, sku, price_rub, category, subcategory, color, brand, sizes, images, status, image, is_new, is_favorite, badge)
+      (name, sku, price_rub, category, subcategory, color, brand, stock, sizes, images, status, image, is_new, is_favorite, badge)
     VALUES
-      (${name}, ${sku}, ${priceRub}, ${category}, ${subcategory}, ${color}, ${brand}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
+      (${name}, ${sku}, ${priceRub}, ${category}, ${subcategory}, ${color}, ${brand}, ${stock}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
     RETURNING *
   `) as DbProduct[]
 
@@ -449,6 +451,10 @@ async function handleUpdateProduct(c: any) {
       : cur.color
   const brand =
     body.brand !== undefined ? String(body.brand).trim() : cur.brand
+  const stock =
+    body.stock !== undefined
+      ? Math.max(0, Math.round(Number(body.stock) || 0))
+      : (cur.stock != null ? Number(cur.stock) : 10)
   const sizes =
     body.sizes !== undefined ? normalizeSizes(body.sizes) : parseStringArray(cur.sizes)
   let images: string[]
@@ -462,7 +468,7 @@ async function handleUpdateProduct(c: any) {
   } else {
     images = parseStringArray(cur.images)
   }
-  const status = body.status !== undefined ? String(body.status) : cur.status
+  const status = body.status !== undefined ? String(body.status) : (stock === 0 ? 'Нет в наличии' : cur.status)
   const image =
     body.image !== undefined
       ? await normalizeProductImage(String(body.image))
@@ -488,6 +494,7 @@ async function handleUpdateProduct(c: any) {
       subcategory = ${subcategory},
       color = ${color},
       brand = ${brand},
+      stock = ${stock},
       sizes = ${JSON.stringify(sizes)},
       images = ${JSON.stringify(images)},
       status = ${status},

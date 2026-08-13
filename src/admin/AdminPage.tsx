@@ -28,6 +28,8 @@ type FormState = {
   colors: string[]
   colorInput: string
   brand: string
+  /** Quantity of items in stock (e.g. 10, 30) */
+  stock: string
   /** Available sizes; multiple values per product */
   sizes: string[]
   sizeInput: string
@@ -50,6 +52,7 @@ const emptyForm: FormState = {
   colors: [],
   colorInput: '',
   brand: '',
+  stock: '10',
   sizes: [],
   sizeInput: '',
   status: 'В наличии',
@@ -1045,6 +1048,7 @@ export default function AdminPage() {
       colors: initialColors,
       colorInput: '',
       brand: product.brand || '',
+      stock: String(product.stock != null ? product.stock : 10),
       sizes: product.sizes || [],
       sizeInput: '',
       status: product.status,
@@ -1154,6 +1158,7 @@ export default function AdminPage() {
       const images = photos.slice(1)
 
       const priceRub = Math.max(0, Number(form.price) || 0)
+      const stock = Math.max(0, Math.round(Number(form.stock) || 0))
       const colorVal = form.colors.length > 0 ? form.colors.join(', ') : (form.color.trim() || '—')
       const payload = {
         name: form.name.trim() || 'Без названия',
@@ -1165,6 +1170,7 @@ export default function AdminPage() {
         subcategory: form.subcategory.trim(),
         color: colorVal,
         brand: form.brand.trim(),
+        stock,
         sizes: form.sizes,
         images,
         status: form.status,
@@ -2023,6 +2029,7 @@ export default function AdminPage() {
                             <p className="text-xs text-on-surface-variant mt-0.5">
                               #{product.id} · {product.category}
                               {product.brand ? ` · ${product.brand}` : ''}
+                              <span className="font-semibold text-primary ml-1">· {product.stock != null ? product.stock : 10} шт.</span>
                             </p>
                           </div>
                           <button
@@ -2054,10 +2061,11 @@ export default function AdminPage() {
                       <col className="w-[56px]" />
                       <col className="w-[72px]" />
                       <col />
-                      <col className="w-[140px]" />
+                      <col className="w-[130px]" />
                       <col className="w-[120px]" />
-                      <col className="w-[120px]" />
-                      <col className="w-[120px]" />
+                      <col className="w-[110px]" />
+                      <col className="w-[90px]" />
+                      <col className="w-[110px]" />
                       <col className="w-[88px]" />
                     </colgroup>
                     <thead>
@@ -2079,6 +2087,9 @@ export default function AdminPage() {
                         </th>
                         <th className="p-3 text-label-md font-label-md text-on-surface-variant">
                           Цена
+                        </th>
+                        <th className="p-3 text-label-md font-label-md text-on-surface-variant">
+                          Остаток
                         </th>
                         <th className="p-3 text-label-md font-label-md text-on-surface-variant">
                           Статус
@@ -2122,6 +2133,11 @@ export default function AdminPage() {
                           </td>
                           <td className="p-3 align-middle whitespace-nowrap">
                             {format(product.priceRub)}
+                          </td>
+                          <td className="p-3 align-middle whitespace-nowrap font-medium">
+                            <span className="px-2 py-0.5 rounded bg-surface-variant text-xs font-semibold text-on-surface">
+                              {product.stock != null ? product.stock : 10} шт.
+                            </span>
                           </td>
                           <td className="p-3 align-middle">
                             <span className="inline-block bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">
@@ -2349,6 +2365,7 @@ export default function AdminPage() {
                   }
                 />
               </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-label-md font-label-md text-on-surface mb-1">
                   Цена (₽)
@@ -2364,6 +2381,28 @@ export default function AdminPage() {
                   }
                 />
               </div>
+              <div>
+                <label className="block text-label-md font-label-md text-on-surface mb-1">
+                  Количество (шт.)
+                </label>
+                <input
+                  className="w-full p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                  placeholder="10"
+                  step="1"
+                  type="number"
+                  min="0"
+                  value={form.stock}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setForm((f) => {
+                      const num = Number(val)
+                      const autoStatus = num === 0 ? 'Нет в наличии' : (f.status === 'Нет в наличии' ? 'В наличии' : f.status)
+                      return { ...f, stock: val, status: autoStatus }
+                    })
+                  }}
+                />
+              </div>
+            </div>
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">
