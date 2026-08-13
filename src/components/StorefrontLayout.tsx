@@ -77,6 +77,15 @@ export default function StorefrontLayout() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [resaleOpen, setResaleOpen] = useState(false)
+  const [openStores, setOpenStores] = useState<Record<string, boolean>>({})
+
+  const toggleStoreAccordion = (storeId: number | string) => {
+    const key = String(storeId)
+    setOpenStores((prev) => ({
+      ...prev,
+      [key]: !(prev[key] ?? true),
+    }))
+  }
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const [redirectModal, setRedirectModal] = useState<{
@@ -641,59 +650,83 @@ export default function StorefrontLayout() {
                 >
                   Порядок и условия выкупа
                 </button>
-                {activeOfficialStores.map((store) => (
-                  <div key={store.id} className="flex flex-col gap-2 pt-1">
-                    <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-outline">
-                      {store.name}
-                    </span>
-                    <ul className="flex flex-col gap-1.5 pl-1">
-                      {store.countries.map((c) => {
-                        const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
-                        const name = item ? String(item.name || '') : String(c || '')
-                        const url = item ? String(item.url || '#') : '#'
-                        const rate = item ? String(item.rate || '') : ''
-                        const isExternal = url.startsWith('http://') || url.startsWith('https://')
+                {activeOfficialStores.map((store) => {
+                  const isExpanded = openStores[store.id] ?? true
+                  return (
+                    <div key={store.id} className="flex flex-col pt-1 border-t border-surface-dim/30 first:border-t-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleStoreAccordion(store.id)}
+                        className="w-full flex items-center justify-between text-left py-1.5 group/store cursor-pointer"
+                        aria-expanded={isExpanded}
+                      >
+                        <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-outline group-hover/store:text-primary transition-colors">
+                          {store.name}
+                        </span>
+                        <span
+                          className={`material-symbols-outlined text-[18px] text-outline group-hover/store:text-primary transition-transform duration-300 ${
+                            isExpanded ? 'rotate-0' : '-rotate-90'
+                          }`}
+                        >
+                          expand_more
+                        </span>
+                      </button>
 
-                        const inner = (
-                          <>
-                            <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">
-                              {name}
-                            </span>
-                            {rate && (
-                              <span className="text-xs font-mono text-on-surface-variant/80 font-normal shrink-0 tabular-nums">
-                                {rate}
-                              </span>
-                            )}
-                          </>
-                        )
+                      <div
+                        className={`flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+                          isExpanded ? 'max-h-96 opacity-100 mt-1' : 'max-h-0 opacity-0 pointer-events-none'
+                        }`}
+                      >
+                        <ul className="flex flex-col gap-1.5 pl-1 pb-1">
+                          {store.countries.map((c) => {
+                            const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
+                            const name = item ? String(item.name || '') : String(c || '')
+                            const url = item ? String(item.url || '#') : '#'
+                            const rate = item ? String(item.rate || '') : ''
+                            const isExternal = url.startsWith('http://') || url.startsWith('https://')
 
-                        return (
-                          <li key={name}>
-                            {isExternal ? (
-                              <a
-                                className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={toggleNavDrawer}
-                              >
-                                {inner}
-                              </a>
-                            ) : (
-                              <Link
-                                className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
-                                to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
-                                onClick={toggleNavDrawer}
-                              >
-                                {inner}
-                              </Link>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                ))}
+                            const inner = (
+                              <>
+                                <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">
+                                  {name}
+                                </span>
+                                {rate && (
+                                  <span className="text-xs font-mono text-on-surface-variant/80 font-normal shrink-0 tabular-nums">
+                                    {rate}
+                                  </span>
+                                )}
+                              </>
+                            )
+
+                            return (
+                              <li key={name}>
+                                {isExternal ? (
+                                  <a
+                                    className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={toggleNavDrawer}
+                                  >
+                                    {inner}
+                                  </a>
+                                ) : (
+                                  <Link
+                                    className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
+                                    to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
+                                    onClick={toggleNavDrawer}
+                                  >
+                                    {inner}
+                                  </Link>
+                                )}
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
