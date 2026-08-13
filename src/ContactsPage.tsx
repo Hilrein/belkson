@@ -5,91 +5,108 @@ export default function ContactsPage() {
   const vkUrl = getVkProfileUrl()
 
   return (
-    <main className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-10 md:py-16">
-      {/* Breadcrumb / Title */}
-      <div className="flex items-center gap-2 text-xs text-outline mb-6">
+    <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
+      {/* Navigation Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-outline mb-8 tracking-wide">
         <Link to="/" className="hover:text-primary transition-colors">
           Главная
         </Link>
-        <span>/</span>
+        <span className="text-outline/40">/</span>
         <span className="text-on-surface font-medium">Контакты</span>
       </div>
 
-      <div className="max-w-3xl">
-        <h1 className="font-display-lg-mobile md:font-display-lg text-3xl md:text-4xl font-bold text-on-surface mb-3 tracking-tight">
-          Контакты & Социальные сети
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-on-surface mb-3">
+          Контакты
         </h1>
-        <p className="text-on-surface-variant text-base md:text-lg leading-relaxed mb-10">
-          Мы всегда на связи! Подписывайтесь на наш Telegram-канал и сообщество ВКонтакте, чтобы первыми узнавать о новинках, распродажах и свежих выкупах из Европы.
+        <p className="text-on-surface-variant text-sm md:text-base leading-relaxed max-w-xl">
+          Связывайтесь с нами в удобном мессенджере или социальном канале. Мы с радостью проконсультируем вас по любым вопросам.
         </p>
+      </div>
 
-        {/* Contact Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-          {/* Telegram Channel Card */}
-          <a
-            href="https://t.me/Belksonshop"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-6 bg-white rounded-3xl border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] hover:border-primary/30 transition-all duration-300"
-          >
+      {/* Ultra-Minimalist List Layout */}
+      <div className="flex flex-col border-t border-b border-gray-100 mb-12">
+        {/* Telegram Channel */}
+        <a
+          href="https://t.me/Belksonshop"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group py-5 flex items-center justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+              Telegram
+            </span>
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">send</span>
-              </div>
-              <h3 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors">
-                Telegram-канал
-              </h3>
-              <p className="text-xs text-outline mb-4">
-                @Belksonshop — свежие выкупы, обзоры коллекций и анонсы.
-              </p>
+              <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors block">
+                @Belksonshop
+              </span>
+              <span className="text-xs text-outline font-normal">
+                Официальный канал с анонсами новинок и выкупов
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-primary group-hover:translate-x-1 transition-transform">
-              <span>Открыть в Telegram</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </div>
-          </a>
-
-          {/* VK Card */}
-          <a
-            href={vkUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-6 bg-white rounded-3xl border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] hover:border-primary/30 transition-all duration-300"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">group</span>
-              </div>
-              <h3 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors">
-                Сообщество ВКонтакте
-              </h3>
-              <p className="text-xs text-outline mb-4">
-                Официальная группа ВКонтакте с информацией и новостями.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-primary group-hover:translate-x-1 transition-transform">
-              <span>Перейти ВКонтакте</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </div>
-          </a>
-        </div>
-
-        {/* Schedule & Info */}
-        <div className="p-6 md:p-8 bg-surface-container-low rounded-3xl border border-surface-dim flex flex-col md:flex-row gap-6 md:items-center justify-between">
-          <div>
-            <h4 className="font-bold text-base text-on-surface mb-1">Режим работы поддержки</h4>
-            <p className="text-xs text-on-surface-variant">
-              Принимаем заказы и отвечаем на сообщения ежедневно с 09:00 до 21:00 по МСК.
-            </p>
           </div>
-          <Link
-            to="/catalog"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-semibold text-sm rounded-full hover:bg-primary-hover transition-colors shrink-0"
-          >
-            <span>Перейти в каталог</span>
-            <span className="material-symbols-outlined text-[18px]">shopping_bag</span>
-          </Link>
+          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all">
+            north_east
+          </span>
+        </a>
+
+        {/* VK Community */}
+        <a
+          href={vkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group py-5 flex items-center justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+        >
+          <div className="flex items-center gap-4">
+            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+              ВКонтакте
+            </span>
+            <div>
+              <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors block">
+                Сообщество Belkson
+              </span>
+              <span className="text-xs text-outline font-normal">
+                Новости бренда, фотографии коллекций и консультации
+              </span>
+            </div>
+          </div>
+          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all">
+            north_east
+          </span>
+        </a>
+
+        {/* Working Hours */}
+        <div className="py-5 flex items-center justify-between px-2">
+          <div className="flex items-center gap-4">
+            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+              Режим работы
+            </span>
+            <div>
+              <span className="text-sm font-semibold text-on-surface block">
+                09:00 — 21:00 МСК
+              </span>
+              <span className="text-xs text-outline font-normal">
+                Ежедневно без выходных
+              </span>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-outline shrink-0">
+            Онлайн
+          </span>
         </div>
+      </div>
+
+      {/* Minimal Action */}
+      <div className="flex items-center justify-between pt-2">
+        <Link
+          to="/catalog"
+          className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-primary hover:text-[#8b2691] transition-colors"
+        >
+          <span>Перейти к каталогу товаров</span>
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </Link>
       </div>
     </main>
   )
