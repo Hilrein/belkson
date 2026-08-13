@@ -361,13 +361,13 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="bg-white rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] border border-gray-100 p-6 flex gap-8 overflow-x-auto min-w-[440px]">
+                <div className="bg-white rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] border border-gray-100 p-6 sm:p-7 flex gap-8 overflow-x-auto w-[min(640px,calc(100vw-2rem))] min-w-[560px]">
                   {activeOfficialStores.map((store) => (
-                    <div key={store.id} className="flex-1 min-w-[140px]">
-                      <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-3 pb-2 border-b border-surface-dim/50">
+                    <div key={store.id} className="flex-1 min-w-[210px]">
+                      <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-3.5 pb-2 border-b border-surface-dim/50">
                         {store.name}
                       </h3>
-                      <ul className="flex flex-col gap-0.5">
+                      <ul className="flex flex-col gap-1">
                         {store.countries.map((c) => {
                           const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
                           const name = item ? String(item.name || '') : String(c || '')
@@ -377,11 +377,11 @@ export default function StorefrontLayout() {
 
                           const content = (
                             <>
-                              <span className="text-xs sm:text-sm font-medium text-on-surface group-hover/item:text-primary transition-colors">
+                              <span className="text-xs sm:text-sm font-medium text-on-surface group-hover/item:text-primary transition-colors whitespace-nowrap">
                                 {name}
                               </span>
                               {rate && (
-                                <span className="text-[11px] font-mono text-on-surface-variant/80 font-normal group-hover/item:text-primary transition-colors tabular-nums">
+                                <span className="text-xs font-mono text-on-surface-variant/80 font-normal group-hover/item:text-primary transition-colors tabular-nums shrink-0 whitespace-nowrap">
                                   {rate}
                                 </span>
                               )}
@@ -392,7 +392,7 @@ export default function StorefrontLayout() {
                             <li key={name}>
                               {isExternal ? (
                                 <a
-                                  className="group/item flex items-center justify-between gap-4 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
+                                  className="group/item flex items-center justify-between gap-6 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -401,7 +401,7 @@ export default function StorefrontLayout() {
                                 </a>
                               ) : (
                                 <Link
-                                  className="group/item flex items-center justify-between gap-4 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
+                                  className="group/item flex items-center justify-between gap-6 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
                                 >
                                   {content}
