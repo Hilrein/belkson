@@ -596,12 +596,7 @@ function StockInlineEditor({
   onUpdate: (id: number, patch: Partial<Product>) => Promise<void>
 }) {
   const currentStock = product.stock != null ? product.stock : 10
-  const [stockVal, setStockVal] = useState(String(currentStock))
   const [updating, setUpdating] = useState(false)
-
-  useEffect(() => {
-    setStockVal(String(currentStock))
-  }, [currentStock])
 
   const saveStock = async (newVal: number) => {
     const valid = Math.max(0, newVal)
@@ -617,56 +612,36 @@ function StockInlineEditor({
       await onUpdate(product.id, { stock: valid, status: autoStatus })
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
-      setStockVal(String(currentStock))
     } finally {
       setUpdating(false)
     }
   }
 
   return (
-    <div className="inline-flex items-center gap-0.5 bg-surface border border-gray-200 rounded-md p-0.5 shadow-2xs">
-      <button
-        type="button"
-        disabled={updating || currentStock <= 0}
-        onClick={() => void saveStock(currentStock - 1)}
-        className="w-5 h-5 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant font-bold text-xs disabled:opacity-30 cursor-pointer select-none"
-        title="Уменьшить на 1"
-      >
-        −
-      </button>
-      <input
-        type="number"
-        min="0"
-        value={stockVal}
-        disabled={updating}
-        onChange={(e) => setStockVal(e.target.value)}
-        onBlur={() => {
-          const num = parseInt(stockVal, 10)
-          if (!isNaN(num)) {
-            void saveStock(num)
-          } else {
-            setStockVal(String(currentStock))
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.currentTarget.blur()
-          }
-        }}
-        className="w-10 text-center font-bold text-xs bg-transparent text-on-surface focus:outline-none focus:bg-white rounded py-0.5 tabular-nums"
-      />
-      <span className="text-[10px] font-medium text-on-surface-variant pr-1 select-none">
-        шт
+    <div className="inline-flex items-center gap-1.5 select-none">
+      <span className="px-2 py-0.5 rounded bg-surface-variant text-xs font-semibold text-on-surface tabular-nums">
+        {currentStock} шт.
       </span>
-      <button
-        type="button"
-        disabled={updating}
-        onClick={() => void saveStock(currentStock + 1)}
-        className="w-5 h-5 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant font-bold text-xs disabled:opacity-30 cursor-pointer select-none"
-        title="Увеличить на 1"
-      >
-        +
-      </button>
+      <div className="flex flex-col gap-0.5">
+        <button
+          type="button"
+          disabled={updating}
+          onClick={() => void saveStock(currentStock + 1)}
+          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer disabled:opacity-40 leading-none"
+          title="Увеличить на 1"
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          disabled={updating || currentStock <= 0}
+          onClick={() => void saveStock(currentStock - 1)}
+          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer disabled:opacity-40 leading-none"
+          title="Уменьшить на 1"
+        >
+          ▼
+        </button>
+      </div>
     </div>
   )
 }
