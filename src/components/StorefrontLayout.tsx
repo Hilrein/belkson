@@ -660,11 +660,11 @@ export default function StorefrontLayout() {
                         className="w-full flex items-center justify-between text-left py-1.5 group/store cursor-pointer"
                         aria-expanded={isExpanded}
                       >
-                        <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-outline group-hover/store:text-primary transition-colors">
+                        <span className="text-on-surface font-body-lg text-base font-semibold group-hover/store:text-[#ce7ed5] transition-colors">
                           {store.name}
                         </span>
                         <span
-                          className={`material-symbols-outlined text-[18px] text-outline group-hover/store:text-primary transition-transform duration-300 ${
+                          className={`material-symbols-outlined text-[18px] text-on-surface group-hover/store:text-[#ce7ed5] transition-transform duration-300 ${
                             isExpanded ? 'rotate-0' : '-rotate-90'
                           }`}
                         >
