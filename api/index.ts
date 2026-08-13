@@ -1052,9 +1052,35 @@ async function buildApp() {
     }
   }
 
+  const MESSENGER_IDS = ['telegram', 'max', 'vk']
+  const DEFAULT_MESSENGER_SEEDS = [
+    { id: 'telegram', label: 'Telegram', value: 'Belksonshop', is_active: true },
+    { id: 'max', label: 'MAX', value: 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', is_active: true },
+    { id: 'vk', label: 'VK', value: '94968923', is_active: true },
+  ]
+
   async function handleGetMessengerSettings(c: any) {
     await ensureMessengerSettingsTable()
-    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
+
+    // Clean up any stale non-messenger records that may have been written by the old combined tab
+    await sql`DELETE FROM messenger_settings WHERE id NOT IN ('telegram', 'max', 'vk')`
+
+    let rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
+
+    // If any of the 3 system messengers are missing, seed them
+    const existingIds = new Set(rows.map((r) => r.id))
+    for (const seed of DEFAULT_MESSENGER_SEEDS) {
+      if (!existingIds.has(seed.id)) {
+        await sql`
+          INSERT INTO messenger_settings (id, label, value, description, is_active, updated_at)
+          VALUES (${seed.id}, ${seed.label}, ${seed.value}, '', ${seed.is_active}, NOW())
+          ON CONFLICT (id) DO NOTHING
+        `
+      }
+    }
+
+    // Re-fetch after potential seeding
+    rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
     return c.json({ settings: rows.map(mapMessengerSetting) })
   }
 
