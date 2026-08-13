@@ -36,30 +36,30 @@ export default function AboutPage() {
         </div>
       ) : (
         <>
-          {/* Intro — larger, featured block */}
+          {/* Intro — uniform size */}
           {introBlock && (
-            <div className="mb-10 pb-10 border-b border-gray-100">
-              <p className="text-base md:text-lg text-on-surface leading-[1.8] whitespace-pre-line">
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <p className="text-sm md:text-base text-on-surface leading-relaxed whitespace-pre-line">
                 {introBlock.content}
               </p>
             </div>
           )}
 
-          {/* Middle blocks — with dot markers */}
-          <div className="flex flex-col border-t border-b border-gray-100 mb-10">
+          {/* Middle blocks — uniform text size */}
+          <div className="flex flex-col border-t border-b border-gray-100 mb-6">
             {middleBlocks.map((block) => (
               <div
                 key={block.id}
-                className="py-5 flex gap-3.5 border-b border-gray-100 last:border-b-0 px-2"
+                className="py-4 flex gap-3.5 border-b border-gray-100 last:border-b-0 px-2"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-on-surface/25 shrink-0 mt-[7px]" />
-                <div className="flex flex-col gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface/25 shrink-0 mt-[9px]" />
+                <div className="flex flex-col gap-1">
                   {block.title && (
-                    <span className="text-sm font-semibold text-on-surface">
+                    <span className="text-sm md:text-base font-semibold text-on-surface">
                       {block.title}
                     </span>
                   )}
-                  <span className="text-sm text-on-surface-variant leading-[1.75] whitespace-pre-line">
+                  <span className="text-sm md:text-base text-on-surface-variant leading-relaxed whitespace-pre-line">
                     {block.content}
                   </span>
                 </div>
@@ -67,9 +67,9 @@ export default function AboutPage() {
             ))}
           </div>
 
-          {/* Closing — italic, warm */}
+          {/* Closing — uniform text size */}
           {closingBlock && (
-            <p className="text-sm text-on-surface-variant italic leading-relaxed mb-12 px-2">
+            <p className="text-sm md:text-base text-on-surface-variant italic leading-relaxed mb-8 px-2">
               {closingBlock.content}
             </p>
           )}
