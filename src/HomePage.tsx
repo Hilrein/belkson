@@ -402,16 +402,16 @@ export default function HomePage() {
                 </ul>
               </article>
 
-              <article className="flex-1 rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest">
-                <div className="aspect-[4/3] overflow-hidden bg-surface-container-low">
+              <article className="flex-1 rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest flex flex-col">
+                <div className="relative flex-1 min-h-[160px] overflow-hidden bg-surface-container-low">
                   <img
                     className="w-full h-full object-cover object-center"
                     alt={promoData.secondaryCard.title}
                     src={promoData.secondaryCard.image}
                   />
                 </div>
-                <div className="p-5 md:p-6 flex items-center justify-between gap-3">
-                  <h3 className="font-headline-md text-base md:text-lg text-on-surface leading-snug">
+                <div className="p-4 sm:p-5 md:p-6 flex items-center justify-between gap-3 shrink-0 bg-surface-container-lowest">
+                  <h3 className="font-headline-md text-base md:text-lg text-on-surface leading-snug line-clamp-1">
                     {promoData.secondaryCard.title}
                   </h3>
                   {promoData.secondaryCard.linkUrl?.startsWith('http') ? (
