@@ -154,15 +154,15 @@ export default function HomePage() {
 
         {/* Glassmorphic pagination bar */}
         {heroSlideCount > 1 && (
-          <div className="absolute bottom-2 md:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/50 shadow-2xs">
+          <div className="absolute bottom-2 md:bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 bg-white/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/40 shadow-2xs">
             {Array.from({ length: heroSlideCount }).map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setHeroIndex(idx)}
                 aria-label={`Слайд ${idx + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                  heroIndex === idx ? 'w-6 bg-primary' : 'w-1.5 bg-neutral-400/60 hover:bg-neutral-600'
+                className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
+                  heroIndex === idx ? 'w-3.5 bg-primary' : 'w-1 bg-neutral-400/70 hover:bg-neutral-600'
                 }`}
               />
             ))}
