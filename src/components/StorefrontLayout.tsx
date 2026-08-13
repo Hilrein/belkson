@@ -719,7 +719,7 @@ export default function StorefrontLayout() {
 
           {cartItems.length === 0 ? (
             <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center gap-4">
-              <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center text-primary/50 mb-4">
+              <div className="w-24 h-24 bg-surface-container rounded-2xl flex items-center justify-center text-primary/50 mb-4">
                 <span className="material-symbols-outlined text-5xl">
                   shopping_cart
                 </span>
@@ -856,7 +856,7 @@ export default function StorefrontLayout() {
                   key={line.id}
                   className="flex gap-3 p-3 rounded-2xl bg-surface-container-low border border-surface-dim"
                 >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-surface-variant">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl overflow-hidden bg-surface-variant border border-surface-dim">
                     <img
                       src={line.image}
                       alt={line.name}

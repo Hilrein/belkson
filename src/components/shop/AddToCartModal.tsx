@@ -109,7 +109,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
           {/* Product Overview Card */}
           <div className="flex gap-4 p-3 rounded-2xl bg-surface-container-low border border-surface-dim items-center">
-            <div className="w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-surface-variant border border-surface-dim">
+            <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-surface-variant border border-surface-dim">
               <img
                 src={productToConfigure.image}
                 alt={productToConfigure.name}
