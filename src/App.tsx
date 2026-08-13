@@ -19,6 +19,9 @@ import { AboutSettingsProvider } from './store/AboutSettingsContext'
 
 import { HeroBannersProvider } from './store/HeroBannersContext'
 
+import SizeGuidePage from './SizeGuidePage'
+import DeliveryPage from './DeliveryPage'
+
 function App() {
   return (
     <CatalogProvider>
@@ -39,6 +42,10 @@ function App() {
                             <Route path="/catalog" element={<CatalogPage />} />
                             <Route path="/about" element={<AboutPage />} />
                             <Route path="/contacts" element={<ContactsPage />} />
+                            <Route path="/size-guide" element={<SizeGuidePage />} />
+                            <Route path="/size" element={<SizeGuidePage />} />
+                            <Route path="/delivery" element={<DeliveryPage />} />
+                            <Route path="/shipping" element={<DeliveryPage />} />
                             <Route path="/shop/:shop" element={<ExternalShopPage />} />
                             <Route path="/shop/:shop/:country" element={<ExternalShopPage />} />
                             {/* Future shop pages: nest under StorefrontLayout */}

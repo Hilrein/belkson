@@ -495,20 +495,18 @@ export default function StorefrontLayout() {
           >
             О нас
           </Link>
-          <button
-            type="button"
-            onClick={goToTerms}
+          <Link
+            to="/size-guide"
             className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Таблица размеров
-          </button>
-          <button
-            type="button"
-            onClick={goToTerms}
+            Размерная сетка
+          </Link>
+          <Link
+            to="/delivery"
             className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
             Доставка и возврат
-          </button>
+          </Link>
           <Link
             className="text-on-surface-variant hover:text-primary transition-colors font-medium"
             to="/contacts"
@@ -520,7 +518,7 @@ export default function StorefrontLayout() {
             onClick={goToTerms}
             className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Политика конфиденциальности
+            Порядок и условия выкупа
           </button>
         </nav>
         <p className="text-outline font-body-md text-xs text-center">
