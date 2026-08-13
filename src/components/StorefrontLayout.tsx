@@ -477,77 +477,134 @@ export default function StorefrontLayout() {
       {/* Page content */}
       <Outlet />
 
-      {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="bg-surface-container-low dark:bg-surface-container-highest w-full px-margin-mobile md:px-margin-desktop py-16 flex flex-col items-center gap-6 max-w-[1200px] mx-auto border-t border-surface-dim mt-8 box-border">
-        <h2 className="font-display-lg-mobile text-primary mb-2 font-bold tracking-tight">
-          Belkson
-        </h2>
-        <nav className="flex flex-wrap justify-center gap-8 mb-6 font-body-md text-body-md">
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            to="/catalog"
-          >
-            Каталог
-          </Link>
-          <a
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            href="#"
-          >
-            О нас
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            href="#"
-          >
-            Таблица размеров
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            href="#"
-          >
-            Доставка и возврат
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            href="#"
-          >
-            Контакты
-          </a>
-          <a
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            href="#"
-          >
-            Политика конфиденциальности
-          </a>
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors duration-200"
-            to="/admin"
-          >
-            Админ
-          </Link>
-        </nav>
-        <div className="flex gap-6 mb-2">
-          <a
-            className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium"
-            href={getInstagramProfileUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="material-symbols-outlined">photo_camera</span>{' '}
-            Instagram
-          </a>
-          <a
-            className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium"
-            href={getTelegramProfileUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="material-symbols-outlined">send</span> Telegram
-          </a>
+      {/* ── Structured Modern Footer ────────────────────────────────────────────── */}
+      <footer className="bg-surface-container-low border-t border-surface-dim/60 mt-16 text-on-surface">
+        <div className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12">
+            {/* Col 1: Brand Info */}
+            <div className="flex flex-col gap-3">
+              <Link className="flex items-center gap-2.5 group" to="/">
+                <img
+                  alt="Belkson Logo"
+                  className="w-7 h-7 object-contain group-hover:opacity-80 transition-opacity"
+                  src={LOGO_SRC}
+                />
+                <span className="font-bold text-sm tracking-[0.2em] uppercase text-primary">
+                  Belkson
+                </span>
+              </Link>
+              <p className="text-xs md:text-sm text-on-surface-variant leading-relaxed mt-1">
+                Авторский премиальный трикотаж для малышей и доставка оригинальной одежды из официальных магазинов Европы.
+              </p>
+              <Link
+                to="/admin"
+                className="text-[11px] text-outline hover:text-primary transition-colors mt-2 self-start"
+              >
+                Панель управления
+              </Link>
+            </div>
+
+            {/* Col 2: Navigation */}
+            <div className="flex flex-col gap-3">
+              <h3 className="text-xs uppercase tracking-[0.16em] font-semibold text-outline mb-1">
+                Каталог & Покупки
+              </h3>
+              <ul className="flex flex-col gap-2.5 text-xs md:text-sm">
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/catalog">
+                    Весь каталог
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/#novinki">
+                    Новинки коллекции
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/#lyubimchiki">
+                    Любимчики & Хиты
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/catalog?category=sale">
+                    Раздел Sale %
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: Customer Service */}
+            <div className="flex flex-col gap-3">
+              <h3 className="text-xs uppercase tracking-[0.16em] font-semibold text-outline mb-1">
+                Информация
+              </h3>
+              <ul className="flex flex-col gap-2.5 text-xs md:text-sm">
+                <li>
+                  <button
+                    type="button"
+                    onClick={goToTerms}
+                    className="text-on-surface-variant hover:text-primary transition-colors font-medium text-left cursor-pointer"
+                  >
+                    Порядок и условия выкупа
+                  </button>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/catalog?category=Девочки">
+                    Одежда для девочек
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/catalog?category=Мальчики">
+                    Одежда для мальчиков
+                  </Link>
+                </li>
+                <li>
+                  <Link className="text-on-surface-variant hover:text-primary transition-colors font-medium" to="/catalog?category=Малыши">
+                    Одежда для малышей
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 4: Contacts & Socials */}
+            <div className="flex flex-col gap-3">
+              <h3 className="text-xs uppercase tracking-[0.16em] font-semibold text-outline mb-1">
+                Мы на связи
+              </h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Принимаем заказы и отвечаем на вопросы ежедневно с 09:00 до 21:00.
+              </p>
+              <div className="flex flex-col gap-2 mt-1">
+                <a
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-[#8b2691] bg-white border border-primary/20 hover:border-primary/50 px-3.5 py-2 rounded-xl transition-all shadow-2xs self-start"
+                  href={getTelegramProfileUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">send</span>
+                  <span>Написать в Telegram</span>
+                </a>
+                <a
+                  className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-[#8b2691] bg-white border border-primary/20 hover:border-primary/50 px-3.5 py-2 rounded-xl transition-all shadow-2xs self-start"
+                  href={getInstagramProfileUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                  <span>Наш Instagram</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom copyright bar */}
+          <div className="pt-8 border-t border-surface-dim/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-outline">
+            <p>© {new Date().getFullYear()} Belkson Kids. Все права защищены.</p>
+            <div className="flex items-center gap-6">
+              <span className="text-outline/80">Оригинальные бренды из Европы</span>
+            </div>
+          </div>
         </div>
-        <p className="text-outline font-body-md text-body-md text-sm">
-          © {new Date().getFullYear()} Belkson Kids. Все права защищены.
-        </p>
       </footer>
 
       {/* ── Mobile nav drawer ────────────────────────────────────── */}
