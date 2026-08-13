@@ -402,35 +402,29 @@ export default function HomePage() {
                 </ul>
               </article>
 
-              <article className="flex-1 rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest flex flex-col">
-                <div className="relative flex-1 min-h-[160px] overflow-hidden bg-surface-container-low">
+              <Link
+                to={promoData.secondaryCard.linkUrl || '/catalog'}
+                className="group flex flex-col rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest transition-all duration-300 hover:border-primary/30"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-surface-container-low">
                   <img
-                    className="w-full h-full object-cover object-center"
+                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                     alt={promoData.secondaryCard.title}
                     src={promoData.secondaryCard.image}
                   />
                 </div>
-                <div className="p-4 sm:p-5 md:p-6 flex items-center justify-between gap-3 shrink-0 bg-surface-container-lowest">
-                  <h3 className="font-headline-md text-base md:text-lg text-on-surface leading-snug line-clamp-1">
+                <div className="p-5 flex items-center justify-between gap-3 bg-surface-container-lowest">
+                  <h3 className="font-headline-md text-base md:text-lg font-medium text-on-surface leading-snug group-hover:text-primary transition-colors">
                     {promoData.secondaryCard.title}
                   </h3>
-                  {promoData.secondaryCard.linkUrl?.startsWith('http') ? (
-                    <a
-                      href={promoData.secondaryCard.linkUrl}
-                      className="shrink-0 bg-primary text-on-primary text-xs sm:text-sm font-medium px-4.5 py-2 rounded-full hover:bg-on-primary-fixed-variant transition-colors shadow-xs inline-flex items-center justify-center"
-                    >
-                      {promoData.secondaryCard.linkText || 'Купить'}
-                    </a>
-                  ) : (
-                    <Link
-                      to={promoData.secondaryCard.linkUrl || '/catalog'}
-                      className="shrink-0 bg-primary text-on-primary text-xs sm:text-sm font-medium px-4.5 py-2 rounded-full hover:bg-on-primary-fixed-variant transition-colors shadow-xs inline-flex items-center justify-center"
-                    >
-                      {promoData.secondaryCard.linkText || 'Купить'}
-                    </Link>
-                  )}
+                  <span className="shrink-0 text-sm font-medium text-primary flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                    <span>{promoData.secondaryCard.linkText || 'Купить'}</span>
+                    <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </span>
                 </div>
-              </article>
+              </Link>
             </div>
           </div>
         </section>
