@@ -1397,6 +1397,7 @@ export default function AdminPage() {
       const images = photos.slice(1)
 
       const priceRub = Math.max(0, Number(form.price) || 0)
+      const salePriceRub = form.isSale && form.salePriceRub ? Math.max(0, Number(form.salePriceRub) || 0) : undefined
       const stock = Math.max(0, Math.round(Number(form.stock) || 0))
       const colorVal = form.colors.length > 0 ? form.colors.join(', ') : (form.color.trim() || '—')
       const payload = {
@@ -1416,6 +1417,8 @@ export default function AdminPage() {
         image,
         isNew: form.isNew,
         isFavorite: form.isFavorite,
+        isSale: form.isSale,
+        salePriceRub,
       }
 
       // Badge NEW only with isNew; empty string clears badge on update
