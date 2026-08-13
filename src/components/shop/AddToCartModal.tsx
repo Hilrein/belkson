@@ -38,6 +38,8 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   useEffect(() => {
     if (productToConfigure) {
       document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
       setQuantity(1)
       const colors =
         productToConfigure.color && productToConfigure.color.trim() !== '—'
@@ -53,10 +55,14 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
       setSelectedSize(availSizes.length > 0 ? availSizes[0] : '')
     } else {
       document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+      document.body.style.touchAction = ''
     }
 
     return () => {
       document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+      document.body.style.touchAction = ''
     }
   }, [productToConfigure])
 
@@ -82,11 +88,19 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   const totalPrice = productToConfigure.priceRub * quantity
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+      onTouchMove={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault()
+        }
+      }}
+    >
       {/* Backdrop click */}
       <div
         className="absolute inset-0"
         onClick={closeAddToCartModal}
+        onTouchMove={(e) => e.preventDefault()}
         aria-hidden="true"
       />
 
