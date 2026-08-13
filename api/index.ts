@@ -655,6 +655,76 @@ async function buildApp() {
   app.put('/purchase-terms', handleUpdatePurchaseTerms)
   app.put('/api/purchase-terms', handleUpdatePurchaseTerms)
 
+  const DEFAULT_PROMO_BLOCK = {
+    isActive: true,
+    mainCard: {
+      image:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuCCcIoQstGiOoJsMha05qt-pi349QXUPBjNWLU-2s49dciEvoFl57vggXvK6J6EH9iyk6QZ2cfwKYheAz5kBYR0AOtjWwR4v_UsxNqxwQsJa7sFCbRMloAb-Yx04owsdwUXHC8VD8ug1TJEyOlcuOAdgkhRrRLGSbAaZjwME82bZDf-BKuNjuqV7PiJRg9MCi3H8yJCe-4owZdsYLAX-YB8Bz6I4gBzcHKiAE5CRzPxertAFZesXtzXVzA1sMm2LuDZYvbUW9ZpGAQu',
+      badge: 'Новая коллекция',
+      title: 'Коллекция для переменки',
+      description: 'Одежда для приключений из экологичных и прочных тканей.',
+      buttonText: 'Смотреть коллекцию',
+      buttonLink: '/catalog',
+    },
+    featuresCard: {
+      title: 'С заботой о планете',
+      items: [
+        'Органический хлопок',
+        'Без агрессивных красителей',
+        'Мягко для чувствительной кожи',
+      ],
+    },
+    secondaryCard: {
+      image:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuDzfXQLCjEcOYa9JWefnJxVNtMvLW77hvpFU-BmxSFAJblnOkg2kDVj_ipKEcO19Gp6j7rjf7okmqUwjlf9JBeE44txITjk8ge7lKAVPCWjvMhYz_xHzqHbWeOWZBvYTmomsPaeXXrmt_5PbSQ8LjavhTyA3GXovY9RaVwRhZM2pLTrJVSQCT-7vcWsQKesLEN-0h3zXilKIgvkwCBKS5bXQoxOAC6OQ2QoXttUxQV4bPS9dRDamgduZScmoYtxUg1DPSdhpUTa7O1B',
+      title: 'Базовые вещи для малышей',
+      linkText: 'Купить',
+      linkUrl: '/catalog',
+    },
+  }
+
+  async function handleGetPromoBlock(c: any) {
+    await ensureSiteSettingsTable()
+    try {
+      const rows = (await sql`
+        SELECT value FROM site_settings WHERE key = 'promo_block' LIMIT 1
+      `) as { value: string }[]
+      if (rows[0]?.value) {
+        const data = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value
+        return c.json(data)
+      }
+    } catch (err) {
+      console.warn('Failed to fetch promo_block setting from Neon DB:', err)
+    }
+    return c.json(DEFAULT_PROMO_BLOCK)
+  }
+
+  async function handleUpdatePromoBlock(c: any) {
+    try {
+      const body = await c.req.json()
+      const valueData = JSON.stringify(body)
+
+      await ensureSiteSettingsTable()
+      await sql`
+        INSERT INTO site_settings (key, value)
+        VALUES ('promo_block', ${valueData})
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+      `
+
+      return c.json({ success: true, data: body })
+    } catch (err: any) {
+      console.error('handleUpdatePromoBlock Neon DB error:', err)
+      return c.json({ error: err?.message || 'Database error' }, 500)
+    }
+  }
+
+  app.get('/promo-block', handleGetPromoBlock)
+  app.get('/api/promo-block', handleGetPromoBlock)
+  app.post('/promo-block', handleUpdatePromoBlock)
+  app.post('/api/promo-block', handleUpdatePromoBlock)
+  app.put('/promo-block', handleUpdatePromoBlock)
+  app.put('/api/promo-block', handleUpdatePromoBlock)
+
   /* ─── Official Stores DB & API ────────────────────────────────────── */
   async function ensureOfficialStoresTable() {
     try {

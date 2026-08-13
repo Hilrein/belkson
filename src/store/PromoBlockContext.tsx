@@ -93,13 +93,17 @@ export function PromoBlockProvider({ children }: { children: ReactNode }) {
   const updateData = async (newData: PromoBlockData) => {
     setData(newData)
     try {
-      await fetch('/api/promo-block', {
+      const res = await fetch('/api/promo-block', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newData),
       })
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP status ${res.status}`)
+      }
     } catch (err) {
       console.warn('Failed to update promo block settings:', err)
+      throw err
     }
   }
 
