@@ -489,43 +489,42 @@ export default function StorefrontLayout() {
           >
             Каталог
           </Link>
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            to="/catalog?category=sale"
-          >
-            Sale %
-          </Link>
           <button
             type="button"
             onClick={goToTerms}
             className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Порядок и условия выкупа
+            О нас
           </button>
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            to="/catalog?category=Девочки"
+          <button
+            type="button"
+            onClick={goToTerms}
+            className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Девочки
-          </Link>
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            to="/catalog?category=Мальчики"
+            Таблица размеров
+          </button>
+          <button
+            type="button"
+            onClick={goToTerms}
+            className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Мальчики
-          </Link>
-          <Link
+            Доставка и возврат
+          </button>
+          <a
             className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            to="/catalog?category=Малыши"
+            href={getTelegramProfileUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Малыши
-          </Link>
-          <Link
-            className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            to="/admin"
+            Контакты
+          </a>
+          <button
+            type="button"
+            onClick={goToTerms}
+            className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
-            Админ
-          </Link>
+            Политика конфиденциальности
+          </button>
         </nav>
         <div className="flex items-center gap-6 my-1">
           <a
