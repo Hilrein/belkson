@@ -408,7 +408,7 @@ export default function HomePage() {
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-surface-container-low">
                   <img
-                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    className="w-full h-full object-cover object-center"
                     alt={promoData.secondaryCard.title}
                     src={promoData.secondaryCard.image}
                   />
