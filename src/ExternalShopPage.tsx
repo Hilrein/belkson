@@ -15,7 +15,7 @@ interface ExternalShopPageProps {
 
 export default function ExternalShopPage({ config: customConfig }: ExternalShopPageProps) {
   const { shop = 'zara', country = 'spain' } = useParams<{ shop?: string; country?: string }>()
-  const { addToCart } = useCart()
+  const { openAddToCartModal } = useCart()
 
   // Dynamically resolve shop configuration from passed props or URL route param
   const shopConfig = useMemo(() => {
@@ -158,7 +158,7 @@ export default function ExternalShopPage({ config: customConfig }: ExternalShopP
       isFavorite: false,
     }
 
-    addToCart(catalogItem, qty)
+    openAddToCartModal(catalogItem)
     setAddedId(product.id)
 
     setTimeout(() => {

@@ -10,7 +10,7 @@ import type { CatalogProduct } from './store/catalog'
  */
 export default function HomePage() {
   const { newArrivals, favorites, format } = useCatalog()
-  const { addToCart } = useCart()
+  const { openAddToCartModal } = useCart()
   const { variants } = usePurchaseTerms()
   const [heroIndex, setHeroIndex] = useState(0)
   const newArrivalsRef = useRef<HTMLDivElement>(null)
@@ -20,9 +20,9 @@ export default function HomePage() {
     (product: CatalogProduct, e?: MouseEvent) => {
       e?.stopPropagation()
       e?.preventDefault()
-      addToCart(product)
+      openAddToCartModal(product)
     },
-    [addToCart],
+    [openAddToCartModal],
   )
 
   const scrollNewArrivals = useCallback((direction: number) => {

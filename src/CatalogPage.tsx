@@ -19,7 +19,7 @@ const FILTER_FAVORITE = 'favorite'
 
 export default function CatalogPage() {
   const { products, format } = useCatalog()
-  const { addToCart } = useCart()
+  const { openAddToCartModal } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [sortBy, setSortBy] = useState<SortOption>('featured')
@@ -82,9 +82,9 @@ export default function CatalogPage() {
     (product: CatalogProduct, e?: MouseEvent) => {
       e?.stopPropagation()
       e?.preventDefault()
-      addToCart(product)
+      openAddToCartModal(product)
     },
-    [addToCart]
+    [openAddToCartModal]
   )
 
   const filtered = useMemo(() => {
@@ -205,7 +205,8 @@ export default function CatalogPage() {
         onClose={() => setQuickViewProduct(null)}
         onAddToCart={() => {
           if (quickViewProduct) {
-            addToCart(quickViewProduct)
+            openAddToCartModal(quickViewProduct)
+            setQuickViewProduct(null)
           }
         }}
       />

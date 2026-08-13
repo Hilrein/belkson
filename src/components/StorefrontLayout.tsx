@@ -15,6 +15,7 @@ import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { useMessengerSettings } from '../store/MessengerSettingsContext'
 import { LoadingScreen } from './LoadingScreen'
+import { AddToCartModal } from './shop/AddToCartModal'
 
 const LOGO_SRC =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuDRIGpaO5cyb72DuJFWmg7fxWR7x5H7FjUvJxjSPmGdAW8shR6cA3TIXynNwyAPvO5vV1K-Dwevw6XOSfPt-cMfFBA_bKImJDdmHNDekxBlxycmkG4ypq8lKktpdqH9KVy_aPMeS4PYPlbzeVFYIXqMy9wKri37ZUUZmdsSSAsP6dsweDFkmpKG6zV383BMuZn4iHw_31fDfw_t_7tEgUtcz0AXKxKaNuNl17EIb3e0jmXY9f7XZfKF0b6qwVyPoCZD7XkI9f7HOE2q'
@@ -1215,6 +1216,8 @@ export default function StorefrontLayout() {
           </div>
         </div>
       )}
+
+      <AddToCartModal onOpenCart={() => setCartOpen(true)} />
     </>
   )
 }

@@ -21,6 +21,12 @@ export type CartLine = {
   quantity: number
 }
 
+export type AddToCartOptions = {
+  qty?: number
+  selectedColor?: string
+  selectedSizes?: string[]
+}
+
 type CartContextValue = {
   items: CartLine[]
   totalCount: number
@@ -34,11 +40,14 @@ type CartContextValue = {
   activeDiscount: Discount | null
   /** Next discount rule that becomes available as subtotal grows, or null */
   nextDiscount: Discount | null
-  addToCart: (product: CatalogProduct, qty?: number) => void
+  addToCart: (product: CatalogProduct, options?: AddToCartOptions | number) => void
   removeFromCart: (productId: number) => void
   setQuantity: (productId: number, quantity: number) => void
   toggleSize: (productId: number, size: string) => void
   clearCart: () => void
+  productToConfigure: CatalogProduct | null
+  openAddToCartModal: (product: CatalogProduct) => void
+  closeAddToCartModal: () => void
 }
 
 const STORAGE_KEY = 'belkson.cart.v1'
@@ -62,35 +71,69 @@ function saveCart(items: CartLine[]) {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartLine[]>(() => loadCart())
+  const [productToConfigure, setProductToConfigure] = useState<CatalogProduct | null>(null)
   const { discounts } = useDiscounts()
 
   useEffect(() => {
     saveCart(items)
   }, [items])
 
-  const addToCart = useCallback((product: CatalogProduct, qty = 1) => {
-    const n = Math.max(1, qty)
-    setItems((prev) => {
-      const i = prev.findIndex((l) => l.productId === product.id)
-      if (i === -1) {
-        return [
-          ...prev,
-          {
-            productId: product.id,
-            name: product.name,
-            image: product.image,
-            priceRub: product.priceRub,
-            color: product.color,
-            sizes: product.sizes,
-            quantity: n,
-          },
-        ]
-      }
-      return prev.map((l, idx) =>
-        idx === i ? { ...l, quantity: l.quantity + n } : l,
-      )
-    })
+  const openAddToCartModal = useCallback((product: CatalogProduct) => {
+    setProductToConfigure(product)
   }, [])
+
+  const closeAddToCartModal = useCallback(() => {
+    setProductToConfigure(null)
+  }, [])
+
+  const addToCart = useCallback(
+    (product: CatalogProduct, options?: AddToCartOptions | number) => {
+      let qty = 1
+      let selectedColor: string | undefined
+      let selectedSizes: string[] | undefined
+
+      if (typeof options === 'number') {
+        qty = options
+      } else if (options) {
+        qty = options.qty ?? 1
+        selectedColor = options.selectedColor
+        selectedSizes = options.selectedSizes
+      }
+
+      const n = Math.max(1, qty)
+
+      setItems((prev) => {
+        const i = prev.findIndex((l) => l.productId === product.id)
+        const finalColor = selectedColor || product.color
+        if (i === -1) {
+          return [
+            ...prev,
+            {
+              productId: product.id,
+              name: product.name,
+              image: product.image,
+              priceRub: product.priceRub,
+              color: finalColor,
+              sizes: product.sizes,
+              selectedSizes: selectedSizes || product.sizes,
+              quantity: n,
+            },
+          ]
+        }
+        return prev.map((l, idx) =>
+          idx === i
+            ? {
+                ...l,
+                color: finalColor,
+                selectedSizes: selectedSizes || l.selectedSizes,
+                quantity: l.quantity + n,
+              }
+            : l,
+        )
+      })
+    },
+    [],
+  )
 
   const removeFromCart = useCallback((productId: number) => {
     setItems((prev) => prev.filter((l) => l.productId !== productId))
@@ -182,6 +225,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       toggleSize,
       clearCart,
+      productToConfigure,
+      openAddToCartModal,
+      closeAddToCartModal,
     }),
     [
       items,
@@ -196,6 +242,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setQuantity,
       toggleSize,
       clearCart,
+      productToConfigure,
+      openAddToCartModal,
+      closeAddToCartModal,
     ],
   )
 
