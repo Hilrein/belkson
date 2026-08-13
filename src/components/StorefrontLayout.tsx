@@ -40,7 +40,7 @@ export default function StorefrontLayout() {
     nextDiscount,
     removeFromCart,
     setQuantity,
-    toggleSize,
+    selectSize,
   } = useCart()
   const { createOrder } = useOrders()
   const location = useLocation()
@@ -884,19 +884,19 @@ export default function StorefrontLayout() {
                     {line.sizes && line.sizes.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {line.sizes.map((size) => {
-                          const selected = (line.selectedSizes || []).includes(size)
+                          const selected = line.selectedSize === size
                           return (
                             <button
                               key={size}
                               type="button"
-                              onClick={() => toggleSize(line.productId, size)}
+                              onClick={() => selectSize(line.productId, size)}
                               className={`px-2.5 py-1 text-[10px] rounded-full border transition-all ${
                                 selected
-                                  ? 'bg-primary text-on-primary border-primary font-semibold'
+                                  ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
                                   : 'bg-surface text-on-surface-variant border-surface-dim hover:border-primary/50'
                               }`}
                             >
-                              {size}
+                              Размер {size}
                             </button>
                           )
                         })}

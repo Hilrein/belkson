@@ -22,8 +22,8 @@ export function buildMaxOrderMessage(
   customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
-    const displaySizes = line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes
-    const sizesStr = displaySizes && displaySizes.length > 0 ? ` (${displaySizes.join(', ')})` : ''
+    const chosenSize = line.selectedSize || (line.sizes && line.sizes.length > 0 ? line.sizes[0] : undefined)
+    const sizesStr = chosenSize ? ` (${chosenSize})` : ''
     return `${i + 1}. ${line.name}${sizesStr} × ${line.quantity}`
   })
 
