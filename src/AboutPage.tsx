@@ -39,11 +39,11 @@ export default function AboutPage() {
               className="py-5 flex flex-col gap-1 border-b border-gray-100 last:border-b-0 px-2"
             >
               {block.title && (
-                <span className="text-sm font-semibold text-on-surface">
+                <span className="text-base font-semibold text-on-surface">
                   {block.title}
                 </span>
               )}
-              <span className="text-xs text-outline font-normal leading-relaxed whitespace-pre-line">
+              <span className="text-sm text-outline font-normal leading-relaxed whitespace-pre-line">
                 {block.content}
               </span>
             </div>
