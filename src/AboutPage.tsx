@@ -22,7 +22,7 @@ export default function AboutPage() {
           О нас
         </h1>
         <p className="text-on-surface-variant text-sm md:text-base leading-relaxed max-w-xl">
-          Belkson — байер-сервис для легкого и безопасного выкупа оригинальных товаров из мировых интернет-магазинов и фирменных бутиков.
+          Магазин детской одежды BELKSON — только оригиналы любимых брендов.
         </p>
       </div>
 
@@ -38,17 +38,21 @@ export default function AboutPage() {
               key={block.id}
               className="py-7 border-b border-gray-100 last:border-b-0 px-2 flex flex-col gap-2.5 transition-all duration-200"
             >
-              <div className="flex items-center justify-between gap-4">
-                <h3 className="text-base font-semibold text-on-surface">
-                  {block.title}
-                </h3>
-                {block.badge && (
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 shrink-0">
-                    {block.badge}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-on-surface-variant leading-relaxed font-normal">
+              {(block.title || block.badge) && (
+                <div className="flex items-center justify-between gap-4">
+                  {block.title && (
+                    <h3 className="text-base font-semibold text-on-surface">
+                      {block.title}
+                    </h3>
+                  )}
+                  {block.badge && (
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 shrink-0">
+                      {block.badge}
+                    </span>
+                  )}
+                </div>
+              )}
+              <p className="text-sm text-on-surface-variant leading-relaxed font-normal whitespace-pre-line">
                 {block.content}
               </p>
             </div>
