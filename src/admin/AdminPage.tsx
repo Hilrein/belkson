@@ -518,10 +518,10 @@ function AdminMessengerSettingsView() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
           <h1 className="text-2xl lg:text-[32px] font-semibold text-on-surface mb-2">
-            Контакты
+            Настройки мессенджеров и способов связи
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Добавление, редактирование и удаление способов связи на странице «Контакты».
+            Включение/отключение способов оформления заказа (Telegram, MAX, VK), добавление контактов и ссылок. Все данные сохраняются в базе данных Neon.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
