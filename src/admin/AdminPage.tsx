@@ -451,7 +451,7 @@ function AdminOrdersView() {
 }
 
 function AdminMessengerSettingsView() {
-  const { settings, updateSettings, loading } = useMessengerSettings()
+  const { settings, updateSettings, deleteSetting, loading } = useMessengerSettings()
   const [localSettings, setLocalSettings] = useState<MessengerSetting[]>(settings)
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -498,9 +498,10 @@ function AdminMessengerSettingsView() {
     setLocalSettings((prev) => [...prev, newItem])
   }
 
-  const handleDeleteContact = (id: string) => {
-    if (!confirm('Удалить этот контакт?')) return
+  const handleDeleteContact = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот контакт из базы данных?')) return
     setLocalSettings((prev) => prev.filter((item) => item.id !== id))
+    await deleteSetting(id)
   }
 
   const handleSave = async () => {
@@ -519,7 +520,7 @@ function AdminMessengerSettingsView() {
             Контакты
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Добавление, редактирование и удаление способов связи на странице «Контакты». Данные сохраняются напрямую в базе данных Neon.
+            Добавление, редактирование и удаление способов связи на странице «Контакты».
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">

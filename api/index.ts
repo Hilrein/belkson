@@ -1089,9 +1089,9 @@ async function buildApp() {
     }
 
     if (validIds.length > 0) {
-      await sql`DELETE FROM messenger_settings WHERE id NOT IN (${sql(validIds)})`
+      await sql`DELETE FROM messenger_settings WHERE NOT (id = ANY(${validIds}))`
     } else {
-      await sql`TRUNCATE TABLE messenger_settings`
+      await sql`DELETE FROM messenger_settings`
     }
 
     const rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
