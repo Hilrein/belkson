@@ -13,6 +13,7 @@ import {
 } from '../store/PurchaseTermsContext'
 import { useOrders, type Order, type OrderItem, type OrderStatus } from '../store/OrdersContext'
 import { useMessengerSettings, type MessengerSetting } from '../store/MessengerSettingsContext'
+import { useHeroBanners, type HeroBanner } from '../store/HeroBannersContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -723,10 +724,118 @@ export default function AdminPage() {
     deleteDiscount,
   } = useDiscounts()
 
+  const {
+    banners: allBanners,
+    loading: bannersLoading,
+    addBanner,
+    updateBanner,
+    deleteBanner,
+  } = useHeroBanners()
+
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
   const { newOrdersCount } = useOrders()
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
+
+  // Hero Banners Drawer state
+  const [bannerDrawerOpen, setBannerDrawerOpen] = useState(false)
+  const [bannerDrawerMode, setBannerDrawerMode] = useState<'add' | 'edit'>('add')
+  const [editingBannerId, setEditingBannerId] = useState<number | null>(null)
+  const [bannerBadge, setBannerBadge] = useState('')
+  const [bannerTitle, setBannerTitle] = useState('')
+  const [bannerSubtitle, setBannerSubtitle] = useState('')
+  const [bannerImage, setBannerImage] = useState('')
+  const [bannerButtonText, setBannerButtonText] = useState('')
+  const [bannerButtonUrl, setBannerButtonUrl] = useState('')
+  const [bannerSortOrder, setBannerSortOrder] = useState('')
+  const [bannerIsActive, setBannerIsActive] = useState(true)
+  const [bannerSaving, setBannerSaving] = useState(false)
+
+  // Delete Banner Modal state
+  const [deleteBannerModalOpen, setDeleteBannerModalOpen] = useState(false)
+  const [deletingBannerId, setDeletingBannerId] = useState<number | null>(null)
+  const [bannerDeleting, setBannerDeleting] = useState(false)
+
+  const openAddBanner = () => {
+    setBannerDrawerMode('add')
+    setEditingBannerId(null)
+    setBannerBadge('')
+    setBannerTitle('')
+    setBannerSubtitle('')
+    setBannerImage('')
+    setBannerButtonText('В каталог')
+    setBannerButtonUrl('/catalog')
+    setBannerSortOrder(String(allBanners.length + 1))
+    setBannerIsActive(true)
+    setBannerDrawerOpen(true)
+  }
+
+  const openEditBanner = (banner: HeroBanner) => {
+    setBannerDrawerMode('edit')
+    setEditingBannerId(banner.id)
+    setBannerBadge(banner.badge || '')
+    setBannerTitle(banner.title)
+    setBannerSubtitle(banner.subtitle || '')
+    setBannerImage(banner.image)
+    setBannerButtonText(banner.buttonText || 'В каталог')
+    setBannerButtonUrl(banner.buttonUrl || '/catalog')
+    setBannerSortOrder(String(banner.sortOrder || 1))
+    setBannerIsActive(banner.isActive)
+    setBannerDrawerOpen(true)
+  }
+
+  const closeBannerDrawer = () => {
+    setBannerDrawerOpen(false)
+    setEditingBannerId(null)
+  }
+
+  const handleSaveBanner = async () => {
+    if (!bannerTitle.trim()) {
+      alert('Введите заголовок баннера')
+      return
+    }
+    if (!bannerImage.trim()) {
+      alert('Укажите ссылку на изображение баннера')
+      return
+    }
+    setBannerSaving(true)
+    try {
+      const payload = {
+        badge: bannerBadge.trim(),
+        title: bannerTitle.trim(),
+        subtitle: bannerSubtitle.trim(),
+        image: bannerImage.trim(),
+        buttonText: bannerButtonText.trim(),
+        buttonUrl: bannerButtonUrl.trim(),
+        sortOrder: Math.round(Number(bannerSortOrder) || 0),
+        isActive: bannerIsActive,
+      }
+      if (bannerDrawerMode === 'add') {
+        await addBanner(payload)
+      } else if (editingBannerId != null) {
+        await updateBanner(editingBannerId, payload)
+      }
+      closeBannerDrawer()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка сохранения баннера')
+    } finally {
+      setBannerSaving(false)
+    }
+  }
+
+  const confirmDeleteBanner = async () => {
+    if (deletingBannerId == null) return
+    setBannerDeleting(true)
+    try {
+      await deleteBanner(deletingBannerId)
+      setDeleteBannerModalOpen(false)
+      setDeletingBannerId(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка удаления баннера')
+    } finally {
+      setBannerDeleting(false)
+    }
+  }
 
   // Dynamic variants state
   const [localVariants, setLocalVariants] = useState<PurchaseVariant[]>(DEFAULT_DYNAMIC_VARIANTS)
@@ -1791,6 +1900,143 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'hero-banners' ? (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface">
+                      Баннеры главной страницы
+                    </h1>
+                    <span className="px-3 py-1 bg-primary/10 text-primary font-bold text-xs rounded-full border border-primary/20 shrink-0">
+                      {allBanners.length} {allBanners.length === 1 ? 'баннер' : allBanners.length > 1 && allBanners.length < 5 ? 'баннера' : 'баннеров'}
+                    </span>
+                  </div>
+                  <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
+                    Управление слайдами карусели на главной странице: фотографии, заголовки, описания и кнопки действия.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="flex items-center justify-center gap-2 bg-[#ce7ed5] text-white px-4 py-2.5 rounded-md hover:bg-opacity-90 transition-opacity border border-[#ce7ed5] w-full md:w-auto shrink-0 cursor-pointer font-medium"
+                  onClick={openAddBanner}
+                >
+                  <Icon name="add" className="text-sm" />
+                  <span>Добавить баннер</span>
+                </button>
+              </div>
+
+              {bannersLoading ? (
+                <p className="text-sm text-on-surface-variant">Загрузка баннеров…</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {allBanners.map((banner) => (
+                    <div
+                      key={banner.id}
+                      className="bg-surface-container-lowest border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between"
+                    >
+                      <div className="relative aspect-[16/9] w-full bg-gray-100 overflow-hidden">
+                        <img
+                          src={banner.image}
+                          alt={banner.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
+                          {banner.badge && (
+                            <span className="text-[10px] tracking-[0.15em] uppercase font-bold text-white/90 mb-1">
+                              {banner.badge}
+                            </span>
+                          )}
+                          <h3 className="text-xl font-bold font-headline-md leading-tight text-white mb-1">
+                            {banner.title}
+                          </h3>
+                          {banner.subtitle && (
+                            <p className="text-xs text-white/80 line-clamp-2 mb-2">
+                              {banner.subtitle}
+                            </p>
+                          )}
+                          {banner.buttonText && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-full self-start">
+                              <span>{banner.buttonText}</span>
+                              <Icon name="arrow_forward" className="text-xs" />
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={`absolute top-3 right-3 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            banner.isActive
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-500/80 text-white'
+                          }`}
+                        >
+                          {banner.isActive ? 'Активен' : 'Отключен'}
+                        </span>
+                      </div>
+
+                      <div className="p-4 flex items-center justify-between gap-3 bg-surface border-t border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-500">
+                            Порядок: #{banner.sortOrder}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title={banner.isActive ? 'Деактивировать' : 'Активировать'}
+                            className={`w-9 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-colors duration-200 ease-in-out ${
+                              banner.isActive ? 'bg-[#ce7ed5]' : 'bg-gray-300'
+                            }`}
+                            onClick={() => {
+                              void updateBanner(banner.id, { isActive: !banner.isActive })
+                            }}
+                          >
+                            <div
+                              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                                banner.isActive ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-on-surface hover:bg-surface-variant rounded-md transition-colors cursor-pointer"
+                            onClick={() => openEditBanner(banner)}
+                          >
+                            <EditIcon />
+                            <span>Изменить</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                            onClick={() => {
+                              setDeletingBannerId(banner.id)
+                              setDeleteBannerModalOpen(true)
+                            }}
+                          >
+                            <Icon name="delete" className="text-sm" />
+                            <span>Удалить</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {allBanners.length === 0 && (
+                    <div className="col-span-full py-12 text-center bg-surface border border-dashed border-gray-300 rounded-xl">
+                      <p className="text-on-surface font-medium text-base mb-1">Нет баннеров</p>
+                      <p className="text-on-surface-variant text-xs mb-4">
+                        Добавьте первый слайд для карусели главной страницы.
+                      </p>
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-[#ce7ed5] text-white rounded-md text-sm font-medium hover:bg-opacity-90 transition-opacity cursor-pointer"
+                        onClick={openAddBanner}
+                      >
+                        + Добавить баннер
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -3603,6 +3849,195 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Banner Slide-over Drawer */}
+      <div
+        className={`fixed inset-0 bg-black/20 z-[60] transition-opacity ${
+          bannerDrawerOpen ? '' : 'hidden'
+        }`}
+        onClick={closeBannerDrawer}
+        aria-hidden={!bannerDrawerOpen}
+      />
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-surface-container-lowest z-[70] flex flex-col border-l border-gray-200 transition-transform duration-300 ease-in-out ${
+          bannerDrawerOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        aria-hidden={!bannerDrawerOpen}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-surface shrink-0">
+          <h2 className="text-lg sm:text-headline-md font-headline-md text-on-surface">
+            {bannerDrawerMode === 'edit' ? 'Редактировать баннер' : 'Добавить баннер'}
+          </h2>
+          <button
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded cursor-pointer"
+            onClick={closeBannerDrawer}
+            aria-label="Закрыть"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Над-заголовок (Бейдж)
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="Например: Коллекция 2026, Премиум трикотаж"
+              value={bannerBadge}
+              onChange={(e) => setBannerBadge(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Главный заголовок *
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container font-semibold"
+              placeholder="Например: Весенняя нежность"
+              value={bannerTitle}
+              onChange={(e) => setBannerTitle(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Подзаголовок / Описание
+            </label>
+            <textarea
+              rows={2}
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="Мягкая одежда для малышей: прогулки, игры и каждый день."
+              value={bannerSubtitle}
+              onChange={(e) => setBannerSubtitle(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Ссылка на фото баннера *
+            </label>
+            <input
+              type="url"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="https://..."
+              value={bannerImage}
+              onChange={(e) => setBannerImage(e.target.value)}
+            />
+            {bannerImage && (
+              <div className="mt-2.5 relative aspect-[16/9] w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
+                <img src={bannerImage} alt="Превью" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+                Текст на кнопке
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder="Смотреть новинки"
+                value={bannerButtonText}
+                onChange={(e) => setBannerButtonText(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+                Ссылка кнопки
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                placeholder="/catalog?category=new"
+                value={bannerButtonUrl}
+                onChange={(e) => setBannerButtonUrl(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Порядок отображения
+            </label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="1"
+              value={bannerSortOrder}
+              onChange={(e) => setBannerSortOrder(e.target.value)}
+            />
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer text-body-sm text-on-surface pt-2">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 text-[#ce7ed5] focus:ring-[#ce7ed5]"
+              checked={bannerIsActive}
+              onChange={(e) => setBannerIsActive(e.target.checked)}
+            />
+            Баннер активен (отображается на главной)
+          </label>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 bg-surface flex justify-end gap-3 shrink-0">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+            onClick={closeBannerDrawer}
+            disabled={bannerSaving}
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            className="bg-[#ce7ed5] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium disabled:opacity-60 cursor-pointer"
+            onClick={() => void handleSaveBanner()}
+            disabled={bannerSaving}
+          >
+            {bannerSaving ? 'Сохранение…' : 'Сохранить баннер'}
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Banner Modal */}
+      {deleteBannerModalOpen && (
+        <div className="fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl max-w-sm w-full p-6 shadow-xl border border-gray-200 space-y-4">
+            <h3 className="text-lg font-bold text-on-surface">Удалить баннер?</h3>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Этот баннер будет удален из карусели главной страницы. Отменить это действие невозможно.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+                onClick={() => setDeleteBannerModalOpen(false)}
+                disabled={bannerDeleting}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-60"
+                onClick={() => void confirmDeleteBanner()}
+                disabled={bannerDeleting}
+              >
+                {bannerDeleting ? 'Удаление…' : 'Удалить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

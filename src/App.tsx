@@ -13,6 +13,8 @@ import { PurchaseTermsProvider } from './store/PurchaseTermsContext'
 import { OrdersProvider } from './store/OrdersContext'
 import { MessengerSettingsProvider } from './store/MessengerSettingsContext'
 
+import { HeroBannersProvider } from './store/HeroBannersContext'
+
 function App() {
   return (
     <CatalogProvider>
@@ -20,25 +22,27 @@ function App() {
         <CartProvider>
           <OfficialStoresProvider>
             <PurchaseTermsProvider>
-              <OrdersProvider>
-                <MessengerSettingsProvider>
-                  <BrowserRouter>
-                    <Routes>
-                      {/* Storefront pages inherit shared navbar / footer / cart */}
-                      <Route element={<StorefrontLayout />}>
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/catalog" element={<CatalogPage />} />
-                        <Route path="/shop/:shop" element={<ExternalShopPage />} />
-                        <Route path="/shop/:shop/:country" element={<ExternalShopPage />} />
-                        {/* Future shop pages: nest under StorefrontLayout */}
-                      </Route>
+              <HeroBannersProvider>
+                <OrdersProvider>
+                  <MessengerSettingsProvider>
+                    <BrowserRouter>
+                      <Routes>
+                        {/* Storefront pages inherit shared navbar / footer / cart */}
+                        <Route element={<StorefrontLayout />}>
+                          <Route path="/" element={<HomePage />} />
+                          <Route path="/catalog" element={<CatalogPage />} />
+                          <Route path="/shop/:shop" element={<ExternalShopPage />} />
+                          <Route path="/shop/:shop/:country" element={<ExternalShopPage />} />
+                          {/* Future shop pages: nest under StorefrontLayout */}
+                        </Route>
 
-                      <Route path="/admin" element={<AdminPage />} />
-                      <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
-                    </Routes>
-                  </BrowserRouter>
-                </MessengerSettingsProvider>
-              </OrdersProvider>
+                        <Route path="/admin" element={<AdminPage />} />
+                        <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+                      </Routes>
+                    </BrowserRouter>
+                  </MessengerSettingsProvider>
+                </OrdersProvider>
+              </HeroBannersProvider>
             </PurchaseTermsProvider>
           </OfficialStoresProvider>
         </CartProvider>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
 import { usePurchaseTerms } from './store/PurchaseTermsContext'
+import { useHeroBanners } from './store/HeroBannersContext'
 import type { CatalogProduct } from './store/catalog'
 
 /**
@@ -12,9 +13,13 @@ export default function HomePage() {
   const { newArrivals, favorites, format } = useCatalog()
   const { openAddToCartModal } = useCart()
   const { variants } = usePurchaseTerms()
+  const { banners: allBanners } = useHeroBanners()
+
+  const activeBanners = allBanners.filter((b) => b.isActive)
+  const heroSlideCount = activeBanners.length > 0 ? activeBanners.length : 1
+
   const [heroIndex, setHeroIndex] = useState(0)
   const newArrivalsRef = useRef<HTMLDivElement>(null)
-  const heroSlideCount = 2
   const touchStartXRef = useRef<number | null>(null)
   const touchEndXRef = useRef<number | null>(null)
 
@@ -32,10 +37,8 @@ export default function HomePage() {
     const distance = touchStartXRef.current - touchEndXRef.current
     const minSwipeDistance = 40
     if (distance > minSwipeDistance) {
-      // Swipe left -> next
       setHeroIndex((i) => (i + 1) % heroSlideCount)
     } else if (distance < -minSwipeDistance) {
-      // Swipe right -> prev
       setHeroIndex((i) => (i - 1 + heroSlideCount) % heroSlideCount)
     }
   }
@@ -57,11 +60,12 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
+    if (heroSlideCount <= 1) return
     const id = window.setInterval(() => {
       setHeroIndex((i) => (i + 1) % heroSlideCount)
     }, 6000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [heroSlideCount])
 
   // Scroll to hash anchors when opened via shared navbar (/#novinki etc.)
   useEffect(() => {
@@ -74,7 +78,7 @@ export default function HomePage() {
   }, [])
 
   return (
-<main>
+    <main>
       {/* Hero — photo + refined copy (soft local glow, elegant btn) */}
       <section
         className="relative w-full overflow-hidden h-[560px] md:h-[640px] bg-surface-container-low group/hero"
@@ -87,106 +91,82 @@ export default function HomePage() {
           id="hero-carousel"
           style={{ transform: `translateX(-${heroIndex * 100}%)` }}
         >
-          <div className="w-full h-full flex-shrink-0 relative">
-            <img
-              className="w-full h-full object-cover object-[center_28%]"
-              alt="Детская одежда Belkson"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap"
-            />
-            {/* Full-bleed fade is light; local glow sits under .hero-copy */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.65)] via-[rgba(251,248,252,0.18)] to-transparent" />
-            <div className="absolute inset-0 flex items-end">
-              <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
-                <div className="hero-copy">
-                  <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-primary block mb-2 opacity-90">
-                    Коллекция 2026
-                  </span>
-                  <h1 className="hero-title">Весенняя нежность</h1>
-                  <p className="hero-lead">
-                    Мягкая одежда для малышей: прогулки, игры и каждый день.
-                  </p>
-                  <div className="hero-actions">
-                    <Link
-                      to="/catalog?category=new"
-                      className="btn-hero group/btn"
-                    >
-                      <span>Смотреть новинки</span>
-                      <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
-                        arrow_forward
+          {activeBanners.map((slide) => (
+            <div key={slide.id} className="w-full h-full flex-shrink-0 relative">
+              <img
+                className="w-full h-full object-cover object-[center_28%]"
+                alt={slide.title}
+                src={slide.image}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.65)] via-[rgba(251,248,252,0.18)] to-transparent" />
+              <div className="absolute inset-0 flex items-end">
+                <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
+                  <div className="hero-copy">
+                    {slide.badge && (
+                      <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-primary block mb-2 opacity-90">
+                        {slide.badge}
                       </span>
-                    </Link>
+                    )}
+                    <h1 className="hero-title">{slide.title}</h1>
+                    {slide.subtitle && <p className="hero-lead">{slide.subtitle}</p>}
+                    {slide.buttonText && (
+                      <div className="hero-actions">
+                        <Link
+                          to={slide.buttonUrl || '/catalog'}
+                          className="btn-hero group/btn"
+                        >
+                          <span>{slide.buttonText}</span>
+                          <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
+                            arrow_forward
+                          </span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="w-full h-full flex-shrink-0 relative">
-            <img
-              className="w-full h-full object-cover object-center"
-              alt="Ткань детского свитера Belkson"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8XYOqM6k1V0yN9OxYE3KD3vUisD4kg3HENS3WhujMMEi1vweZXTfbqxf_gMVmXS3BxO3xhuNShDRdDGpgd_dC2YWaMLWhh9DaJoQymdWpGNX-7E3zC5JpTWwLPoqWwsZD46MK841lM3bvdLReNjLgKBzZOZDuQj6x8yCoihcD7f3TOr6gE1i-HO9NlZA9-TQfrglWzkecr7PxoNuovqPLQCtN8W5d1rQk7XGWDqLQwJiargBAigg616CwuYyRyCXzdpUihQVawbcF"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.65)] via-[rgba(251,248,252,0.18)] to-transparent" />
-            <div className="absolute inset-0 flex items-end">
-              <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
-                <div className="hero-copy">
-                  <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-primary block mb-2 opacity-90">
-                    Премиум трикотаж
-                  </span>
-                  <h1 className="hero-title">Создано для комфорта</h1>
-                  <p className="hero-lead">
-                    Нежные ткани и удобная посадка для активного дня ребёнка.
-                  </p>
-                  <div className="hero-actions">
-                    <Link
-                      to="/catalog"
-                      className="btn-hero group/btn"
-                    >
-                      <span>В каталог</span>
-                      <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
-                        arrow_forward
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Side navigation arrows for desktop */}
-        <button
-          type="button"
-          onClick={() => setHeroIndex((i) => (i - 1 + heroSlideCount) % heroSlideCount)}
-          className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
-          aria-label="Предыдущий слайд"
-        >
-          <span className="material-symbols-outlined text-xl">chevron_left</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setHeroIndex((i) => (i + 1) % heroSlideCount)}
-          className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
-          aria-label="Следующий слайд"
-        >
-          <span className="material-symbols-outlined text-xl">chevron_right</span>
-        </button>
+        {heroSlideCount > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setHeroIndex((i) => (i - 1 + heroSlideCount) % heroSlideCount)}
+              className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
+              aria-label="Предыдущий слайд"
+            >
+              <span className="material-symbols-outlined text-xl">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroIndex((i) => (i + 1) % heroSlideCount)}
+              className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
+              aria-label="Следующий слайд"
+            >
+              <span className="material-symbols-outlined text-xl">chevron_right</span>
+            </button>
+          </>
+        )}
 
         {/* Glassmorphic pagination bar */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/50 shadow-2xs">
-          {Array.from({ length: heroSlideCount }).map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setHeroIndex(idx)}
-              aria-label={`Слайд ${idx + 1}`}
-              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                heroIndex === idx ? 'w-6 bg-primary' : 'w-1.5 bg-neutral-400/60 hover:bg-neutral-600'
-              }`}
-            />
-          ))}
-        </div>
+        {heroSlideCount > 1 && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/50 shadow-2xs">
+            {Array.from({ length: heroSlideCount }).map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setHeroIndex(idx)}
+                aria-label={`Слайд ${idx + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  heroIndex === idx ? 'w-6 bg-primary' : 'w-1.5 bg-neutral-400/60 hover:bg-neutral-600'
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Category row — quiet fashion nav under hero */}
