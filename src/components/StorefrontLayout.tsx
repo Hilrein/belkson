@@ -361,7 +361,7 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="bg-surface/98 backdrop-blur-md rounded-2xl shadow-[0_16px_36px_-8px_rgba(0,0,0,0.08)] border border-surface-dim/80 p-6 flex gap-8 overflow-x-auto min-w-[440px]">
+                <div className="bg-white rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] border border-gray-100 p-6 flex gap-8 overflow-x-auto min-w-[440px]">
                   {activeOfficialStores.map((store) => (
                     <div key={store.id} className="flex-1 min-w-[140px]">
                       <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-3 pb-2 border-b border-surface-dim/50">
