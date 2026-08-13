@@ -4,7 +4,6 @@ export type MessengerSetting = {
   id: 'telegram' | 'max' | 'vk' | string
   label: string
   value: string
-  description?: string
   isActive: boolean
   updatedAt?: string
 }
@@ -14,11 +13,14 @@ type MessengerSettingsContextValue = {
   loading: boolean
   fetchSettings: () => Promise<void>
   updateSettings: (nextSettings: MessengerSetting[]) => Promise<void>
-  deleteSetting: (id: string) => Promise<void>
   getSetting: (id: 'telegram' | 'max' | 'vk') => MessengerSetting | undefined
 }
 
-const DEFAULT_SETTINGS: MessengerSetting[] = []
+const DEFAULT_SETTINGS: MessengerSetting[] = [
+  { id: 'telegram', label: 'Telegram', value: 'Belksonshop', isActive: true },
+  { id: 'max', label: 'MAX', value: 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', isActive: true },
+  { id: 'vk', label: 'VK', value: '94968923', isActive: true },
+]
 
 const MessengerSettingsContext = createContext<MessengerSettingsContextValue | null>(null)
 
@@ -32,7 +34,7 @@ export function MessengerSettingsProvider({ children }: { children: ReactNode })
       const res = await fetch('/api/messenger-settings')
       if (res.ok) {
         const data = await res.json()
-        if (Array.isArray(data.settings)) {
+        if (Array.isArray(data.settings) && data.settings.length > 0) {
           setSettings(data.settings)
         }
       }
@@ -67,23 +69,6 @@ export function MessengerSettingsProvider({ children }: { children: ReactNode })
     }
   }
 
-  const deleteSetting = async (id: string) => {
-    setSettings((prev) => prev.filter((s) => s.id !== id))
-    try {
-      const res = await fetch(`/api/messenger-settings/${id}`, {
-        method: 'DELETE',
-      })
-      if (res.ok) {
-        const data = await res.json()
-        if (Array.isArray(data.settings)) {
-          setSettings(data.settings)
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to delete messenger setting in DB:', err)
-    }
-  }
-
   const getSetting = (id: 'telegram' | 'max' | 'vk') => {
     return settings.find((s) => s.id === id) || DEFAULT_SETTINGS.find((s) => s.id === id)
   }
@@ -95,7 +80,6 @@ export function MessengerSettingsProvider({ children }: { children: ReactNode })
         loading,
         fetchSettings,
         updateSettings,
-        deleteSetting,
         getSetting,
       }}
     >

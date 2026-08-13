@@ -13,6 +13,7 @@ import {
 } from '../store/PurchaseTermsContext'
 import { useOrders, type Order, type OrderItem, type OrderStatus } from '../store/OrdersContext'
 import { useMessengerSettings, type MessengerSetting } from '../store/MessengerSettingsContext'
+import { useContactsSettings, type ContactItem } from '../store/ContactsSettingsContext'
 import { useAboutSettings, type AboutSetting } from '../store/AboutSettingsContext'
 import { useHeroBanners, type HeroBanner } from '../store/HeroBannersContext'
 import { defaultProductImage } from '../store/catalog'
@@ -452,10 +453,10 @@ function AdminOrdersView() {
 }
 
 function AdminMessengerSettingsView() {
-  const { settings, updateSettings, deleteSetting, loading } = useMessengerSettings()
+  const { settings, updateSettings, loading } = useMessengerSettings()
   const [localSettings, setLocalSettings] = useState<MessengerSetting[]>(settings)
-  const [savedSuccess, setSavedSuccess] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [savedSuccess, setSavedSuccess] = useState(false)
 
   useEffect(() => {
     setLocalSettings(settings)
@@ -475,36 +476,6 @@ function AdminMessengerSettingsView() {
     )
   }
 
-  const handleChangeLabel = (id: string, label: string) => {
-    setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, label } : item)),
-    )
-  }
-
-  const handleChangeDescription = (id: string, description: string) => {
-    setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, description } : item)),
-    )
-  }
-
-  const handleAddContact = () => {
-    const newId = `contact_${Date.now()}`
-    const newItem: MessengerSetting = {
-      id: newId,
-      label: 'Новый контакт',
-      value: '',
-      description: '',
-      isActive: true,
-    }
-    setLocalSettings((prev) => [...prev, newItem])
-  }
-
-  const handleDeleteContact = async (id: string) => {
-    if (!confirm('Вы уверены, что хотите удалить этот контакт из базы данных?')) return
-    setLocalSettings((prev) => prev.filter((item) => item.id !== id))
-    await deleteSetting(id)
-  }
-
   const handleSave = async () => {
     setSaving(true)
     await updateSettings(localSettings)
@@ -518,10 +489,177 @@ function AdminMessengerSettingsView() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
           <h1 className="text-2xl lg:text-[32px] font-semibold text-on-surface mb-2">
-            Настройки мессенджеров и способов связи
+            Настройки мессенджеров оформления заказа
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Включение/отключение способов оформления заказа (Telegram, MAX, VK), добавление контактов и ссылок. Все данные сохраняются в базе данных Neon.
+            Включение/отключение способов выкупа и привязка аккаунтов (Telegram, MAX, VK) для оформления заказов из корзины.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {savedSuccess && (
+            <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+              Сохранено
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="px-5 py-2.5 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить настройки'}
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {localSettings.map((item) => {
+          const isTelegram = item.id === 'telegram'
+          const isMax = item.id === 'max'
+          const isVk = item.id === 'vk'
+
+          let helperText = ''
+          let placeholderText = ''
+
+          if (isTelegram) {
+            helperText = 'Юзернейм профиля или бота в Telegram (например Belksonshop)'
+            placeholderText = 'Belksonshop'
+          } else if (isMax) {
+            helperText = 'Полная ссылка на профиль или чат в MAX'
+            placeholderText = 'https://web.max.ru/u/...'
+          } else if (isVk) {
+            helperText = 'ID пользователя/группы (например 94968923) или короткая ссылка'
+            placeholderText = '94968923'
+          }
+
+          return (
+            <div
+              key={item.id}
+              className={`p-5 rounded-2xl border transition-all ${
+                item.isActive
+                  ? 'bg-white border-gray-200 shadow-xs'
+                  : 'bg-gray-50 border-gray-200 opacity-60'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4 mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-sm text-on-surface">
+                    {item.label || item.id.toUpperCase()}
+                  </span>
+                  <span
+                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium ${
+                      item.isActive
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {item.isActive ? 'Активен для заказов' : 'Отключен'}
+                  </span>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={item.isActive}
+                    onChange={() => handleToggle(item.id)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Аккаунт / Ссылка для приёма заказов
+                </label>
+                <input
+                  type="text"
+                  value={item.value}
+                  onChange={(e) => handleChangeValue(item.id, e.target.value)}
+                  placeholder={placeholderText}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                />
+                <p className="mt-1 text-[11px] text-on-surface-variant/70">{helperText}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function AdminContactsSettingsView() {
+  const { items, updateContacts, deleteContact, loading } = useContactsSettings()
+  const [localItems, setLocalItems] = useState<ContactItem[]>(items)
+  const [savedSuccess, setSavedSuccess] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setLocalItems(items)
+  }, [items])
+
+  const handleToggle = (id: string) => {
+    setLocalItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isActive: !item.isActive } : item,
+      ),
+    )
+  }
+
+  const handleChangeValue = (id: string, value: string) => {
+    setLocalItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, value } : item)),
+    )
+  }
+
+  const handleChangeLabel = (id: string, label: string) => {
+    setLocalItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, label } : item)),
+    )
+  }
+
+  const handleChangeDescription = (id: string, description: string) => {
+    setLocalItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, description } : item)),
+    )
+  }
+
+  const handleAddContact = () => {
+    const newId = `contact_${Date.now()}`
+    const newItem: ContactItem = {
+      id: newId,
+      label: 'Новый контакт',
+      value: '',
+      description: '',
+      isActive: true,
+    }
+    setLocalItems((prev) => [...prev, newItem])
+  }
+
+  const handleDeleteContact = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот контакт из базы данных?')) return
+    setLocalItems((prev) => prev.filter((item) => item.id !== id))
+    await deleteContact(id)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    await updateContacts(localItems)
+    setSaving(false)
+    setSavedSuccess(true)
+    setTimeout(() => setSavedSuccess(false), 2500)
+  }
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
+        <div>
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-on-surface mb-2">
+            Контакты (страница «Контакты»)
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Добавление, редактирование и удаление способов связи на странице «Контакты». Все данные сохраняются в базе данных Neon.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -549,7 +687,7 @@ function AdminMessengerSettingsView() {
         </div>
       </div>
 
-      {localSettings.length === 0 ? (
+      {localItems.length === 0 ? (
         <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
           <p className="text-sm text-on-surface-variant mb-3">В базе данных пока нет сохранённых контактов.</p>
           <button
@@ -562,7 +700,7 @@ function AdminMessengerSettingsView() {
         </div>
       ) : (
         <div className="space-y-5">
-          {localSettings.map((item) => (
+          {localItems.map((item) => (
             <div
               key={item.id}
               className={`p-5 rounded-2xl border transition-all ${
@@ -1858,8 +1996,10 @@ export default function AdminPage() {
           )}
           {activeTab === 'orders' ? (
             <AdminOrdersView />
-          ) : activeTab === 'contacts' || activeTab === 'messengers' ? (
+          ) : activeTab === 'messengers' ? (
             <AdminMessengerSettingsView />
+          ) : activeTab === 'contacts' ? (
+            <AdminContactsSettingsView />
           ) : activeTab === 'about' ? (
             <AdminAboutSettingsView />
           ) : activeTab === 'purchase-terms' ? (

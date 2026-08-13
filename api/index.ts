@@ -1115,6 +1115,113 @@ async function buildApp() {
   app.delete('/messenger-settings/:id', handleDeleteMessengerSetting)
   app.delete('/api/messenger-settings/:id', handleDeleteMessengerSetting)
 
+  /* ─── CONTACTS SETTINGS ───────────────────────────────────────────── */
+
+  type DbContactSettingRow = {
+    id: string
+    label: string
+    value: string
+    description?: string
+    is_active: boolean
+    sort_order: number
+    updated_at: string
+  }
+
+  async function ensureContactsSettingsTable() {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS contacts_settings (
+          id TEXT PRIMARY KEY,
+          label TEXT NOT NULL DEFAULT '',
+          value TEXT NOT NULL DEFAULT '',
+          description TEXT NOT NULL DEFAULT '',
+          sort_order INT NOT NULL DEFAULT 1,
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+    } catch (err) {
+      console.warn('ensureContactsSettingsTable error:', err)
+    }
+  }
+
+  function mapContactSetting(r: DbContactSettingRow) {
+    return {
+      id: r.id,
+      label: r.label || '',
+      value: r.value || '',
+      description: r.description || '',
+      sortOrder: Number(r.sort_order || 1),
+      isActive: Boolean(r.is_active),
+      updatedAt: r.updated_at,
+    }
+  }
+
+  async function handleGetContactsSettings(c: any) {
+    await ensureContactsSettingsTable()
+    const rows = (await sql`SELECT * FROM contacts_settings ORDER BY sort_order ASC, updated_at ASC`) as DbContactSettingRow[]
+    return c.json({ items: rows.map(mapContactSetting) })
+  }
+
+  async function handlePutContactsSettings(c: any) {
+    const body = await c.req.json()
+    await ensureContactsSettingsTable()
+
+    const list = Array.isArray(body) ? body : Array.isArray(body.items) ? body.items : [body]
+
+    const validIds: string[] = []
+    for (const item of list) {
+      if (!item || !item.id) continue
+      const id = String(item.id).trim()
+      if (!id) continue
+      validIds.push(id)
+
+      const label = item.label !== undefined ? String(item.label).trim() : ''
+      const value = item.value !== undefined ? String(item.value).trim() : ''
+      const description = item.description !== undefined ? String(item.description).trim() : ''
+      const sortOrder = Number(item.sortOrder) || 1
+      const isActive = item.isActive === true
+
+      await sql`
+        INSERT INTO contacts_settings (id, label, value, description, sort_order, is_active, updated_at)
+        VALUES (${id}, ${label}, ${value}, ${description}, ${sortOrder}, ${isActive}, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          label = EXCLUDED.label,
+          value = EXCLUDED.value,
+          description = EXCLUDED.description,
+          sort_order = EXCLUDED.sort_order,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()
+      `
+    }
+
+    if (validIds.length > 0) {
+      await sql`DELETE FROM contacts_settings WHERE NOT (id = ANY(${validIds}))`
+    } else {
+      await sql`DELETE FROM contacts_settings`
+    }
+
+    const rows = (await sql`SELECT * FROM contacts_settings ORDER BY sort_order ASC, updated_at ASC`) as DbContactSettingRow[]
+    return c.json({ items: rows.map(mapContactSetting) })
+  }
+
+  async function handleDeleteContactSetting(c: any) {
+    const id = c.req.param('id')
+    await ensureContactsSettingsTable()
+    if (id) {
+      await sql`DELETE FROM contacts_settings WHERE id = ${id}`
+    }
+    const rows = (await sql`SELECT * FROM contacts_settings ORDER BY sort_order ASC, updated_at ASC`) as DbContactSettingRow[]
+    return c.json({ items: rows.map(mapContactSetting) })
+  }
+
+  app.get('/contacts-settings', handleGetContactsSettings)
+  app.get('/api/contacts-settings', handleGetContactsSettings)
+  app.put('/contacts-settings', handlePutContactsSettings)
+  app.put('/api/contacts-settings', handlePutContactsSettings)
+  app.delete('/contacts-settings/:id', handleDeleteContactSetting)
+  app.delete('/api/contacts-settings/:id', handleDeleteContactSetting)
+
   /* ─── ABOUT SETTINGS ─────────────────────────────────────────────── */
 
   type DbAboutSettingRow = {

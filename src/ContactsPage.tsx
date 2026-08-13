@@ -1,20 +1,20 @@
 import { Link } from 'react-router-dom'
-import { useMessengerSettings, type MessengerSetting } from './store/MessengerSettingsContext'
+import { useContactsSettings, type ContactItem } from './store/ContactsSettingsContext'
 
-function getMessengerUrl(setting: MessengerSetting): string {
-  const val = setting.value?.trim() || ''
+function getContactUrl(item: ContactItem): string {
+  const val = item.value?.trim() || ''
   if (!val) return '#'
 
   if (val.startsWith('http://') || val.startsWith('https://')) {
     return val
   }
 
-  if (setting.id === 'telegram') {
+  if (item.id.includes('telegram') || item.label.toLowerCase().includes('telegram')) {
     const clean = val.replace(/^@/, '')
     return `https://t.me/${clean}`
   }
 
-  if (setting.id === 'vk') {
+  if (item.id.includes('vk') || item.label.toLowerCase().includes('vk')) {
     const clean = val.replace(/^@/, '')
     if (clean.startsWith('club') || clean.startsWith('public') || /^\d+$/.test(clean)) {
       return `https://vk.com/${clean.startsWith('club') || clean.startsWith('public') ? clean : 'club' + clean}`
@@ -26,8 +26,8 @@ function getMessengerUrl(setting: MessengerSetting): string {
 }
 
 export default function ContactsPage() {
-  const { settings, loading } = useMessengerSettings()
-  const activeSettings = settings.filter((s) => s.isActive)
+  const { items, loading } = useContactsSettings()
+  const activeContacts = items.filter((s) => s.isActive)
 
   return (
     <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
@@ -52,17 +52,17 @@ export default function ContactsPage() {
 
       {/* Ultra-Minimalist List Layout */}
       <div className="flex flex-col border-t border-b border-gray-100 mb-12">
-        {loading && activeSettings.length === 0 ? (
+        {loading && activeContacts.length === 0 ? (
           <div className="py-8 text-center text-xs text-outline font-medium">
             Загрузка контактов...
           </div>
         ) : (
-          activeSettings.map((setting) => {
-            const url = getMessengerUrl(setting)
+          activeContacts.map((contact) => {
+            const url = getContactUrl(contact)
 
             return (
               <a
-                key={setting.id}
+                key={contact.id}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -70,10 +70,10 @@ export default function ContactsPage() {
               >
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
-                    {setting.label || setting.id.toUpperCase()}
+                    {contact.label || contact.id.toUpperCase()}
                   </span>
                   <span className="text-xs text-outline font-normal">
-                    {setting.description || setting.value}
+                    {contact.description || contact.value}
                   </span>
                 </div>
                 <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">

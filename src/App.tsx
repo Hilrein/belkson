@@ -14,6 +14,7 @@ import { PurchaseTermsProvider } from './store/PurchaseTermsContext'
 
 import { OrdersProvider } from './store/OrdersContext'
 import { MessengerSettingsProvider } from './store/MessengerSettingsContext'
+import { ContactsSettingsProvider } from './store/ContactsSettingsContext'
 import { AboutSettingsProvider } from './store/AboutSettingsContext'
 
 import { HeroBannersProvider } from './store/HeroBannersContext'
@@ -28,9 +29,10 @@ function App() {
               <HeroBannersProvider>
                 <OrdersProvider>
                   <MessengerSettingsProvider>
-                    <AboutSettingsProvider>
-                      <BrowserRouter>
-                        <Routes>
+                    <ContactsSettingsProvider>
+                      <AboutSettingsProvider>
+                        <BrowserRouter>
+                          <Routes>
                           {/* Storefront pages inherit shared navbar / footer / cart */}
                           <Route element={<StorefrontLayout />}>
                             <Route path="/" element={<HomePage />} />
@@ -47,7 +49,8 @@ function App() {
                         </Routes>
                       </BrowserRouter>
                     </AboutSettingsProvider>
-                  </MessengerSettingsProvider>
+                  </ContactsSettingsProvider>
+                </MessengerSettingsProvider>
                 </OrdersProvider>
               </HeroBannersProvider>
             </PurchaseTermsProvider>
