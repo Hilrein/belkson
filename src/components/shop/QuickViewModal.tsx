@@ -152,9 +152,20 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
           {/* Price Row */}
           <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-surface-dim/60 flex-wrap">
             <div className="flex items-baseline gap-3">
-              <span className="text-2xl md:text-3xl font-bold text-primary tabular-nums">
-                {product.priceRub.toLocaleString('ru-RU')} ₽
-              </span>
+              {product.isSale && product.salePriceRub ? (
+                <>
+                  <span className="text-sm md:text-base text-on-surface-variant/70 line-through font-normal tabular-nums">
+                    {product.priceRub.toLocaleString('ru-RU')} ₽
+                  </span>
+                  <span className="text-2xl md:text-3xl font-bold text-[#6f2879] tabular-nums">
+                    {product.salePriceRub.toLocaleString('ru-RU')} ₽
+                  </span>
+                </>
+              ) : (
+                <span className="text-2xl md:text-3xl font-bold text-primary tabular-nums">
+                  {product.priceRub.toLocaleString('ru-RU')} ₽
+                </span>
+              )}
               {product.brand !== 'belkson' && (
                 <span className="text-xs md:text-sm text-on-surface-variant tabular-nums">
                   (Официально {brandName}: {product.originalPrice} {product.currencySymbol})
@@ -263,7 +274,7 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
               className="flex-1 py-3.5 px-6 rounded-full bg-[#8b2691] hover:bg-[#731b78] text-white text-xs tracking-[0.14em] uppercase font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-md hover:shadow-lg cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">shopping_bag</span>
-              В корзину ({(product.priceRub * quantity).toLocaleString('ru-RU')} ₽)
+              В корзину ({((product.isSale && product.salePriceRub ? product.salePriceRub : product.priceRub) * quantity).toLocaleString('ru-RU')} ₽)
             </button>
           </div>
         </div>

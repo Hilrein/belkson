@@ -14,6 +14,7 @@ import { QuickViewModal } from './components/shop/QuickViewModal'
 import type { Product, SortOption } from './types/shop'
 
 const FILTER_ALL = 'all'
+const FILTER_SALE = 'sale'
 const FILTER_NEW = 'new'
 const FILTER_FAVORITE = 'favorite'
 
@@ -82,14 +83,18 @@ export default function CatalogPage() {
     (product: CatalogProduct, e?: MouseEvent) => {
       e?.stopPropagation()
       e?.preventDefault()
-      openAddToCartModal(product)
+      // If product has sale price, override priceRub for cart
+      const finalProduct = product.isSale && product.salePriceRub ? { ...product, priceRub: product.salePriceRub } : product
+      openAddToCartModal(finalProduct)
     },
     [openAddToCartModal]
   )
 
   const filtered = useMemo(() => {
     let list = products.filter((p) => p.status !== 'Нет в наличии')
-    if (activeFilter === FILTER_NEW) {
+    if (activeFilter === FILTER_SALE) {
+      list = list.filter((p) => p.isSale)
+    } else if (activeFilter === FILTER_NEW) {
       list = list.filter((p) => p.isNew)
     } else if (activeFilter === FILTER_FAVORITE) {
       list = list.filter((p) => p.isFavorite)
@@ -114,9 +119,9 @@ export default function CatalogPage() {
     }
 
     if (sortBy === 'price_asc') {
-      list = [...list].sort((a, b) => a.priceRub - b.priceRub)
+      list = [...list].sort((a, b) => (a.isSale && a.salePriceRub ? a.salePriceRub : a.priceRub) - (b.isSale && b.salePriceRub ? b.salePriceRub : b.priceRub))
     } else if (sortBy === 'price_desc') {
-      list = [...list].sort((a, b) => b.priceRub - a.priceRub)
+      list = [...list].sort((a, b) => (b.isSale && b.salePriceRub ? b.salePriceRub : b.priceRub) - (a.isSale && a.salePriceRub ? a.salePriceRub : a.priceRub))
     } else if (sortBy === 'newest') {
       list = [...list].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
     }
@@ -127,6 +132,7 @@ export default function CatalogPage() {
   const navItems = useMemo(() => {
     const fixed: { id: string; label: string }[] = [
       { id: FILTER_ALL, label: 'Смотреть всё' },
+      { id: FILTER_SALE, label: 'Sale %' },
       { id: FILTER_NEW, label: 'Новинки' },
       { id: FILTER_FAVORITE, label: 'Любимчики' },
       ...CATEGORIES.map((c) => ({ id: c, label: c })),
@@ -180,10 +186,12 @@ export default function CatalogPage() {
       title: quickViewProduct.name,
       brand: quickViewProduct.brand || 'belkson',
       region: 'spain',
-      category: 'girl',
+      category: 'all',
       originalPrice: Math.round(quickViewProduct.priceRub / 100),
       currencySymbol: '€',
       priceRub: quickViewProduct.priceRub,
+      isSale: quickViewProduct.isSale,
+      salePriceRub: quickViewProduct.salePriceRub,
       description: `${
         quickViewProduct.brand ? `Бренд: ${quickViewProduct.brand}. ` : ''
       }${quickViewProduct.name} из авторской коллекции Belkson. Премиальный комфортный трикотаж для детей. Артикул: ${quickViewProduct.sku}.`,

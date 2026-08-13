@@ -26,6 +26,10 @@ export type CatalogProduct = {
   isNew: boolean
   /** Show in «Наши любимчики» */
   isFavorite: boolean
+  /** Product is on Sale / Discount */
+  isSale?: boolean
+  /** Discounted price in RUB (e.g. 1490 instead of 1990) */
+  salePriceRub?: number
   /** Optional label; NEW is only shown when isNew is true */
   badge?: string
 }

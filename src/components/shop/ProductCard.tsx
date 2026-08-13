@@ -97,7 +97,12 @@ export function ProductCard({
           <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1 shadow-xs flex items-center gap-1">
             <span>{categoryLabel}</span>
           </span>
-          {product.isNew && (
+          {product.isSale && (
+            <span className="text-[10px] tracking-[0.12em] uppercase font-bold text-white bg-[#ce7ed5] px-2 py-1 shadow-xs rounded-xs">
+              Sale
+            </span>
+          )}
+          {product.isNew && !product.isSale && (
             <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1">
               New
             </span>
@@ -124,9 +129,22 @@ export function ProductCard({
           <h2 className="text-sm md:text-[15px] font-medium text-on-surface leading-snug line-clamp-2 group-hover:text-primary transition-colors flex-1">
             {product.title}
           </h2>
-          <span className="text-sm md:text-[15px] font-medium text-primary shrink-0 tabular-nums">
-            {product.priceRub.toLocaleString('ru-RU')} ₽
-          </span>
+          <div className="flex flex-col items-end shrink-0 tabular-nums">
+            {product.isSale && product.salePriceRub ? (
+              <>
+                <span className="text-[11px] md:text-xs font-normal text-on-surface-variant/70 line-through">
+                  {product.priceRub.toLocaleString('ru-RU')} ₽
+                </span>
+                <span className="text-sm md:text-[15px] font-bold text-[#6f2879]">
+                  {product.salePriceRub.toLocaleString('ru-RU')} ₽
+                </span>
+              </>
+            ) : (
+              <span className="text-sm md:text-[15px] font-medium text-primary">
+                {product.priceRub.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Subtitle row with color name & original price */}

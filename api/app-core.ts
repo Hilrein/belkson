@@ -61,7 +61,9 @@ async function ensureProductColumns(client: NeonQueryFunction<false, false>) {
         ADD COLUMN IF NOT EXISTS subcategory TEXT NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 10,
         ADD COLUMN IF NOT EXISTS sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
-        ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb
+        ADD COLUMN IF NOT EXISTS images JSONB NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS is_sale BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS sale_price_rub NUMERIC(10, 2)
     `
   } catch (err) {
     console.warn('ensureProductColumns error:', err)
@@ -95,6 +97,8 @@ function mapProduct(row: DbProduct) {
     image: row.image,
     isNew: Boolean(row.is_new),
     isFavorite: Boolean(row.is_favorite),
+    isSale: Boolean(row.is_sale),
+    salePriceRub: row.sale_price_rub != null ? Number(row.sale_price_rub) : undefined,
     badge:
       row.badge === 'NEW' && !row.is_new
         ? undefined
@@ -400,13 +404,15 @@ async function handleCreateProduct(c: any) {
   const image = await normalizeProductImage(String(body.image ?? ''))
   const isNew = Boolean(body.isNew)
   const isFavorite = Boolean(body.isFavorite)
+  const isSale = Boolean(body.isSale)
+  const salePriceRub = body.salePriceRub != null && Number(body.salePriceRub) > 0 ? Number(body.salePriceRub) : null
   const badge = body.badge ? String(body.badge) : null
 
   const rows = (await client`
     INSERT INTO products
-      (name, sku, price_rub, category, subcategory, color, brand, stock, sizes, images, status, image, is_new, is_favorite, badge)
+      (name, sku, price_rub, category, subcategory, color, brand, stock, sizes, images, status, image, is_new, is_favorite, is_sale, sale_price_rub, badge)
     VALUES
-      (${name}, ${sku}, ${priceRub}, ${category}, ${subcategory}, ${color}, ${brand}, ${stock}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${badge})
+      (${name}, ${sku}, ${priceRub}, ${category}, ${subcategory}, ${color}, ${brand}, ${stock}, ${JSON.stringify(sizes)}, ${JSON.stringify(images)}, ${status}, ${image}, ${isNew}, ${isFavorite}, ${isSale}, ${salePriceRub}, ${badge})
     RETURNING *
   `) as DbProduct[]
 
@@ -430,7 +436,7 @@ async function handleUpdateProduct(c: any) {
   if (!existing[0]) return c.json({ error: 'Not found' }, 404)
 
   const cur = existing[0]
-  const name = body.name !== undefined ? String(body.name).trim() : cur.name
+  const name = body.name !== undefined ? String(body.name).trim() || cur.name : cur.name
   const sku = body.sku !== undefined ? String(body.sku).trim() : cur.sku
   const priceRub =
     body.priceRub !== undefined
@@ -450,7 +456,7 @@ async function handleUpdateProduct(c: any) {
       ? String(body.color).trim() || '—'
       : cur.color
   const brand =
-    body.brand !== undefined ? String(body.brand).trim() : cur.brand
+    body.brand !== undefined ? String(body.brand).trim() : (cur.brand ?? '')
   const stock =
     body.stock !== undefined
       ? Math.max(0, Math.round(Number(body.stock) || 0))
@@ -476,6 +482,13 @@ async function handleUpdateProduct(c: any) {
   const isNew = body.isNew !== undefined ? Boolean(body.isNew) : cur.is_new
   const isFavorite =
     body.isFavorite !== undefined ? Boolean(body.isFavorite) : cur.is_favorite
+  const isSale =
+    body.isSale !== undefined ? Boolean(body.isSale) : Boolean(cur.is_sale)
+  const salePriceRub =
+    body.salePriceRub !== undefined
+      ? (body.salePriceRub != null && Number(body.salePriceRub) > 0 ? Number(body.salePriceRub) : null)
+      : (cur.sale_price_rub != null ? Number(cur.sale_price_rub) : null)
+  
   let badge: string | null =
     body.badge !== undefined
       ? body.badge
@@ -501,6 +514,8 @@ async function handleUpdateProduct(c: any) {
       image = ${image},
       is_new = ${isNew},
       is_favorite = ${isFavorite},
+      is_sale = ${isSale},
+      sale_price_rub = ${salePriceRub},
       badge = ${badge},
       updated_at = NOW()
     WHERE id = ${id}

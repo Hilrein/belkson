@@ -37,6 +37,8 @@ type FormState = {
   status: ProductStatus
   isNew: boolean
   isFavorite: boolean
+  isSale: boolean
+  salePriceRub: string
   /** All photos; first one is the main product photo */
   photos: string[]
   /** Draft URL field (may not be applied until blur / apply) */
@@ -59,6 +61,8 @@ const emptyForm: FormState = {
   status: 'В наличии',
   isNew: true,
   isFavorite: false,
+  isSale: false,
+  salePriceRub: '',
   photos: [],
   imageUrlDraft: '',
 }
@@ -1276,6 +1280,8 @@ export default function AdminPage() {
       status: product.status,
       isNew: product.isNew,
       isFavorite: product.isFavorite,
+      isSale: product.isSale || false,
+      salePriceRub: product.salePriceRub ? String(product.salePriceRub) : '',
       photos: [img, ...(product.images || [])].filter(Boolean),
       imageUrlDraft: '',
     })
@@ -1314,26 +1320,37 @@ export default function AdminPage() {
     setImageBusy(true)
     setImageError(null)
     try {
-      const list = Array.from(files).slice(0, 20)
-      const added: string[] = []
-      for (const file of list) {
-        if (form.photos.length + added.length >= 20) break
-        added.push(await fileToCompressedDataUrl(file))
+      const list: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (!file.type.startsWith('image/')) continue
+        const dataUrl = await fileToCompressedDataUrl(file)
+        list.push(dataUrl)
       }
-      if (added.length > 0) {
-        setForm((f) => ({ ...f, photos: [...f.photos, ...added] }))
+      if (list.length === 0) {
+        setImageError('Выберите графические файлы (png, jpg, webp)')
+        return
       }
-    } catch (e) {
-      setImageError(e instanceof Error ? e.message : 'Ошибка загрузки файла')
+      setForm((f) => ({
+        ...f,
+        photos: [...f.photos, ...list].filter(
+          (item, idx, arr) => arr.indexOf(item) === idx,
+        ),
+      }))
+    } catch (err) {
+      setImageError(
+        err instanceof Error ? err.message : 'Не удалось обработать фото',
+      )
     } finally {
       setImageBusy(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
   const removePhoto = (index: number) => {
-    setForm((f) => ({ ...f, photos: f.photos.filter((_, i) => i !== index) }))
-    setImageError(null)
+    setForm((f) => ({
+      ...f,
+      photos: f.photos.filter((_, i) => i !== index),
+    }))
   }
 
   const makeMainPhoto = (index: number) => {
@@ -2499,7 +2516,21 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td className="p-3 align-middle whitespace-nowrap">
-                            {format(product.priceRub)}
+                            {product.isSale && product.salePriceRub ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs text-on-surface-variant line-through">
+                                  {format(product.priceRub)}
+                                </span>
+                                <span className="font-bold text-[#6f2879] flex items-center gap-1">
+                                  <span>{format(product.salePriceRub)}</span>
+                                  <span className="text-[10px] bg-[#ce7ed5]/20 text-[#6f2879] px-1.5 py-0.5 rounded font-bold uppercase">
+                                    Sale
+                                  </span>
+                                </span>
+                              </div>
+                            ) : (
+                              format(product.priceRub)
+                            )}
                           </td>
                           <td className="p-3 align-middle whitespace-nowrap">
                             <StockInlineEditor product={product} onUpdate={updateProduct} />
@@ -3069,6 +3100,40 @@ export default function AdminPage() {
                 />
                 Показывать в «Любимчики» на сайте
               </label>
+              <div className="p-3 bg-[#ce7ed5]/10 border border-[#ce7ed5]/30 rounded-xl space-y-2.5">
+                <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-[#6f2879]">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-[#ce7ed5] focus:ring-[#ce7ed5]"
+                    checked={form.isSale}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, isSale: e.target.checked }))
+                    }
+                  />
+                  <span>Товар на распродаже (Раздел «Sale %»)</span>
+                </label>
+                {form.isSale && (
+                  <div className="pt-1">
+                    <label className="block text-xs font-medium text-on-surface mb-1">
+                      Цена со скидкой (₽) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className="w-full p-2 bg-surface border border-gray-300 rounded-md text-sm font-bold text-[#6f2879] focus:outline-none focus:ring-1 focus:ring-[#ce7ed5]"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Например: 1490 (вместо 1990)"
+                      value={form.salePriceRub}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, salePriceRub: e.target.value }))
+                      }
+                    />
+                    <p className="text-[11px] text-on-surface-variant mt-1">
+                      Обычная цена ({form.price || 0} ₽) будет отображаться перечёркнутой: <span className="line-through">{form.price || 1990} ₽</span> <span className="font-bold text-[#6f2879]">{form.salePriceRub || 1490} ₽</span>
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
             {slideMode === 'edit' && editingId != null && (
               <button

@@ -2,6 +2,7 @@ import type { Product, RegionId } from './shop'
 
 export type ZaraMainCategory =
   | 'all'
+  | 'sale'
   | 'girl'
   | 'boy'
   | 'baby_girl'
@@ -27,15 +28,15 @@ export interface SubcategoryMeta {
 }
 
 export const ZARA_SUBCATEGORIES: SubcategoryMeta[] = [
-  { id: 'all', label: 'Все товары', parentCategories: ['all', 'girl', 'boy', 'baby_girl', 'baby_boy', 'mini', 'shoes_acc'] },
-  { id: 'jackets_coats', label: 'Куртки и пальто', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy'] },
-  { id: 'dresses_jumpsuits', label: 'Платья и комбинезоны', parentCategories: ['girl', 'baby_girl'] },
-  { id: 'sweaters_hoodies', label: 'Свитшоты и худи', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy'] },
-  { id: 'shirts_tops', label: 'Рубашки и блузки', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy'] },
-  { id: 'trousers_jeans', label: 'Брюки и джинсы', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy'] },
-  { id: 'sets', label: 'Комплекты и костюмы', parentCategories: ['baby_girl', 'baby_boy', 'mini'] },
-  { id: 'shoes', label: 'Обувь', parentCategories: ['shoes_acc', 'girl', 'boy', 'baby_girl', 'baby_boy'] },
-  { id: 'accessories', label: 'Аксессуары и сумки', parentCategories: ['shoes_acc', 'girl', 'boy'] },
+  { id: 'all', label: 'Все товары', parentCategories: ['all', 'sale', 'girl', 'boy', 'baby_girl', 'baby_boy', 'mini', 'shoes_acc'] },
+  { id: 'jackets_coats', label: 'Куртки и пальто', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'sale'] },
+  { id: 'dresses_jumpsuits', label: 'Платья и комбинезоны', parentCategories: ['girl', 'baby_girl', 'sale'] },
+  { id: 'sweaters_hoodies', label: 'Свитшоты и худи', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'sale'] },
+  { id: 'shirts_tops', label: 'Рубашки и блузки', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'sale'] },
+  { id: 'trousers_jeans', label: 'Брюки и джинсы', parentCategories: ['girl', 'boy', 'baby_girl', 'baby_boy', 'sale'] },
+  { id: 'sets', label: 'Комплекты и костюмы', parentCategories: ['baby_girl', 'baby_boy', 'mini', 'sale'] },
+  { id: 'shoes', label: 'Обувь', parentCategories: ['shoes_acc', 'girl', 'boy', 'baby_girl', 'baby_boy', 'sale'] },
+  { id: 'accessories', label: 'Аксессуары и сумки', parentCategories: ['shoes_acc', 'girl', 'boy', 'sale'] },
 ]
 
 export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest'

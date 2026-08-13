@@ -38,4 +38,6 @@ export interface Product {
   isNew?: boolean
   isBestSeller?: boolean
   stock?: number
+  isSale?: boolean
+  salePriceRub?: number
 }
