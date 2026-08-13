@@ -141,24 +141,23 @@ main {
 
 .hero-title {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+  font-family: inherit;
   font-weight: 700;
-  font-size: clamp(2.3rem, 5.2vw, 3.5rem);
-  line-height: 1.12;
-  letter-spacing: -0.025em;
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: #8b2691;
   text-wrap: balance;
 }
 
 .hero-lead {
-  margin: 0.85rem 0 0;
+  margin: 0.75rem 0 0;
   max-width: 22rem;
-  font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
-  font-size: 1.05rem;
-  line-height: 1.6;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.55;
   font-weight: 500;
-  letter-spacing: -0.01em;
-  color: #3d3545;
+  color: #4f4758;
 }
 
 .hero-actions {
