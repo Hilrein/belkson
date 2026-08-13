@@ -71,10 +71,21 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   const updateProduct = useCallback(
     async (id: number, patch: Partial<CatalogProduct>) => {
-      const updated = await api.updateProduct(id, patch)
-      setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      // Optimistic update for instant 0ms response
+      setProducts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+      )
+      try {
+        const updated = await api.updateProduct(id, patch)
+        setProducts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, ...updated } : p)),
+        )
+      } catch (err) {
+        void refresh()
+        throw err
+      }
     },
-    [],
+    [refresh],
   )
 
   const deleteProduct = useCallback(async (id: number) => {

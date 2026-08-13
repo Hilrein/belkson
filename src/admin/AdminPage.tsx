@@ -596,25 +596,21 @@ function StockInlineEditor({
   onUpdate: (id: number, patch: Partial<Product>) => Promise<void>
 }) {
   const currentStock = product.stock != null ? product.stock : 10
-  const [updating, setUpdating] = useState(false)
 
-  const saveStock = async (newVal: number) => {
-    const valid = Math.max(0, newVal)
+  const handleAdjust = (delta: number) => {
+    const valid = Math.max(0, currentStock + delta)
     if (valid === currentStock) return
-    setUpdating(true)
-    try {
-      const autoStatus =
-        valid === 0
-          ? 'Нет в наличии'
-          : product.status === 'Нет в наличии'
-            ? 'В наличии'
-            : product.status
-      await onUpdate(product.id, { stock: valid, status: autoStatus })
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
-    } finally {
-      setUpdating(false)
-    }
+    const autoStatus =
+      valid === 0
+        ? 'Нет в наличии'
+        : product.status === 'Нет в наличии'
+          ? 'В наличии'
+          : product.status
+    void onUpdate(product.id, { stock: valid, status: autoStatus }).catch(
+      (err) => {
+        alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
+      },
+    )
   }
 
   return (
@@ -625,18 +621,17 @@ function StockInlineEditor({
       <div className="flex flex-col gap-0.5">
         <button
           type="button"
-          disabled={updating}
-          onClick={() => void saveStock(currentStock + 1)}
-          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer disabled:opacity-40 leading-none"
+          onClick={() => handleAdjust(1)}
+          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary active:scale-95 transition-all cursor-pointer leading-none"
           title="Увеличить на 1"
         >
           ▲
         </button>
         <button
           type="button"
-          disabled={updating || currentStock <= 0}
-          onClick={() => void saveStock(currentStock - 1)}
-          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary transition-colors cursor-pointer disabled:opacity-40 leading-none"
+          disabled={currentStock <= 0}
+          onClick={() => handleAdjust(-1)}
+          className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary active:scale-95 transition-all cursor-pointer disabled:opacity-40 leading-none"
           title="Уменьшить на 1"
         >
           ▼
