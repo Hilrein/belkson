@@ -135,7 +135,6 @@ export default function ExternalShopPage({ config: customConfig }: ExternalShopP
   const handleAddToCart = (
     product: Product,
     color: string,
-    qty = 1,
     e?: MouseEvent
   ) => {
     e?.stopPropagation()
@@ -181,7 +180,7 @@ export default function ExternalShopPage({ config: customConfig }: ExternalShopP
       <QuickViewModal
         product={quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
-        onAddToCart={(prod, col, q, e) => handleAddToCart(prod, col, q, e)}
+        onAddToCart={(prod, col, _q, e) => handleAddToCart(prod, col, e)}
       />
 
       <BaseCatalogLayout<Product>
@@ -221,7 +220,7 @@ export default function ExternalShopPage({ config: customConfig }: ExternalShopP
             key={product.id}
             product={product}
             addedId={addedId}
-            onAddToCart={(prod, col, q, e) => handleAddToCart(prod, col, q || 1, e)}
+            onAddToCart={(prod, col, _q, e) => handleAddToCart(prod, col, e)}
             onQuickView={(prod) => setQuickViewProduct(prod)}
           />
         )}
