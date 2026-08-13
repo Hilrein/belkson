@@ -487,8 +487,6 @@ export default function StorefrontLayout() {
           Belkson
         </h2>
 
-        {/* Telegram Channel Pill Button */}
-
         <nav className="flex flex-wrap justify-center items-center gap-x-8 gap-y-3 font-body-md text-xs sm:text-sm">
           <Link
             className="text-on-surface-variant hover:text-primary transition-colors font-medium"
