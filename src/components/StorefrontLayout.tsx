@@ -853,7 +853,7 @@ export default function StorefrontLayout() {
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {cartItems.map((line) => (
                 <div
-                  key={line.productId}
+                  key={line.id}
                   className="flex gap-3 p-3 rounded-2xl bg-surface-container-low border border-surface-dim"
                 >
                   <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden bg-surface-variant">
@@ -873,7 +873,7 @@ export default function StorefrontLayout() {
                       <button
                         type="button"
                         className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:text-error hover:bg-surface-variant"
-                        onClick={() => removeFromCart(line.productId)}
+                        onClick={() => removeFromCart(line.id)}
                         aria-label="Удалить"
                       >
                         <span className="material-symbols-outlined text-[18px]">
@@ -890,7 +890,7 @@ export default function StorefrontLayout() {
                             <button
                               key={size}
                               type="button"
-                              onClick={() => toggleSize(line.productId, size)}
+                              onClick={() => toggleSize(line.id, size)}
                               className={`px-2.5 py-1 text-[10px] rounded-full border transition-all ${
                                 selected
                                   ? 'bg-primary text-on-primary border-primary font-semibold'
@@ -909,7 +909,7 @@ export default function StorefrontLayout() {
                           type="button"
                           className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
                           onClick={() =>
-                            setQuantity(line.productId, line.quantity - 1)
+                            setQuantity(line.id, line.quantity - 1)
                           }
                           aria-label="Меньше"
                         >
@@ -922,7 +922,7 @@ export default function StorefrontLayout() {
                           type="button"
                           className="w-8 h-8 flex items-center justify-center text-primary rounded-full hover:bg-surface-variant"
                           onClick={() =>
-                            setQuantity(line.productId, line.quantity + 1)
+                            setQuantity(line.id, line.quantity + 1)
                           }
                           aria-label="Больше"
                         >

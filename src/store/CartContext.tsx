@@ -11,6 +11,7 @@ import type { CatalogProduct } from './catalog'
 import { useDiscounts, type Discount } from './DiscountsContext'
 
 export type CartLine = {
+  id: string
   productId: number
   name: string
   image: string
@@ -41,9 +42,9 @@ type CartContextValue = {
   /** Next discount rule that becomes available as subtotal grows, or null */
   nextDiscount: Discount | null
   addToCart: (product: CatalogProduct, options?: AddToCartOptions | number) => void
-  removeFromCart: (productId: number) => void
-  setQuantity: (productId: number, quantity: number) => void
-  toggleSize: (productId: number, size: string) => void
+  removeFromCart: (id: string | number) => void
+  setQuantity: (id: string | number, quantity: number) => void
+  toggleSize: (id: string | number, size: string) => void
   clearCart: () => void
   productToConfigure: CatalogProduct | null
   openAddToCartModal: (product: CatalogProduct) => void
@@ -54,12 +55,21 @@ const STORAGE_KEY = 'belkson.cart.v1'
 
 const CartContext = createContext<CartContextValue | null>(null)
 
+function makeCartLineId(productId: number, color: string, selectedSizes?: string[]): string {
+  const sizesKey = selectedSizes && selectedSizes.length > 0 ? [...selectedSizes].sort().join(',') : 'nosize'
+  return `${productId}_${color || 'nocolor'}_${sizesKey}`
+}
+
 function loadCart(): CartLine[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as CartLine[]
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((item) => {
+      const id = item.id || makeCartLineId(item.productId, item.color, item.selectedSizes || item.sizes)
+      return { ...item, id }
+    })
   } catch {
     return []
   }
@@ -101,21 +111,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       const n = Math.max(1, qty)
+      const finalColor = selectedColor || product.color || 'Стандартный'
+      const finalSizes = selectedSizes || product.sizes
+      const targetId = makeCartLineId(product.id, finalColor, finalSizes)
 
       setItems((prev) => {
-        const i = prev.findIndex((l) => l.productId === product.id)
-        const finalColor = selectedColor || product.color
+        const i = prev.findIndex((l) => l.id === targetId)
         if (i === -1) {
           return [
             ...prev,
             {
+              id: targetId,
               productId: product.id,
               name: product.name,
               image: product.image,
               priceRub: product.priceRub,
               color: finalColor,
               sizes: product.sizes,
-              selectedSizes: selectedSizes || product.sizes,
+              selectedSizes: finalSizes,
               quantity: n,
             },
           ]
@@ -124,8 +137,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           idx === i
             ? {
                 ...l,
-                color: finalColor,
-                selectedSizes: selectedSizes || l.selectedSizes,
                 quantity: l.quantity + n,
               }
             : l,
@@ -135,32 +146,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const removeFromCart = useCallback((productId: number) => {
-    setItems((prev) => prev.filter((l) => l.productId !== productId))
+  const removeFromCart = useCallback((id: string | number) => {
+    setItems((prev) =>
+      prev.filter((l) => l.id !== String(id) && l.productId !== Number(id)),
+    )
   }, [])
 
-  const setQuantity = useCallback((productId: number, quantity: number) => {
+  const setQuantity = useCallback((id: string | number, quantity: number) => {
     setItems((prev) => {
-      if (quantity <= 0) return prev.filter((l) => l.productId !== productId)
+      if (quantity <= 0) {
+        return prev.filter((l) => l.id !== String(id) && l.productId !== Number(id))
+      }
       return prev.map((l) =>
-        l.productId === productId ? { ...l, quantity } : l,
+        l.id === String(id) || l.productId === Number(id) ? { ...l, quantity } : l,
       )
     })
   }, [])
 
   const clearCart = useCallback(() => setItems([]), [])
 
-  const toggleSize = useCallback((productId: number, size: string) => {
+  const toggleSize = useCallback((id: string | number, size: string) => {
     setItems((prev) =>
       prev.map((l) => {
-        if (l.productId !== productId) return l
+        if (l.id !== String(id) && l.productId !== Number(id)) return l
         const current = l.selectedSizes || []
         const has = current.includes(size)
+        const nextSizes = has
+          ? current.filter((s) => s !== size)
+          : [...current, size]
+        const newId = makeCartLineId(l.productId, l.color, nextSizes)
         return {
           ...l,
-          selectedSizes: has
-            ? current.filter((s) => s !== size)
-            : [...current, size],
+          id: newId,
+          selectedSizes: nextSizes,
         }
       }),
     )
