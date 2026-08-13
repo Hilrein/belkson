@@ -1052,7 +1052,7 @@ export default function StorefrontLayout() {
                         className="w-full bg-primary hover:bg-[#793782] text-on-primary font-semibold py-3.5 px-3 rounded-2xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs tracking-wide truncate cursor-pointer"
                       >
                         <img
-                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5lowDklQLtanDE6qYGFyfmQYjOG8y0KE-icDpPopCSswDPUo_8ZKWp-zw&s=10"
+                          src="https://maxicons.ru/icons/png/Max_logo/Max_logo-1024x1024.png"
                           alt="Max"
                           className="w-5 h-5 rounded-md object-cover shrink-0"
                         />
