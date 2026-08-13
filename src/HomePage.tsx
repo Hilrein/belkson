@@ -154,7 +154,7 @@ export default function HomePage() {
 
         {/* Glassmorphic pagination bar */}
         {heroSlideCount > 1 && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/50 shadow-2xs">
+          <div className="absolute bottom-3 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/50 shadow-2xs">
             {Array.from({ length: heroSlideCount }).map((_, idx) => (
               <button
                 key={idx}

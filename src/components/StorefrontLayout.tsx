@@ -236,7 +236,7 @@ export default function StorefrontLayout() {
       {splashVisible && <LoadingScreen fading={splashFading} />}
 
       {/* ── Ultra-minimalist modern sticky header ─────────────────────────────── */}
-      <header className="site-header sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-surface-dim/40 transition-all duration-300">
+      <header className="site-header sticky top-0 z-40 bg-surface/90 backdrop-blur-md transition-all duration-300">
         <div className="relative flex justify-between items-center w-full min-w-0 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto h-14 box-border">
           <div className="flex items-center gap-3 md:gap-4">
             <button
