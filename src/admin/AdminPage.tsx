@@ -2351,23 +2351,23 @@ export default function AdminPage() {
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-label-md font-label-md text-on-surface mb-1">
+                <label className="block text-label-md font-label-md text-on-surface mb-1 truncate">
                   Артикул
                 </label>
                 <input
                   className="w-full p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
                   type="text"
+                  placeholder="BLK-001"
                   value={form.sku}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, sku: e.target.value }))
                   }
                 />
               </div>
-            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-label-md font-label-md text-on-surface mb-1">
+                <label className="block text-label-md font-label-md text-on-surface mb-1 truncate">
                   Цена (₽)
                 </label>
                 <input
@@ -2382,7 +2382,7 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-label-md font-label-md text-on-surface mb-1">
+                <label className="block text-label-md font-label-md text-on-surface mb-1 truncate">
                   Количество (шт.)
                 </label>
                 <input
@@ -2402,7 +2402,6 @@ export default function AdminPage() {
                   }}
                 />
               </div>
-            </div>
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">
