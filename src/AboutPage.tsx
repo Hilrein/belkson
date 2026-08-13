@@ -5,100 +5,60 @@ export default function AboutPage() {
   const { items, loading } = useAboutSettings()
   const activeItems = items.filter((item) => item.isActive)
 
-  /* Split first block (intro) from the rest for distinct styling */
-  const introBlock = activeItems.length > 0 ? activeItems[0] : null
-  const restBlocks = activeItems.slice(1)
-
   return (
-    <main className="max-w-[600px] mx-auto px-margin-mobile md:px-margin-desktop py-14 md:py-24">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-[11px] text-outline mb-14 tracking-[0.14em] uppercase font-medium">
-        <Link to="/" className="hover:text-on-surface transition-colors">
+    <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
+      {/* Navigation Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-outline mb-8 tracking-wide">
+        <Link to="/" className="hover:text-primary transition-colors">
           Главная
         </Link>
-        <span className="text-outline/25">—</span>
-        <span className="text-on-surface">О нас</span>
-      </nav>
+        <span className="text-outline/40">/</span>
+        <span className="text-on-surface font-medium">О нас</span>
+      </div>
 
-      {/* Title — serif */}
-      <h1
-        className="text-on-surface mb-16"
-        style={{
-          fontFamily: "'Cormorant Garamond', Georgia, serif",
-          fontSize: 'clamp(32px, 5vw, 44px)',
-          fontWeight: 600,
-          lineHeight: 1.1,
-          letterSpacing: '-0.02em',
-        }}
-      >
-        О нас
-      </h1>
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-on-surface mb-3">
+          О нас
+        </h1>
+        <p className="text-on-surface-variant text-sm md:text-base leading-relaxed max-w-xl">
+          Магазин детской одежды BELKSON — только оригиналы любимых брендов.
+        </p>
+      </div>
 
-      {loading && activeItems.length === 0 ? (
-        <p className="text-[13px] text-outline tracking-wide">Загрузка…</p>
-      ) : (
-        <article>
-          {/* Intro block — larger serif text */}
-          {introBlock && (
-            <div className="mb-12 pb-12 border-b border-gray-100">
-              <p
-                className="text-on-surface whitespace-pre-line"
-                style={{
-                  fontFamily: "'Cormorant Garamond', Georgia, serif",
-                  fontSize: 'clamp(18px, 2.5vw, 22px)',
-                  fontWeight: 500,
-                  lineHeight: 1.7,
-                  letterSpacing: '0.005em',
-                }}
-              >
-                {introBlock.content}
-              </p>
-            </div>
-          )}
-
-          {/* Remaining blocks — clean sans-serif */}
-          <div className="space-y-7">
-            {restBlocks.map((block) => (
-              <div key={block.id}>
-                {block.title && (
-                  <h3
-                    className="text-on-surface mb-2"
-                    style={{
-                      fontFamily: "'Cormorant Garamond', Georgia, serif",
-                      fontSize: '18px',
-                      fontWeight: 700,
-                      letterSpacing: '0.01em',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {block.title}
-                  </h3>
-                )}
-                <p
-                  className="text-on-surface-variant whitespace-pre-line"
-                  style={{
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    fontSize: '13.5px',
-                    lineHeight: 1.85,
-                    letterSpacing: '0.01em',
-                  }}
-                >
-                  {block.content}
-                </p>
-              </div>
-            ))}
+      {/* Content List */}
+      <div className="flex flex-col border-t border-b border-gray-100 mb-12">
+        {loading && activeItems.length === 0 ? (
+          <div className="py-8 text-center text-xs text-outline font-medium">
+            Загрузка информации...
           </div>
-        </article>
-      )}
+        ) : (
+          activeItems.map((block) => (
+            <div
+              key={block.id}
+              className="py-5 flex flex-col gap-1 border-b border-gray-100 last:border-b-0 px-2"
+            >
+              {block.title && (
+                <span className="text-sm font-semibold text-on-surface">
+                  {block.title}
+                </span>
+              )}
+              <span className="text-xs text-outline font-normal leading-relaxed whitespace-pre-line">
+                {block.content}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
 
-      {/* Footer link */}
-      <div className="mt-16 pt-8 border-t border-gray-100">
+      {/* Minimal Action */}
+      <div className="flex items-center justify-between pt-2">
         <Link
           to="/contacts"
-          className="inline-flex items-center gap-2.5 text-[11px] uppercase tracking-[0.14em] font-semibold text-on-surface hover:text-primary transition-colors"
+          className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-primary hover:text-[#8b2691] transition-colors"
         >
           <span>Связаться с нами</span>
-          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
         </Link>
       </div>
     </main>
