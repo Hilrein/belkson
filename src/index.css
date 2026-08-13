@@ -108,7 +108,9 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: #8b2691;
+  background-color: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
   font-family: 'Plus Jakarta Sans', Quicksand, system-ui, sans-serif;
   font-size: 0.75rem;
@@ -118,24 +120,25 @@ main {
   text-transform: uppercase;
   padding: 0.9rem 1.75rem;
   border-radius: 9999px;
-  box-shadow: 0 4px 14px rgba(139, 38, 145, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-hero:hover {
-  background-color: #731b78;
+  background-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(139, 38, 145, 0.35);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.2);
 }
 
 .btn-hero:active {
   transform: scale(0.98);
 }
 
-/* Hero copy — clean type, no backdrop block */
+/* Hero copy — clean type on dark overlay */
 .hero-copy {
   position: relative;
-  max-width: 28rem;
+  max-width: 30rem;
   z-index: 1;
 }
 
@@ -144,21 +147,23 @@ main {
   font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   font-weight: 600;
   font-style: normal;
-  font-size: clamp(2.35rem, 5.2vw, 3.5rem);
-  line-height: 1.14;
+  font-size: clamp(2.5rem, 5.5vw, 3.75rem);
+  line-height: 1.1;
   letter-spacing: -0.01em;
-  color: #6f2879;
+  color: #ffffff;
   text-wrap: balance;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
 }
 
 .hero-lead {
   margin: 0.75rem 0 0;
-  max-width: 22rem;
+  max-width: 24rem;
   font-family: Quicksand, system-ui, sans-serif;
-  font-size: 1rem;
-  line-height: 1.55;
+  font-size: 0.9375rem;
+  line-height: 1.6;
   font-weight: 500;
-  color: #4f4758;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
 }
 
 .hero-actions {
@@ -168,11 +173,11 @@ main {
 @media (min-width: 768px) {
   .hero-lead {
     font-size: 1.0625rem;
-    max-width: 22rem;
+    max-width: 24rem;
   }
 
   .hero-actions {
-    margin-top: 1.75rem;
+    margin-top: 2rem;
   }
 }
 
