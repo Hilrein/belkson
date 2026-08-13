@@ -195,6 +195,7 @@ export default function CatalogPage() {
       colors: [quickViewProduct.color || 'Стандартный'],
       isNew: quickViewProduct.isNew,
       isBestSeller: quickViewProduct.isFavorite,
+      stock: quickViewProduct.stock != null ? quickViewProduct.stock : 10,
     }
   }, [quickViewProduct])
 
@@ -273,10 +274,16 @@ export default function CatalogPage() {
                   {format(product.priceRub)}
                 </span>
               </div>
-              <p className="text-xs text-on-surface-variant">
-                {product.color}
-                {product.category ? ` · ${product.category}` : ''}
-              </p>
+              <div className="flex items-center justify-between gap-2 mt-1">
+                <p className="text-xs text-on-surface-variant truncate">
+                  {product.color}
+                  {product.category ? ` · ${product.category}` : ''}
+                </p>
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>В наличии: {product.stock != null ? product.stock : 10} шт.</span>
+                </span>
+              </div>
               {product.sizes && product.sizes.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {product.sizes.slice(0, 5).map((size) => (

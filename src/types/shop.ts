@@ -37,4 +37,5 @@ export interface Product {
   variants?: ProductVariant[]
   isNew?: boolean
   isBestSeller?: boolean
+  stock?: number
 }

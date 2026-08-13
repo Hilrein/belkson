@@ -150,15 +150,21 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
           </h2>
 
           {/* Price Row */}
-          <div className="flex items-baseline gap-3 mb-5 pb-4 border-b border-surface-dim/60">
-            <span className="text-2xl md:text-3xl font-semibold text-primary tabular-nums">
-              {product.priceRub.toLocaleString('ru-RU')} ₽
-            </span>
-            {product.brand !== 'belkson' && (
-              <span className="text-xs md:text-sm text-on-surface-variant tabular-nums">
-                (Официально {brandName}: {product.originalPrice} {product.currencySymbol})
+          <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-surface-dim/60 flex-wrap">
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl md:text-3xl font-semibold text-primary tabular-nums">
+                {product.priceRub.toLocaleString('ru-RU')} ₽
               </span>
-            )}
+              {product.brand !== 'belkson' && (
+                <span className="text-xs md:text-sm text-on-surface-variant tabular-nums">
+                  (Официально {brandName}: {product.originalPrice} {product.currencySymbol})
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>В наличии: {product.stock != null ? product.stock : 10} шт.</span>
+            </span>
           </div>
 
           {/* Description */}
