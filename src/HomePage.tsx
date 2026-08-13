@@ -417,16 +417,16 @@ export default function HomePage() {
                   {promoData.secondaryCard.linkUrl?.startsWith('http') ? (
                     <a
                       href={promoData.secondaryCard.linkUrl}
-                      className="shrink-0 text-sm font-medium text-primary hover:text-on-primary-fixed-variant transition-colors"
+                      className="shrink-0 bg-primary text-on-primary text-xs sm:text-sm font-medium px-4.5 py-2 rounded-full hover:bg-on-primary-fixed-variant transition-colors shadow-xs inline-flex items-center justify-center"
                     >
-                      {promoData.secondaryCard.linkText}
+                      {promoData.secondaryCard.linkText || 'Купить'}
                     </a>
                   ) : (
                     <Link
                       to={promoData.secondaryCard.linkUrl || '/catalog'}
-                      className="shrink-0 text-sm font-medium text-primary hover:text-on-primary-fixed-variant transition-colors"
+                      className="shrink-0 bg-primary text-on-primary text-xs sm:text-sm font-medium px-4.5 py-2 rounded-full hover:bg-on-primary-fixed-variant transition-colors shadow-xs inline-flex items-center justify-center"
                     >
-                      {promoData.secondaryCard.linkText}
+                      {promoData.secondaryCard.linkText || 'Купить'}
                     </Link>
                   )}
                 </div>

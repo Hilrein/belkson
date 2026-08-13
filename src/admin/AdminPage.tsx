@@ -1613,7 +1613,7 @@ function AdminPromoBlockView() {
 
             <div>
               <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                Текст ссылки (linkText)
+                Текст кнопки (linkText)
               </label>
               <input
                 type="text"
