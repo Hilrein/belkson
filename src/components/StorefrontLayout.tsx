@@ -869,6 +869,11 @@ export default function StorefrontLayout() {
                         <p className="font-semibold text-on-surface text-sm sm:text-base line-clamp-2 leading-snug">
                           {line.name}
                         </p>
+                        {line.color && line.color !== '—' && (
+                          <p className="text-[11px] text-on-surface-variant/80 mt-0.5 font-medium">
+                            Цвет: <span className="text-on-surface">{line.color}</span>
+                          </p>
+                        )}
                       </div>
                       <button
                         type="button"

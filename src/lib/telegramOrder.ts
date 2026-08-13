@@ -25,7 +25,8 @@ export function buildTelegramOrderMessage(
   const lines = items.map((line, i) => {
     const displaySizes = line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes
     const sizesStr = displaySizes && displaySizes.length > 0 ? ` (${displaySizes.join(', ')})` : ''
-    return `${i + 1}. ${line.name}${sizesStr} × ${line.quantity}`
+    const colorStr = line.color && line.color !== '—' ? `, цвет: ${line.color}` : ''
+    return `${i + 1}. ${line.name}${sizesStr}${colorStr} × ${line.quantity}`
   })
 
   const parts = [
