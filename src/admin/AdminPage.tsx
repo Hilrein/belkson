@@ -1098,6 +1098,70 @@ function StockInlineEditor({
  * Port of static-admin/admin.html — responsive products admin.
  */
 export default function AdminPage() {
+  const [authChecking, setAuthChecking] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [loginUsername, setLoginUsername] = useState('belkson')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
+  const [loginBusy, setLoginBusy] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/admin/me', { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          if (mounted && data.authenticated) {
+            setIsAuthenticated(true)
+          }
+        }
+      } catch (err) {
+        console.warn('Auth check error:', err)
+      } finally {
+        if (mounted) setAuthChecking(false)
+      }
+    }
+    checkAuth()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError(null)
+    setLoginBusy(true)
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setLoginError(data.error || 'Неверный логин или пароль')
+      } else {
+        setIsAuthenticated(true)
+        setLoginPassword('')
+      }
+    } catch {
+      setLoginError('Ошибка соединения с сервером авторизации')
+    } finally {
+      setLoginBusy(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' })
+    } catch {
+      // ignore
+    }
+    setIsAuthenticated(false)
+  }
+
   const {
     products,
     currency,
@@ -1916,13 +1980,96 @@ export default function AdminPage() {
         })}
       </ul>
       <div className="mt-auto flex flex-col gap-1.5 border-t border-gray-200 pt-4">
-        <Link className={navLinkClass(false)} to="/" onClick={closeNav}>
+        <button
+          type="button"
+          onClick={() => {
+            closeNav()
+            void handleLogout()
+          }}
+          className={`w-full text-left cursor-pointer ${navLinkClass(false)}`}
+        >
           <Icon name="logout" />
-          <span className="text-button font-button">Выйти</span>
-        </Link>
+          <span className="text-button font-button">Выйти из системы</span>
+        </button>
       </div>
     </>
   )
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F0D15] text-white p-4 font-[Inter,sans-serif]">
+        <div className="w-8 h-8 border-2 border-[#ce7ed5] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm text-gray-400">Проверка доступа к панели администратора...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-[#0F0D15] text-gray-100 p-4 font-[Inter,sans-serif]">
+        <div className="w-full max-w-md bg-[#181524] border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">BELKSON</h1>
+            <p className="text-xs uppercase tracking-widest text-[#ce7ed5] font-semibold">Вход в панель администратора</p>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="flex flex-col gap-5">
+            {loginError && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs px-4 py-3 rounded-xl flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm shrink-0">error</span>
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-gray-300 font-medium">Имя пользователя (Username)</label>
+              <input
+                type="text"
+                required
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                placeholder="belkson"
+                className="w-full bg-[#0F0D15] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ce7ed5] transition-colors"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-gray-300 font-medium">Пароль (Password)</label>
+              <input
+                type="password"
+                required
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#0F0D15] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ce7ed5] transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginBusy}
+              className="mt-2 w-full py-3.5 px-4 bg-[#8a4193] hover:bg-[#a14bb0] active:scale-[0.99] text-white text-xs uppercase tracking-wider font-bold rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            >
+              {loginBusy ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Вход...</span>
+                </>
+              ) : (
+                <span>Войти в систему</span>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-white/10 text-center">
+            <Link to="/" className="text-xs text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
+              <span>← На главную витрину</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="admin-shell flex h-[100dvh] overflow-hidden bg-background w-full font-[Inter,system-ui,sans-serif]">

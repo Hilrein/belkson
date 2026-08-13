@@ -1364,6 +1364,140 @@ async function handleDeleteHeroBanner(c: any) {
   return c.json({ ok: true, id })
 }
 
+/* ─── Admin Auth ─────────────────────────────────────────────────── */
+
+async function ensureAdminAuthTables(client: any) {
+  try {
+    await client`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `
+    await client`
+      CREATE TABLE IF NOT EXISTS admin_sessions (
+        token VARCHAR(128) PRIMARY KEY,
+        username VARCHAR(100) NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `
+    // Auto-seed default admin credentials if not present
+    await client`
+      INSERT INTO admin_users (username, password)
+      VALUES ('belkson', 'AdminBelkson')
+      ON CONFLICT (username) DO NOTHING;
+    `
+  } catch (err) {
+    console.warn('ensureAdminAuthTables error:', err)
+  }
+}
+
+async function handleAdminLogin(c: any) {
+  const client = getSql()
+  await ensureAdminAuthTables(client)
+
+  const body = await c.req.json().catch(() => ({}))
+  const username = String(body.username || '').trim()
+  const password = String(body.password || '').trim()
+
+  if (!username || !password) {
+    return c.json({ error: 'Укажите имя пользователя и пароль' }, 400)
+  }
+
+  const rows = (await client`
+    SELECT id, username, password FROM admin_users WHERE username = ${username}
+  `) as { id: number; username: string; password: string }[]
+
+  if (rows.length === 0 || rows[0].password !== password) {
+    return c.json({ error: 'Неверный логин или пароль' }, 401)
+  }
+
+  const token = 'sess_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36)
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+  await client`
+    INSERT INTO admin_sessions (token, username, expires_at)
+    VALUES (${token}, ${username}, ${expiresAt.toISOString()})
+  `
+
+  c.header('Set-Cookie', `belkson_admin_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`)
+
+  return c.json({
+    success: true,
+    user: { username: rows[0].username },
+    token,
+  })
+}
+
+async function handleAdminMe(c: any) {
+  const client = getSql()
+  await ensureAdminAuthTables(client)
+
+  const cookieHeader = c.req.header('cookie') || ''
+  const authHeader = c.req.header('authorization') || ''
+  let token = ''
+
+  if (cookieHeader) {
+    const match = cookieHeader.match(/belkson_admin_session=([^;]+)/)
+    if (match) token = match[1].trim()
+  }
+  if (!token && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim()
+  }
+
+  if (!token) {
+    return c.json({ authenticated: false })
+  }
+
+  const rows = (await client`
+    SELECT token, username, expires_at FROM admin_sessions WHERE token = ${token} AND expires_at > NOW()
+  `) as { token: string; username: string; expires_at: string }[]
+
+  if (rows.length === 0) {
+    return c.json({ authenticated: false })
+  }
+
+  return c.json({
+    authenticated: true,
+    user: { username: rows[0].username },
+  })
+}
+
+async function handleAdminLogout(c: any) {
+  const client = getSql()
+  await ensureAdminAuthTables(client)
+
+  const cookieHeader = c.req.header('cookie') || ''
+  const authHeader = c.req.header('authorization') || ''
+  let token = ''
+
+  if (cookieHeader) {
+    const match = cookieHeader.match(/belkson_admin_session=([^;]+)/)
+    if (match) token = match[1].trim()
+  }
+  if (!token && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim()
+  }
+
+  if (token) {
+    await client`DELETE FROM admin_sessions WHERE token = ${token}`
+  }
+
+  c.header('Set-Cookie', 'belkson_admin_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0')
+  return c.json({ success: true })
+}
+
+app.post('/admin/login', handleAdminLogin)
+app.post('/api/admin/login', handleAdminLogin)
+app.get('/admin/me', handleAdminMe)
+app.get('/api/admin/me', handleAdminMe)
+app.post('/admin/logout', handleAdminLogout)
+app.post('/api/admin/logout', handleAdminLogout)
+
 app.get('/hero-banners', handleGetHeroBanners)
 app.get('/api/hero-banners', handleGetHeroBanners)
 app.post('/hero-banners', handleCreateHeroBanner)
