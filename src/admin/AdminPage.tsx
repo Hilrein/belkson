@@ -25,6 +25,8 @@ type FormState = {
   category: string
   subcategory: string
   color: string
+  colors: string[]
+  colorInput: string
   brand: string
   /** Available sizes; multiple values per product */
   sizes: string[]
@@ -45,6 +47,8 @@ const emptyForm: FormState = {
   category: CATEGORIES[0],
   subcategory: '',
   color: '',
+  colors: [],
+  colorInput: '',
   brand: '',
   sizes: [],
   sizeInput: '',
@@ -1028,6 +1032,9 @@ export default function AdminPage() {
     setSlideMode('edit')
     setEditingId(product.id)
     const img = product.image || ''
+    const initialColors = product.color
+      ? product.color.split(/[,/]/).map((c) => c.trim()).filter((c) => c && c !== '—')
+      : []
     setForm({
       name: product.name,
       sku: product.sku,
@@ -1035,6 +1042,8 @@ export default function AdminPage() {
       category: product.category,
       subcategory: product.subcategory || '',
       color: product.color || '',
+      colors: initialColors,
+      colorInput: '',
       brand: product.brand || '',
       sizes: product.sizes || [],
       sizeInput: '',
@@ -1145,6 +1154,7 @@ export default function AdminPage() {
       const images = photos.slice(1)
 
       const priceRub = Math.max(0, Number(form.price) || 0)
+      const colorVal = form.colors.length > 0 ? form.colors.join(', ') : (form.color.trim() || '—')
       const payload = {
         name: form.name.trim() || 'Без названия',
         sku: form.sku.trim() || `BLK-${Date.now().toString().slice(-6)}`,
@@ -1153,7 +1163,7 @@ export default function AdminPage() {
           form.category.replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ') ||
           CATEGORIES[0],
         subcategory: form.subcategory.trim(),
-        color: form.color.trim() || '—',
+        color: colorVal,
         brand: form.brand.trim(),
         sizes: form.sizes,
         images,
@@ -2384,16 +2394,126 @@ export default function AdminPage() {
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">
-                Цвет / оттенок
+                Цвета / оттенки
               </label>
-              <input
-                className="w-full p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
-                type="text"
-                value={form.color}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, color: e.target.value }))
-                }
-              />
+
+              {/* Added color chips */}
+              {form.colors.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {form.colors.map((c) => (
+                    <span
+                      key={c}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-lowest border border-gray-200 text-body-sm font-medium text-on-surface"
+                    >
+                      {c}
+                      <button
+                        type="button"
+                        className="text-on-surface-variant hover:text-red-600 cursor-pointer text-sm leading-none"
+                        onClick={() =>
+                          setForm((f) => ({
+                            ...f,
+                            colors: f.colors.filter((item) => item !== c),
+                          }))
+                        }
+                        aria-label={`Убрать цвет ${c}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Input for custom color */}
+              <div className="flex gap-2 mb-2">
+                <input
+                  className="flex-1 min-w-0 p-2.5 sm:p-2 bg-surface-container-lowest border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container"
+                  type="text"
+                  placeholder="Введите цвет (например: Мокко)"
+                  value={form.colorInput}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, colorInput: e.target.value }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const val = form.colorInput.trim()
+                      if (
+                        val &&
+                        !form.colors.some(
+                          (item) => item.toLowerCase() === val.toLowerCase(),
+                        )
+                      ) {
+                        setForm((f) => ({
+                          ...f,
+                          colors: [...f.colors, val],
+                          colorInput: '',
+                        }))
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="shrink-0 px-3 py-2 rounded-md border border-gray-200 text-sm font-medium text-on-surface hover:bg-surface-variant transition-colors cursor-pointer"
+                  onClick={() => {
+                    const val = form.colorInput.trim()
+                    if (
+                      val &&
+                      !form.colors.some(
+                        (item) => item.toLowerCase() === val.toLowerCase(),
+                      )
+                    ) {
+                      setForm((f) => ({
+                        ...f,
+                        colors: [...f.colors, val],
+                        colorInput: '',
+                      }))
+                    }
+                  }}
+                >
+                  Добавить
+                </button>
+              </div>
+
+              {/* Quick preset color chips */}
+              <div className="flex flex-wrap gap-1">
+                {[
+                  'Молочный',
+                  'Бежевый',
+                  'Розовый',
+                  'Голубой',
+                  'Серый',
+                  'Мятный',
+                  'Шоколадный',
+                  'Черный',
+                  'Белый',
+                ].map((preset) => {
+                  const has = form.colors.some(
+                    (c) => c.toLowerCase() === preset.toLowerCase(),
+                  )
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={has}
+                      className={`text-[11px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                        has
+                          ? 'opacity-40 border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'border-gray-200 bg-surface-container-lowest text-on-surface hover:border-[#8a4193] hover:text-[#8a4193]'
+                      }`}
+                      onClick={() => {
+                        setForm((f) => ({
+                          ...f,
+                          colors: [...f.colors, preset],
+                        }))
+                      }}
+                    >
+                      + {preset}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <div>
               <label className="block text-label-md font-label-md text-on-surface mb-1">
