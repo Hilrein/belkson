@@ -83,7 +83,7 @@ export default function StorefrontLayout() {
     const key = String(storeId)
     setOpenStores((prev) => ({
       ...prev,
-      [key]: !(prev[key] ?? true),
+      [key]: !(prev[key] ?? false),
     }))
   }
   const [splashVisible, setSplashVisible] = useState(true)
@@ -643,15 +643,8 @@ export default function StorefrontLayout() {
                   resaleOpen ? 'max-h-[800px] mt-4 pb-2' : 'max-h-0'
                 }`}
               >
-                <button
-                  type="button"
-                  className="text-on-surface font-body-lg text-base font-semibold hover:text-[#ce7ed5] transition-colors text-left border-b border-surface-dim/40 pb-2"
-                  onClick={goToTerms}
-                >
-                  Порядок и условия выкупа
-                </button>
                 {activeOfficialStores.map((store) => {
-                  const isExpanded = openStores[store.id] ?? true
+                  const isExpanded = openStores[store.id] ?? false
                   return (
                     <div key={store.id} className="flex flex-col pt-1 border-t border-surface-dim/30 first:border-t-0">
                       <button
@@ -727,6 +720,13 @@ export default function StorefrontLayout() {
                     </div>
                   )
                 })}
+                <button
+                  type="button"
+                  className="text-on-surface font-body-lg text-sm font-medium hover:text-[#ce7ed5] transition-colors text-left border-t border-surface-dim/40 pt-3 mt-1"
+                  onClick={goToTerms}
+                >
+                  Порядок и условия выкупа
+                </button>
               </div>
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
