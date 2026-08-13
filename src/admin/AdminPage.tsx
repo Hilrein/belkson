@@ -530,7 +530,7 @@ function AdminMessengerSettingsView() {
             placeholderText = 'belkson'
           } else if (isMax) {
             helperText = 'Полная ссылка на профиль или чат в MAX'
-            placeholderText = 'https://max.ru/u/...'
+            placeholderText = 'https://web.max.ru/u/...'
           } else if (isVk) {
             helperText = 'ID пользователя/группы (например 94968923) или короткая ссылка'
             placeholderText = '94968923'

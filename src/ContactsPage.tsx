@@ -1,13 +1,33 @@
 import { Link } from 'react-router-dom'
-import { getVkProfileUrl } from './lib/vk'
-import { getMaxUrl } from './lib/maxOrder'
-import { useMessengerSettings } from './store/MessengerSettingsContext'
+import { useMessengerSettings, type MessengerSetting } from './store/MessengerSettingsContext'
+
+function getMessengerUrl(setting: MessengerSetting): string {
+  const val = setting.value?.trim() || ''
+  if (!val) return '#'
+
+  if (val.startsWith('http://') || val.startsWith('https://')) {
+    return val
+  }
+
+  if (setting.id === 'telegram') {
+    const clean = val.replace(/^@/, '')
+    return `https://t.me/${clean}`
+  }
+
+  if (setting.id === 'vk') {
+    const clean = val.replace(/^@/, '')
+    if (clean.startsWith('club') || clean.startsWith('public') || /^\d+$/.test(clean)) {
+      return `https://vk.com/${clean.startsWith('club') || clean.startsWith('public') ? clean : 'club' + clean}`
+    }
+    return `https://vk.com/${clean}`
+  }
+
+  return val
+}
 
 export default function ContactsPage() {
-  const vkUrl = getVkProfileUrl()
-  const { getSetting } = useMessengerSettings()
-  const maxSetting = getSetting('max')
-  const maxUrl = (maxSetting?.value && maxSetting.value.trim()) || getMaxUrl()
+  const { settings, loading } = useMessengerSettings()
+  const activeSettings = settings.filter((s) => s.isActive)
 
   return (
     <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
@@ -26,74 +46,46 @@ export default function ContactsPage() {
           Контакты
         </h1>
         <p className="text-on-surface-variant text-sm md:text-base leading-relaxed max-w-xl">
-          Связывайтесь с нами в удобном мессенджере или социальном канале. Мы с радостью проконсультируем вас по любым вопросам.
+          Связывайтесь с нами в удобном мессенджере или социальном канале. Все способы связи управляются из панели администратора.
         </p>
       </div>
 
       {/* Ultra-Minimalist List Layout */}
       <div className="flex flex-col border-t border-b border-gray-100 mb-12">
-        {/* Telegram Channel */}
-        <a
-          href="https://t.me/Belksonshop"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
-        >
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
-              Telegram
-            </span>
-            <span className="text-xs text-outline font-normal">
-              Официальный канал с анонсами новинок и выкупов
-            </span>
+        {loading && activeSettings.length === 0 ? (
+          <div className="py-8 text-center text-xs text-outline font-medium">
+            Загрузка контактов...
           </div>
-          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
-            north_east
-          </span>
-        </a>
+        ) : (
+          activeSettings.map((setting) => {
+            const url = getMessengerUrl(setting)
 
-        {/* MAX Messenger */}
-        <a
-          href={maxUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
-        >
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
-              MAX
-            </span>
-            <span className="text-xs text-outline font-normal">
-              Мессенджер MAX для консультаций и оформления заказов
-            </span>
-          </div>
-          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
-            north_east
-          </span>
-        </a>
-
-        {/* VK Community */}
-        <a
-          href={vkUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
-        >
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
-              VK
-            </span>
-            <span className="text-xs text-outline font-normal">
-              Новости бренда, фотографии коллекций и консультации
-            </span>
-          </div>
-          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
-            north_east
-          </span>
-        </a>
+            return (
+              <a
+                key={setting.id}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+                    {setting.label || setting.id.toUpperCase()}
+                  </span>
+                  <span className="text-xs text-outline font-normal">
+                    {setting.value}
+                  </span>
+                </div>
+                <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
+                  north_east
+                </span>
+              </a>
+            )
+          })
+        )}
 
         {/* Working Hours */}
-        <div className="py-5 flex items-start justify-between px-2">
+        <div className="py-5 flex items-start justify-between px-2 border-t border-gray-100">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-on-surface">
               Режим работы

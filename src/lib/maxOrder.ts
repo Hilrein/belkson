@@ -8,7 +8,7 @@ import type { DeliveryMethod } from './telegramOrder'
 export function getMaxUrl(): string {
   return (
     (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() ||
-    'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
+    'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
   )
 }
 

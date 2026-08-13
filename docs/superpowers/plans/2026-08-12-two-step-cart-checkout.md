@@ -26,7 +26,7 @@ In `src/lib/telegramOrder.ts`:
 1. Add `getMaxUrl()`:
 ```typescript
 export function getMaxUrl(): string {
-  return (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() || 'https://max.ru'
+  return (import.meta.env.VITE_MAX_URL as string | undefined)?.trim() || 'https://web.max.ru'
 }
 ```
 2. Update `buildOrderMessage` to include delivery service and optional address/notes:

@@ -1035,7 +1035,7 @@ async function buildApp() {
         INSERT INTO messenger_settings (id, label, value, is_active)
         VALUES 
           ('telegram', 'Telegram', 'belkson', true),
-          ('max', 'Max', 'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', true),
+          ('max', 'Max', 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', true),
           ('vk', 'VK', '94968923', true)
         ON CONFLICT (id) DO NOTHING
       `
