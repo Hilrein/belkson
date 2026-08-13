@@ -761,37 +761,6 @@ export default function StorefrontLayout() {
                 </button>
               </div>
 
-              {/* Size selection per item */}
-              {cartItems.some((line) => line.sizes && line.sizes.length > 0) && (
-                <div className="space-y-3">
-                  <span className="text-xs text-on-surface-variant block font-medium">Выберите размеры</span>
-                  {cartItems.filter((line) => line.sizes && line.sizes.length > 0).map((line) => (
-                    <div key={line.productId} className="space-y-1.5">
-                      <p className="text-[11px] text-on-surface font-medium truncate">{line.name}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {line.sizes!.map((size) => {
-                          const selected = (line.selectedSizes || []).includes(size)
-                          return (
-                            <button
-                              key={size}
-                              type="button"
-                              onClick={() => toggleSize(line.productId, size)}
-                              className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
-                                selected
-                                  ? 'bg-primary text-on-primary border-primary font-semibold'
-                                  : 'bg-surface-container-low text-on-surface-variant border-surface-dim hover:border-primary/50'
-                              }`}
-                            >
-                              {size}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* Customer Name */}
               <div className="space-y-1.5">
                 <span className="text-xs text-on-surface-variant block font-medium">
