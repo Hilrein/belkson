@@ -1016,6 +1016,7 @@ async function buildApp() {
     id: string
     label: string
     value: string
+    description?: string
     is_active: boolean
     updated_at: string
   }
@@ -1027,17 +1028,13 @@ async function buildApp() {
           id TEXT PRIMARY KEY,
           label TEXT NOT NULL DEFAULT '',
           value TEXT NOT NULL DEFAULT '',
+          description TEXT NOT NULL DEFAULT '',
           is_active BOOLEAN NOT NULL DEFAULT true,
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `
       await sql`
-        INSERT INTO messenger_settings (id, label, value, is_active)
-        VALUES 
-          ('telegram', 'Telegram', 'belkson', true),
-          ('max', 'Max', 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', true),
-          ('vk', 'VK', '94968923', true)
-        ON CONFLICT (id) DO NOTHING
+        ALTER TABLE messenger_settings ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT ''
       `
     } catch (err) {
       console.warn('ensureMessengerSettingsTable error:', err)
@@ -1049,6 +1046,7 @@ async function buildApp() {
       id: r.id,
       label: r.label,
       value: r.value,
+      description: r.description || '',
       isActive: Boolean(r.is_active),
       updatedAt: r.updated_at,
     }
@@ -1056,7 +1054,7 @@ async function buildApp() {
 
   async function handleGetMessengerSettings(c: any) {
     await ensureMessengerSettingsTable()
-    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY id ASC`) as DbMessengerSettingRow[]
+    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
     return c.json({ settings: rows.map(mapMessengerSetting) })
   }
 
@@ -1066,25 +1064,47 @@ async function buildApp() {
 
     const list = Array.isArray(body) ? body : Array.isArray(body.settings) ? body.settings : [body]
 
+    const validIds: string[] = []
     for (const item of list) {
       if (!item || !item.id) continue
-      const id = String(item.id)
+      const id = String(item.id).trim()
+      if (!id) continue
+      validIds.push(id)
+
       const label = item.label !== undefined ? String(item.label) : id.toUpperCase()
       const value = item.value !== undefined ? String(item.value).trim() : ''
+      const description = item.description !== undefined ? String(item.description).trim() : ''
       const isActive = item.isActive === true
 
       await sql`
-        INSERT INTO messenger_settings (id, label, value, is_active, updated_at)
-        VALUES (${id}, ${label}, ${value}, ${isActive}, NOW())
+        INSERT INTO messenger_settings (id, label, value, description, is_active, updated_at)
+        VALUES (${id}, ${label}, ${value}, ${description}, ${isActive}, NOW())
         ON CONFLICT (id) DO UPDATE SET
           label = EXCLUDED.label,
           value = EXCLUDED.value,
+          description = EXCLUDED.description,
           is_active = EXCLUDED.is_active,
           updated_at = NOW()
       `
     }
 
-    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY id ASC`) as DbMessengerSettingRow[]
+    if (validIds.length > 0) {
+      await sql`DELETE FROM messenger_settings WHERE id NOT IN (${sql(validIds)})`
+    } else {
+      await sql`TRUNCATE TABLE messenger_settings`
+    }
+
+    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
+    return c.json({ settings: rows.map(mapMessengerSetting) })
+  }
+
+  async function handleDeleteMessengerSetting(c: any) {
+    const id = c.req.param('id')
+    await ensureMessengerSettingsTable()
+    if (id) {
+      await sql`DELETE FROM messenger_settings WHERE id = ${id}`
+    }
+    const rows = (await sql`SELECT * FROM messenger_settings ORDER BY updated_at ASC, id ASC`) as DbMessengerSettingRow[]
     return c.json({ settings: rows.map(mapMessengerSetting) })
   }
 
@@ -1092,6 +1112,8 @@ async function buildApp() {
   app.get('/api/messenger-settings', handleGetMessengerSettings)
   app.put('/messenger-settings', handlePutMessengerSettings)
   app.put('/api/messenger-settings', handlePutMessengerSettings)
+  app.delete('/messenger-settings/:id', handleDeleteMessengerSetting)
+  app.delete('/api/messenger-settings/:id', handleDeleteMessengerSetting)
 
   app.onError((err, c) => {
     console.error(err)

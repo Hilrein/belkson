@@ -457,39 +457,50 @@ function AdminMessengerSettingsView() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (settings && settings.length > 0) {
-      setLocalSettings(settings)
-    }
+    setLocalSettings(settings)
   }, [settings])
 
-  const handleToggle = async (id: string) => {
-    const updated = localSettings.map((item) =>
-      item.id === id ? { ...item, isActive: !item.isActive } : item
+  const handleToggle = (id: string) => {
+    setLocalSettings((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isActive: !item.isActive } : item,
+      ),
     )
-    setLocalSettings(updated)
-    setSaving(true)
-    await updateSettings(updated)
-    setSaving(false)
-    setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 2500)
   }
 
   const handleChangeValue = (id: string, value: string) => {
     setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, value } : item))
+      prev.map((item) => (item.id === id ? { ...item, value } : item)),
     )
   }
 
   const handleChangeLabel = (id: string, label: string) => {
     setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, label } : item))
+      prev.map((item) => (item.id === id ? { ...item, label } : item)),
     )
   }
 
   const handleChangeDescription = (id: string, description: string) => {
     setLocalSettings((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, description } : item))
+      prev.map((item) => (item.id === id ? { ...item, description } : item)),
     )
+  }
+
+  const handleAddContact = () => {
+    const newId = `contact_${Date.now()}`
+    const newItem: MessengerSetting = {
+      id: newId,
+      label: 'Новый контакт',
+      value: '',
+      description: '',
+      isActive: true,
+    }
+    setLocalSettings((prev) => [...prev, newItem])
+  }
+
+  const handleDeleteContact = (id: string) => {
+    if (!confirm('Удалить этот контакт?')) return
+    setLocalSettings((prev) => prev.filter((item) => item.id !== id))
   }
 
   const handleSave = async () => {
@@ -508,7 +519,7 @@ function AdminMessengerSettingsView() {
             Контакты
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Управление ссылками, названиями и описанием мессенджеров на странице «Контакты». Данные автоматически сохраняются в базе данных.
+            Добавление, редактирование и удаление способов связи на странице «Контакты». Данные сохраняются напрямую в базе данных Neon.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -517,6 +528,14 @@ function AdminMessengerSettingsView() {
               Сохранено
             </span>
           )}
+          <button
+            type="button"
+            onClick={handleAddContact}
+            className="px-4 py-2.5 bg-gray-100 text-on-surface hover:bg-gray-200 text-xs font-semibold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <Icon name="add" className="text-base" />
+            <span>Добавить контакт</span>
+          </button>
           <button
             type="button"
             onClick={handleSave}
@@ -528,27 +547,20 @@ function AdminMessengerSettingsView() {
         </div>
       </div>
 
-      <div className="space-y-5">
-        {localSettings.map((item) => {
-          const isTelegram = item.id === 'telegram'
-          const isMax = item.id === 'max'
-          const isVk = item.id === 'vk'
-
-          let helperText = ''
-          let placeholderText = ''
-
-          if (isTelegram) {
-            helperText = 'Ссылка на Telegram (например https://t.me/Belksonshop) или юзернейм'
-            placeholderText = 'https://t.me/Belksonshop'
-          } else if (isMax) {
-            helperText = 'Полная ссылка на профиль или чат в MAX'
-            placeholderText = 'https://web.max.ru/u/...'
-          } else if (isVk) {
-            helperText = 'Ссылка ВКонтакте или ID группы/профиля'
-            placeholderText = '94968923'
-          }
-
-          return (
+      {localSettings.length === 0 ? (
+        <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <p className="text-sm text-on-surface-variant mb-3">В базе данных пока нет сохранённых контактов.</p>
+          <button
+            type="button"
+            onClick={handleAddContact}
+            className="px-4 py-2 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors cursor-pointer"
+          >
+            + Добавить первый контакт
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {localSettings.map((item) => (
             <div
               key={item.id}
               className={`p-5 rounded-2xl border transition-all ${
@@ -569,19 +581,30 @@ function AdminMessengerSettingsView() {
                         : 'bg-gray-200 text-gray-600'
                     }`}
                   >
-                    {item.isActive ? 'Активен на сайте' : 'Отключен'}
+                    {item.isActive ? 'Активен на странице «Контакты»' : 'Отключен'}
                   </span>
                 </div>
 
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={item.isActive}
-                    onChange={() => handleToggle(item.id)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={item.isActive}
+                      onChange={() => handleToggle(item.id)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteContact(item.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Удалить контакт"
+                  >
+                    <Icon name="delete" className="text-lg" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -600,16 +623,15 @@ function AdminMessengerSettingsView() {
 
                 <div>
                   <label className="block text-xs font-medium text-on-surface-variant mb-1">
-                    Ссылка / Аккаунт
+                    Ссылка / Номер / Аккаунт
                   </label>
                   <input
                     type="text"
                     value={item.value || ''}
                     onChange={(e) => handleChangeValue(item.id, e.target.value)}
-                    placeholder={placeholderText}
+                    placeholder="Например: https://t.me/Belksonshop"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
                   />
-                  <p className="mt-1 text-[11px] text-on-surface-variant/70">{helperText}</p>
                 </div>
 
                 <div>
@@ -626,9 +648,9 @@ function AdminMessengerSettingsView() {
                 </div>
               </div>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
