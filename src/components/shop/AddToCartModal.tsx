@@ -25,6 +25,34 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
 
+  // Drag down swipe gesture state for mobile sheet handle
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
+  const [dragOffsetY, setDragOffsetY] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].clientY)
+    setIsDragging(true)
+  }
+
+  const handleHandleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY === null) return
+    const currentY = e.touches[0].clientY
+    const diff = currentY - touchStartY
+    if (diff > 0) {
+      setDragOffsetY(diff)
+    }
+  }
+
+  const handleHandleTouchEnd = () => {
+    if (dragOffsetY > 65) {
+      closeAddToCartModal()
+    }
+    setTouchStartY(null)
+    setDragOffsetY(0)
+    setIsDragging(false)
+  }
+
   const availableColors = useMemo(() => {
     if (!productToConfigure?.color || productToConfigure.color.trim() === '—') {
       return []
@@ -41,6 +69,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
       document.documentElement.style.overflow = 'hidden'
       document.body.style.touchAction = 'none'
       setQuantity(1)
+      setDragOffsetY(0)
       const colors =
         productToConfigure.color && productToConfigure.color.trim() !== '—'
           ? productToConfigure.color.split(/[,/]/).map((c) => c.trim()).filter(Boolean)
@@ -105,10 +134,23 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-lg bg-white rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col transition-all border border-neutral-100">
-        {/* Top Handle Pill (Mobile Sheet Indicator) */}
-        <div className="pt-3 pb-1 flex justify-center sm:hidden">
-          <div className="w-9 h-1 rounded-full bg-neutral-200" />
+      <div
+        className="relative w-full max-w-lg bg-white rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col border border-neutral-100"
+        style={{
+          transform: `translateY(${dragOffsetY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.25s ease-out',
+        }}
+      >
+        {/* Top Handle Pill (Mobile Sheet Drag & Click Handle) */}
+        <div
+          className="pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          onClick={closeAddToCartModal}
+          onTouchStart={handleHandleTouchStart}
+          onTouchMove={handleHandleTouchMove}
+          onTouchEnd={handleHandleTouchEnd}
+          title="Нажмите или смахните вниз, чтобы закрыть"
+        >
+          <div className="w-12 h-1.5 rounded-full bg-neutral-300 hover:bg-neutral-400 active:bg-neutral-500 transition-colors" />
         </div>
 
         {/* Close Button */}
