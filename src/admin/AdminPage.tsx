@@ -1258,6 +1258,11 @@ export default function AdminPage() {
                     {newOrdersCount}
                   </span>
                 )}
+                {item.id === 'products' && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 text-gray-700 rounded-full shrink-0 border border-gray-200">
+                    {products.length}
+                  </span>
+                )}
               </button>
             </li>
           )
@@ -1918,9 +1923,14 @@ export default function AdminPage() {
             <>
               <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface mb-2">
-                    Управление товарами
-                  </h1>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h1 className="text-2xl lg:text-[32px] lg:leading-10 font-semibold tracking-tight text-on-surface">
+                      Управление товарами
+                    </h1>
+                    <span className="px-3 py-1 bg-primary/10 text-primary font-bold text-xs rounded-full border border-primary/20 shrink-0">
+                      {products.length} {products.length === 1 ? 'товар' : products.length > 1 && products.length < 5 ? 'товара' : 'товаров'}
+                    </span>
+                  </div>
                   <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
                     Управление запасами, ценами и деталями коллекции Belkson.
                   </p>
@@ -1937,9 +1947,14 @@ export default function AdminPage() {
 
               <section className="w-full">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
-                  <h3 className="text-xl font-semibold text-on-surface">
-                    Недавние товары
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-on-surface">
+                      Каталог товаров
+                    </h3>
+                    <span className="text-xs font-semibold text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-full">
+                      {products.length} шт.
+                    </span>
+                  </div>
                   <div className="flex gap-2 flex-wrap items-center">
                     <div className="relative inline-block">
                       <select
