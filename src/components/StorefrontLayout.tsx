@@ -275,12 +275,12 @@ export default function StorefrontLayout() {
                 className={isCatalog ? linkActive : linkIdle}
               >
                 Категории
-                <span className="material-symbols-outlined text-[18px] leading-none translate-y-px">
+                <span className="material-symbols-outlined text-[18px] leading-none translate-y-px opacity-60 group-hover:opacity-100 transition-opacity">
                   keyboard_arrow_down
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 flex gap-8">
+                <div className="w-[min(760px,calc(100vw-3rem))] bg-white rounded-2xl shadow-[0_20px_45px_-12px_rgba(0,0,0,0.12)] border border-gray-100 p-6 sm:p-8 flex gap-8">
                   <div className="flex-1 flex flex-col justify-center gap-4 py-2 min-w-0">
                     <Link
                       className="text-primary hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
