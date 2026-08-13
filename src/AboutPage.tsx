@@ -5,6 +5,10 @@ export default function AboutPage() {
   const { items, loading } = useAboutSettings()
   const activeItems = items.filter((item) => item.isActive)
 
+  const introBlock = activeItems.length > 0 ? activeItems[0] : null
+  const middleBlocks = activeItems.slice(1, -1)
+  const closingBlock = activeItems.length > 1 ? activeItems[activeItems.length - 1] : null
+
   return (
     <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
       {/* Navigation Breadcrumb */}
@@ -26,30 +30,51 @@ export default function AboutPage() {
         </p>
       </div>
 
-      {/* Content List */}
-      <div className="flex flex-col border-t border-b border-gray-100 mb-12">
-        {loading && activeItems.length === 0 ? (
-          <div className="py-8 text-center text-xs text-outline font-medium">
-            Загрузка информации...
-          </div>
-        ) : (
-          activeItems.map((block) => (
-            <div
-              key={block.id}
-              className="py-5 flex flex-col gap-1 border-b border-gray-100 last:border-b-0 px-2"
-            >
-              {block.title && (
-                <span className="text-base font-semibold text-on-surface">
-                  {block.title}
-                </span>
-              )}
-              <span className="text-sm text-outline font-normal leading-relaxed whitespace-pre-line">
-                {block.content}
-              </span>
+      {loading && activeItems.length === 0 ? (
+        <div className="py-8 text-center text-xs text-outline font-medium">
+          Загрузка информации...
+        </div>
+      ) : (
+        <>
+          {/* Intro — larger, featured block */}
+          {introBlock && (
+            <div className="mb-10 pb-10 border-b border-gray-100">
+              <p className="text-base md:text-lg text-on-surface leading-[1.8] whitespace-pre-line">
+                {introBlock.content}
+              </p>
             </div>
-          ))
-        )}
-      </div>
+          )}
+
+          {/* Middle blocks — with dot markers */}
+          <div className="flex flex-col border-t border-b border-gray-100 mb-10">
+            {middleBlocks.map((block) => (
+              <div
+                key={block.id}
+                className="py-5 flex gap-3.5 border-b border-gray-100 last:border-b-0 px-2"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface/25 shrink-0 mt-[7px]" />
+                <div className="flex flex-col gap-1.5">
+                  {block.title && (
+                    <span className="text-sm font-semibold text-on-surface">
+                      {block.title}
+                    </span>
+                  )}
+                  <span className="text-sm text-on-surface-variant leading-[1.75] whitespace-pre-line">
+                    {block.content}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Closing — italic, warm */}
+          {closingBlock && (
+            <p className="text-sm text-on-surface-variant italic leading-relaxed mb-12 px-2">
+              {closingBlock.content}
+            </p>
+          )}
+        </>
+      )}
 
       {/* Minimal Action */}
       <div className="flex items-center justify-between pt-2">
