@@ -1,5 +1,6 @@
 import { useState, type MouseEvent } from 'react'
 import type { Product } from '../../types/shop'
+import { FullscreenImageViewer } from './FullscreenImageViewer'
 
 interface QuickViewModalProps {
   product: Product | null
@@ -38,6 +39,7 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0)
   const [selectedSizeIndex, setSelectedSizeIndex] = useState<number>(0)
   const [quantity, setQuantity] = useState<number>(1)
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
 
   if (!product) return null
 
@@ -71,62 +73,91 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
   const brandName = product.brand === 'belkson' ? 'Belkson' : product.brand === 'zara' ? 'Zara Kids' : String(product.brand).toUpperCase()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/45 backdrop-blur-md transition-opacity duration-300">
-      {/* Backdrop click */}
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-hidden="true"
+    <>
+      <FullscreenImageViewer
+        isOpen={isFullscreen}
+        images={activeImages}
+        initialIndex={activeImageIndex}
+        title={product.title}
+        colors={colorsList}
+        selectedColorIndex={selectedColorIndex}
+        onSelectColor={handleSelectColor}
+        onClose={() => setIsFullscreen(false)}
       />
 
-      {/* Dialog container — matching navbar glassmorphism design */}
-      <div className="relative w-full max-w-4xl bg-surface/95 backdrop-blur-xl rounded-[28px] shadow-2xl overflow-hidden z-10 flex flex-col md:flex-row max-h-[92vh] border border-white/60">
-        {/* Minimalist Close button */}
-        <button
-          type="button"
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-md transition-opacity duration-300">
+        {/* Backdrop click */}
+        <div
+          className="absolute inset-0"
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95"
-          aria-label="Закрыть"
-        >
-          <span className="material-symbols-outlined text-xl">close</span>
-        </button>
+          aria-hidden="true"
+        />
 
-        {/* Left: Gallery Column */}
-        <div className="w-full md:w-1/2 bg-surface-container-low/40 p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-surface-dim/60">
-          <div className="relative aspect-3/4 w-full overflow-hidden bg-surface mb-3 border border-surface-dim/60 shadow-2xs rounded-2xl">
-            <img
-              src={activeImages[activeImageIndex] || product.images[0]}
-              alt={product.title}
-              className="w-full h-full object-cover object-center transition-all duration-500"
-            />
-            <span className="absolute top-3 left-3 text-[10px] tracking-[0.14em] uppercase font-bold text-primary bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
-              <span>{categoryLabel}</span>
-            </span>
+        {/* Dialog container — enlarged max-w-5xl lg:max-w-6xl for desktop */}
+        <div className="relative w-full max-w-5xl lg:max-w-6xl bg-surface/95 backdrop-blur-xl rounded-[28px] shadow-2xl overflow-hidden z-10 flex flex-col md:flex-row max-h-[92vh] border border-white/60">
+          {/* Minimalist Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-surface-variant/70 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
+            aria-label="Закрыть"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+
+          {/* Left: Gallery Column — Enlarged gallery column (55% width on desktop) */}
+          <div className="w-full md:w-[55%] lg:w-[58%] bg-surface-container-low/40 p-5 sm:p-7 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-surface-dim/60">
+            <div
+              className="relative aspect-3/4 md:aspect-[4/5] lg:aspect-3/4 w-full max-h-[60vh] md:max-h-[68vh] overflow-hidden bg-surface mb-3 border border-surface-dim/60 shadow-xs rounded-2xl group cursor-zoom-in"
+              onClick={() => setIsFullscreen(true)}
+              title="Нажмите, чтобы развернуть во весь экран"
+            >
+              <img
+                src={activeImages[activeImageIndex] || product.images[0]}
+                alt={product.title}
+                className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
+              />
+              <span className="absolute top-3 left-3 text-[10px] tracking-[0.14em] uppercase font-bold text-primary bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                <span>{categoryLabel}</span>
+              </span>
+
+              {/* Fullscreen zoom hint badge */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsFullscreen(true)
+                }}
+                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-md hover:scale-110 active:scale-95 cursor-pointer"
+                title="Развернуть во весь экран"
+              >
+                <span className="material-symbols-outlined text-lg">fullscreen</span>
+              </button>
+            </div>
+
+            {/* Thumbnails */}
+            {activeImages.length > 1 && (
+              <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                {activeImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveImageIndex(idx)}
+                    className={`w-16 h-20 md:w-18 md:h-24 overflow-hidden shrink-0 border transition-all rounded-xl cursor-pointer ${
+                      activeImageIndex === idx
+                        ? 'border-primary ring-2 ring-primary/40 shadow-xs opacity-100'
+                        : 'border-surface-dim opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Thumbnails */}
-          {activeImages.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {activeImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveImageIndex(idx)}
-                  className={`w-14 h-18 overflow-hidden shrink-0 border transition-all rounded-xl cursor-pointer ${
-                    activeImageIndex === idx
-                      ? 'border-primary ring-2 ring-primary/40 shadow-xs opacity-100'
-                      : 'border-surface-dim opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Right: Details & Options Column */}
-        <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col overflow-y-auto">
+        <div className="w-full md:w-[45%] lg:w-[42%] p-6 md:p-8 flex flex-col overflow-y-auto">
           {/* Header meta info */}
           <div className="flex items-center justify-between text-[11px] tracking-[0.12em] uppercase text-on-surface-variant mb-3 flex-wrap gap-2">
             <span>Артикул: {product.sku}</span>
@@ -280,5 +311,6 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
         </div>
       </div>
     </div>
-  )
+  </>
+)
 }

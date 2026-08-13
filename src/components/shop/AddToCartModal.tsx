@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCart } from '../../store/CartContext'
 import { useCatalog } from '../../store/CatalogContext'
+import { FullscreenImageViewer } from './FullscreenImageViewer'
 
 const DEFAULT_CHILDREN_SIZES = [
   '56-62',
@@ -24,6 +25,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSize, setSelectedSize] = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Drag down swipe gesture state for mobile sheet handle
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
@@ -115,66 +117,97 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   }
 
   const totalPrice = productToConfigure.priceRub * quantity
+  const imagesList = [
+    productToConfigure.image,
+    ...(productToConfigure.images || []),
+  ].filter(Boolean)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-md transition-opacity duration-300"
-      onTouchMove={(e) => {
-        if (e.target === e.currentTarget) {
-          e.preventDefault()
-        }
-      }}
-    >
-      {/* Backdrop click */}
-      <div
-        className="absolute inset-0"
-        onClick={closeAddToCartModal}
-        onTouchMove={(e) => e.preventDefault()}
-        aria-hidden="true"
+    <>
+      <FullscreenImageViewer
+        isOpen={isFullscreen}
+        images={imagesList}
+        initialIndex={0}
+        title={productToConfigure.name}
+        colors={availableColors}
+        selectedColorIndex={Math.max(0, availableColors.indexOf(selectedColor))}
+        onSelectColor={(idx) => setSelectedColor(availableColors[idx] || '')}
+        onClose={() => setIsFullscreen(false)}
       />
 
-      {/* Modal Dialog Card */}
       <div
-        className="relative w-full max-w-lg bg-surface/95 backdrop-blur-xl rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col border border-white/60"
-        style={{
-          transform: `translateY(${dragOffsetY}px)`,
-          transition: isDragging ? 'none' : 'transform 0.25s ease-out',
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-md transition-opacity duration-300"
+        onTouchMove={(e) => {
+          if (e.target === e.currentTarget) {
+            e.preventDefault()
+          }
         }}
       >
-        {/* Top Handle Pill (Mobile Sheet Drag & Click Handle) */}
+        {/* Backdrop click */}
         <div
-          className="pt-3 pb-1.5 flex justify-center cursor-grab active:cursor-grabbing select-none touch-none bg-surface/80 backdrop-blur-md"
+          className="absolute inset-0"
           onClick={closeAddToCartModal}
-          onTouchStart={handleHandleTouchStart}
-          onTouchMove={handleHandleTouchMove}
-          onTouchEnd={handleHandleTouchEnd}
-          title="Нажмите или смахните вниз, чтобы закрыть"
-        >
-          <div className="w-12 h-1.5 rounded-full bg-surface-dim hover:bg-on-surface-variant/40 active:bg-on-surface-variant/60 transition-colors" />
-        </div>
+          onTouchMove={(e) => e.preventDefault()}
+          aria-hidden="true"
+        />
 
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={closeAddToCartModal}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95"
-          aria-label="Закрыть"
+        {/* Modal Dialog Card — Enlarged max-w-xl sm:max-w-2xl on desktop */}
+        <div
+          className="relative w-full max-w-xl sm:max-w-2xl bg-surface/95 backdrop-blur-xl rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col border border-white/60"
+          style={{
+            transform: `translateY(${dragOffsetY}px)`,
+            transition: isDragging ? 'none' : 'transform 0.25s ease-out',
+          }}
         >
-          <span className="material-symbols-outlined text-xl">close</span>
-        </button>
+          {/* Top Handle Pill (Mobile Sheet Drag & Click Handle) */}
+          <div
+            className="pt-3 pb-1.5 flex justify-center cursor-grab active:cursor-grabbing select-none touch-none bg-surface/80 backdrop-blur-md"
+            onClick={closeAddToCartModal}
+            onTouchStart={handleHandleTouchStart}
+            onTouchMove={handleHandleTouchMove}
+            onTouchEnd={handleHandleTouchEnd}
+            title="Нажмите или смахните вниз, чтобы закрыть"
+          >
+            <div className="w-12 h-1.5 rounded-full bg-surface-dim hover:bg-on-surface-variant/40 active:bg-on-surface-variant/60 transition-colors" />
+          </div>
 
-        {/* Body content */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
-          {/* Main Layout: Product Image + Details Grid */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
-            {/* Compact Vertical Product Image */}
-            <div className="w-24 sm:w-28 aspect-3/4 rounded-2xl overflow-hidden bg-surface-container-low border border-surface-dim/60 shrink-0 shadow-2xs">
-              <img
-                src={productToConfigure.image}
-                alt={productToConfigure.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
+          {/* Close Button */}
+          <button
+            type="button"
+            onClick={closeAddToCartModal}
+            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95"
+            aria-label="Закрыть"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+
+          {/* Body content */}
+          <div className="p-5 sm:p-6 md:p-8 overflow-y-auto space-y-5">
+            {/* Main Layout: Product Image + Details Grid */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+              {/* Enlarged Vertical Product Image on Desktop */}
+              <div
+                className="relative w-28 sm:w-36 md:w-44 aspect-3/4 rounded-2xl overflow-hidden bg-surface-container-low border border-surface-dim/60 shrink-0 shadow-xs cursor-zoom-in group"
+                onClick={() => setIsFullscreen(true)}
+                title="Развернуть во весь экран"
+              >
+                <img
+                  src={productToConfigure.image}
+                  alt={productToConfigure.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsFullscreen(true)
+                  }}
+                  className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white transition-all cursor-pointer"
+                  title="Развернуть во весь экран"
+                >
+                  <span className="material-symbols-outlined text-sm">fullscreen</span>
+                </button>
+              </div>
 
             {/* Right Product Overview & Selectors */}
             <div className="flex-1 min-w-0 space-y-3.5 w-full">
@@ -318,5 +351,6 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
         </div>
       </div>
     </div>
-  )
+  </>
+)
 }
