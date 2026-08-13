@@ -369,27 +369,38 @@ export default function StorefrontLayout() {
                       </h3>
                       <ul className="flex flex-col gap-2">
                         {store.countries.map((c) => {
-                          const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string }) : null
+                          const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
                           const name = item ? String(item.name || '') : String(c || '')
                           const url = item ? String(item.url || '#') : '#'
+                          const rate = item ? String(item.rate || '') : ''
                           const isExternal = url.startsWith('http://') || url.startsWith('https://')
                           return (
                             <li key={name}>
                               {isExternal ? (
                                 <a
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal text-sm"
+                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-2 group/item"
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
-                                  {name}
+                                  <span>{name}</span>
+                                  {rate && (
+                                    <span className="text-[11px] font-semibold text-primary group-hover/item:text-white transition-colors">
+                                      Курс: {rate}
+                                    </span>
+                                  )}
                                 </a>
                               ) : (
                                 <Link
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors block font-normal text-sm"
+                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-2 group/item"
                                   to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
                                 >
-                                  {name}
+                                  <span>{name}</span>
+                                  {rate && (
+                                    <span className="text-[11px] font-semibold text-primary group-hover/item:text-white transition-colors">
+                                      Курс: {rate}
+                                    </span>
+                                  )}
                                 </Link>
                               )}
                             </li>

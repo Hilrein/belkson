@@ -700,16 +700,17 @@ function normalizeCountries(raw: unknown): CountryItem[] {
   }
   return list.map((item) => {
     if (typeof item === 'string') {
-      return { name: item.trim(), url: '' }
+      return { name: item.trim(), url: '', rate: '' }
     }
     if (item && typeof item === 'object') {
       const obj = item as Record<string, unknown>
       return {
         name: String(obj.name ?? '').trim(),
         url: String(obj.url ?? '').trim(),
+        rate: obj.rate != null ? String(obj.rate).trim() : '',
       }
     }
-    return { name: '—', url: '' }
+    return { name: '—', url: '', rate: '' }
   })
 }
 

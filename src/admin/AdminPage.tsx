@@ -875,9 +875,10 @@ export default function AdminPage() {
   const [storeDrawerMode, setStoreDrawerMode] = useState<'add' | 'edit'>('add')
   const [editingStoreId, setEditingStoreId] = useState<number | null>(null)
   const [storeName, setStoreName] = useState('')
-  const [storeCountries, setStoreCountries] = useState<{ name: string; url: string }[]>([])
+  const [storeCountries, setStoreCountries] = useState<{ name: string; url: string; rate?: string }[]>([])
   const [countryInput, setCountryInput] = useState('')
   const [countryUrlInput, setCountryUrlInput] = useState('')
+  const [countryRateInput, setCountryRateInput] = useState('')
   const [storeSaving, setStoreSaving] = useState(false)
 
   // Delete Store modal state
@@ -986,6 +987,7 @@ export default function AdminPage() {
     setStoreCountries([])
     setCountryInput('')
     setCountryUrlInput('')
+    setCountryRateInput('')
     setStoreDrawerOpen(true)
   }
 
@@ -996,12 +998,13 @@ export default function AdminPage() {
     setStoreCountries(
       (store.countries || []).map((c) =>
         typeof c === 'string'
-          ? { name: c, url: '' }
-          : { name: c.name || '', url: c.url || '' },
+          ? { name: c, url: '', rate: '' }
+          : { name: c.name || '', url: c.url || '', rate: c.rate || '' },
       ),
     )
     setCountryInput('')
     setCountryUrlInput('')
+    setCountryRateInput('')
     setStoreDrawerOpen(true)
   }
 
@@ -1013,11 +1016,19 @@ export default function AdminPage() {
   const handleAddCountry = () => {
     const name = countryInput.trim()
     const url = countryUrlInput.trim()
+    const rate = countryRateInput.trim()
     if (name && !storeCountries.some((c) => c.name === name)) {
-      setStoreCountries([...storeCountries, { name, url }])
+      setStoreCountries([...storeCountries, { name, url, rate }])
       setCountryInput('')
       setCountryUrlInput('')
+      setCountryRateInput('')
     }
+  }
+
+  const handleUpdateCountryRate = (name: string, newRate: string) => {
+    setStoreCountries(
+      storeCountries.map((c) => (c.name === name ? { ...c, rate: newRate } : c)),
+    )
   }
 
   const handleRemoveCountry = (name: string) => {
@@ -1972,19 +1983,25 @@ export default function AdminPage() {
                             {store.countries.map((c) => {
                               const name = typeof c === 'string' ? c : c.name
                               const url = typeof c === 'string' ? '' : c.url
+                              const rate = typeof c === 'string' ? '' : c.rate
                               return (
                                 <span
                                   key={name}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-surface border border-gray-200 text-on-surface"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-surface border border-gray-200 text-on-surface flex-wrap"
                                 >
-                                  <span>{name}</span>
+                                  <span className="font-semibold">{name}</span>
+                                  {rate && (
+                                    <span className="text-[10px] font-bold text-[#ce7ed5] bg-[#ce7ed5]/10 px-1.5 py-0.5 rounded border border-[#ce7ed5]/20 shrink-0">
+                                      Курс: {rate}
+                                    </span>
+                                  )}
                                   {url && (
                                     <a
                                       href={url}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       title={url}
-                                      className="text-[#ce7ed5] hover:underline inline-flex items-center"
+                                      className="text-[#ce7ed5] hover:underline inline-flex items-center ml-0.5"
                                     >
                                       <Icon name="open_in_new" className="text-[12px]" />
                                     </a>
@@ -3027,7 +3044,7 @@ export default function AdminPage() {
 
           <div>
             <label className="block text-body-sm font-medium text-on-surface mb-2">
-              Страны / регионы выкупа и ссылки
+              Страны / регионы выкупа, ссылки и курсы валют
             </label>
             <div className="space-y-2 mb-3">
               <input
@@ -3043,52 +3060,71 @@ export default function AdminPage() {
                   }
                 }}
               />
-              <div className="flex gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input
                   type="url"
-                  className="flex-1 px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                  className="sm:col-span-2 px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
                   placeholder="Ссылка на сайт (например: https://zara.com/es/)"
                   value={countryUrlInput}
                   onChange={(e) => setCountryUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleAddCountry()
-                    }
-                  }}
                 />
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-[#ce7ed5] text-white rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium shrink-0 cursor-pointer"
-                  onClick={handleAddCountry}
-                >
-                  + Добавить
-                </button>
+                <input
+                  type="text"
+                  className="px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+                  placeholder="Курс (напр. 105 ₽)"
+                  value={countryRateInput}
+                  onChange={(e) => setCountryRateInput(e.target.value)}
+                />
               </div>
+              <button
+                type="button"
+                className="w-full py-2 bg-[#ce7ed5] text-white rounded-md hover:bg-opacity-90 transition-opacity text-sm font-medium cursor-pointer mt-1"
+                onClick={handleAddCountry}
+              >
+                + Добавить страну
+              </button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2 mb-2">
               {storeCountries.map((c) => (
-                <span
+                <div
                   key={c.name}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-surface border border-gray-200 text-on-surface font-medium"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-surface border border-gray-200 text-on-surface text-sm"
                 >
-                  <span className="font-semibold">{c.name}</span>
-                  {c.url ? (
-                    <span className="text-xs text-on-surface-variant max-w-[150px] truncate" title={c.url}>
-                      ({c.url})
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400 italic">(без ссылки)</span>
-                  )}
-                  <button
-                    type="button"
-                    className="hover:text-red-600 transition-colors cursor-pointer ml-1"
-                    onClick={() => handleRemoveCountry(c.name)}
-                  >
-                    <Icon name="close" className="text-xs" />
-                  </button>
-                </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{c.name}</span>
+                      {c.url && (
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-[#ce7ed5] hover:underline truncate max-w-[130px]"
+                        >
+                          {c.url}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-gray-500 font-medium">Курс:</span>
+                    <input
+                      type="text"
+                      className="w-24 px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold text-primary focus:outline-none focus:border-[#ce7ed5]"
+                      placeholder="напр. 105 ₽"
+                      value={c.rate || ''}
+                      onChange={(e) => handleUpdateCountryRate(c.name, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                      onClick={() => handleRemoveCountry(c.name)}
+                      title="Удалить страну"
+                    >
+                      <Icon name="close" className="text-xs" />
+                    </button>
+                  </div>
+                </div>
               ))}
               {storeCountries.length === 0 && (
                 <p className="text-xs text-gray-400 italic">

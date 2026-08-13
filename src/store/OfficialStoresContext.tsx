@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 export type CountryItem = {
   name: string
   url: string
+  rate?: string
 }
 
 export type OfficialStore = {
@@ -30,11 +31,11 @@ const DEFAULT_STORES: OfficialStore[] = [
     id: 1,
     name: 'Zara',
     countries: [
-      { name: 'Spain', url: 'https://www.zara.com/es/' },
-      { name: 'UK', url: 'https://www.zara.com/uk/' },
-      { name: 'Poland', url: 'https://www.zara.com/pl/' },
-      { name: 'Germany', url: 'https://www.zara.com/de/' },
-      { name: 'Kazakhstan', url: 'https://www.zara.com/kz/' },
+      { name: 'Spain', url: 'https://www.zara.com/es/', rate: '105 ₽' },
+      { name: 'UK', url: 'https://www.zara.com/uk/', rate: '130 ₽' },
+      { name: 'Poland', url: 'https://www.zara.com/pl/', rate: '26 ₽' },
+      { name: 'Germany', url: 'https://www.zara.com/de/', rate: '105 ₽' },
+      { name: 'Kazakhstan', url: 'https://www.zara.com/kz/', rate: '0.22 ₽' },
     ],
     sortOrder: 1,
     isActive: true,
@@ -43,10 +44,10 @@ const DEFAULT_STORES: OfficialStore[] = [
     id: 2,
     name: 'H&M',
     countries: [
-      { name: 'UK', url: 'https://www2.hm.com/en_gb/index.html' },
-      { name: 'Germany', url: 'https://www2.hm.com/de_de/index.html' },
-      { name: 'Poland', url: 'https://www2.hm.com/pl_pl/index.html' },
-      { name: 'USA', url: 'https://www2.hm.com/en_us/index.html' },
+      { name: 'UK', url: 'https://www2.hm.com/en_gb/index.html', rate: '130 ₽' },
+      { name: 'Germany', url: 'https://www2.hm.com/de_de/index.html', rate: '105 ₽' },
+      { name: 'Poland', url: 'https://www2.hm.com/pl_pl/index.html', rate: '26 ₽' },
+      { name: 'USA', url: 'https://www2.hm.com/en_us/index.html', rate: '98 ₽' },
     ],
     sortOrder: 2,
     isActive: true,
@@ -55,10 +56,10 @@ const DEFAULT_STORES: OfficialStore[] = [
     id: 3,
     name: 'Next',
     countries: [
-      { name: 'UK', url: 'https://www.next.co.uk' },
-      { name: 'Kazakhstan', url: 'https://www.next.kz' },
-      { name: 'Germany', url: 'https://www.next.de' },
-      { name: 'Spain', url: 'https://www.next.es' },
+      { name: 'UK', url: 'https://www.next.co.uk', rate: '130 ₽' },
+      { name: 'Kazakhstan', url: 'https://www.next.kz', rate: '0.22 ₽' },
+      { name: 'Germany', url: 'https://www.next.de', rate: '105 ₽' },
+      { name: 'Spain', url: 'https://www.next.es', rate: '105 ₽' },
     ],
     sortOrder: 3,
     isActive: true,
