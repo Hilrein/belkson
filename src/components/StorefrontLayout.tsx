@@ -653,7 +653,7 @@ export default function StorefrontLayout() {
                         className="w-full flex items-center justify-between text-left py-1.5 group/store cursor-pointer"
                         aria-expanded={isExpanded}
                       >
-                        <span className="text-on-surface font-body-lg text-base font-semibold group-hover/store:text-[#ce7ed5] transition-colors">
+                        <span className="font-headline-md text-sm uppercase tracking-wider text-on-surface group-hover/store:text-[#ce7ed5] transition-colors">
                           {store.name}
                         </span>
                         <span
@@ -722,7 +722,7 @@ export default function StorefrontLayout() {
                 })}
                 <button
                   type="button"
-                  className="text-on-surface font-body-lg text-base font-semibold hover:text-[#ce7ed5] transition-colors text-left border-t border-surface-dim/40 pt-3 mt-1"
+                  className="font-headline-md text-sm uppercase tracking-wider text-on-surface hover:text-[#ce7ed5] transition-colors text-left border-t border-surface-dim/40 pt-3 mt-1"
                   onClick={goToTerms}
                 >
                   Порядок и условия выкупа
