@@ -11,7 +11,6 @@ import {
 } from './store/catalog'
 import { BaseCatalogLayout } from './components/shop/BaseCatalogLayout'
 import { QuickViewModal } from './components/shop/QuickViewModal'
-import { StorefrontProductCard } from './components/shop/StorefrontProductCard'
 import type { Product, SortOption } from './types/shop'
 
 const FILTER_ALL = 'all'
@@ -20,7 +19,7 @@ const FILTER_NEW = 'new'
 const FILTER_FAVORITE = 'favorite'
 
 export default function CatalogPage() {
-  const { products } = useCatalog()
+  const { products, format } = useCatalog()
   const { openAddToCartModal } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
@@ -294,12 +293,100 @@ export default function CatalogPage() {
         totalCount={filtered.length}
         onResetAll={handleResetAll}
         renderItem={(product) => (
-          <StorefrontProductCard
+          <article
             key={product.id}
-            product={product}
-            onQuickView={setQuickViewProduct}
-            onAddToCart={handleAddToCart}
-          />
+            onClick={() => setQuickViewProduct(product)}
+            className="group flex flex-col cursor-pointer"
+          >
+            <div className="relative aspect-[3/4] overflow-hidden bg-surface-container-low mb-3 md:mb-4">
+              <img
+                className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                alt={product.name}
+                src={product.image}
+              />
+              <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                {product.isSale && (
+                  <span className="text-[10px] tracking-[0.12em] uppercase font-bold text-white bg-[#ce7ed5] px-2 py-1 shadow-xs rounded-xs">
+                    Sale
+                  </span>
+                )}
+                {product.isNew && !product.isSale && (
+                  <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1">
+                    New
+                  </span>
+                )}
+              </div>
+              {product.status === 'Мало' && (
+                <span className="absolute top-3 right-3 text-[10px] tracking-[0.12em] uppercase font-medium text-on-surface-variant bg-surface/90 px-2 py-1 z-10">
+                  Мало
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={(e) => handleAddToCart(product, e)}
+                className="hidden md:block absolute inset-x-0 bottom-0 py-3 bg-primary text-on-primary text-[11px] tracking-[0.14em] uppercase font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10"
+              >
+                В корзину
+              </button>
+            </div>
+            <div className="flex flex-col gap-1 px-0.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  {product.brand && (
+                    <p className="text-[10px] tracking-[0.12em] uppercase font-semibold text-on-surface-variant mb-0.5">
+                      {product.brand}
+                    </p>
+                  )}
+                  <h2 className="text-sm md:text-[15px] font-medium text-on-surface leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                    {product.name}
+                  </h2>
+                </div>
+                {product.isSale && product.salePriceRub ? (
+                  <div className="flex flex-col items-end shrink-0 tabular-nums">
+                    <span className="text-[11px] font-normal text-on-surface-variant/70 line-through">
+                      {format(product.priceRub)}
+                    </span>
+                    <span className="text-sm md:text-[15px] font-bold text-[#6f2879]">
+                      {format(product.salePriceRub)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm md:text-[15px] font-medium text-primary shrink-0 tabular-nums">
+                    {format(product.priceRub)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-1">
+                <p className="text-xs text-on-surface-variant truncate">
+                  {product.color}
+                  {product.category ? ` · ${product.category}` : ''}
+                </p>
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>В наличии: {product.stock != null ? product.stock : 10} шт.</span>
+                </span>
+              </div>
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {product.sizes.slice(0, 5).map((size) => (
+                    <span
+                      key={size}
+                      className="text-[10px] px-1.5 py-0.5 rounded border border-surface-dim text-on-surface-variant"
+                    >
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={(e) => handleAddToCart(product, e)}
+                className="md:hidden mt-2 self-start text-[11px] tracking-[0.12em] uppercase font-semibold text-primary border-b border-primary/40 pb-0.5"
+              >
+                В корзину
+              </button>
+            </div>
+          </article>
         )}
       />
     </>
