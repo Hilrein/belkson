@@ -76,10 +76,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         prev.map((p) => (p.id === id ? { ...p, ...patch } : p)),
       )
       try {
-        const updated = await api.updateProduct(id, patch)
-        setProducts((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, ...updated } : p)),
-        )
+        await api.updateProduct(id, patch)
       } catch (err) {
         void refresh()
         throw err

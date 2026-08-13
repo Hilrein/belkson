@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, SUBCATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
@@ -595,28 +595,63 @@ function StockInlineEditor({
   product: Product
   onUpdate: (id: number, patch: Partial<Product>) => Promise<void>
 }) {
-  const currentStock = product.stock != null ? product.stock : 10
+  const dbStock = product.stock != null ? product.stock : 10
+  const [localStock, setLocalStock] = useState<number>(dbStock)
+  const [statusState, setStatusState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideSavedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const latestStockRef = useRef<number>(dbStock)
+
+  useEffect(() => {
+    if (statusState === 'idle') {
+      setLocalStock(dbStock)
+      latestStockRef.current = dbStock
+    }
+  }, [dbStock, statusState])
+
+  const flushSave = useCallback(
+    async (targetStock: number) => {
+      setStatusState('saving')
+      try {
+        const autoStatus =
+          targetStock === 0
+            ? 'Нет в наличии'
+            : product.status === 'Нет в наличии'
+              ? 'В наличии'
+              : product.status
+        await onUpdate(product.id, { stock: targetStock, status: autoStatus })
+        setStatusState('saved')
+        if (hideSavedTimerRef.current) clearTimeout(hideSavedTimerRef.current)
+        hideSavedTimerRef.current = setTimeout(() => {
+          setStatusState('idle')
+        }, 1500)
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
+        setStatusState('idle')
+      }
+    },
+    [product.id, product.status, onUpdate],
+  )
 
   const handleAdjust = (delta: number) => {
-    const valid = Math.max(0, currentStock + delta)
-    if (valid === currentStock) return
-    const autoStatus =
-      valid === 0
-        ? 'Нет в наличии'
-        : product.status === 'Нет в наличии'
-          ? 'В наличии'
-          : product.status
-    void onUpdate(product.id, { stock: valid, status: autoStatus }).catch(
-      (err) => {
-        alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
-      },
-    )
+    const nextStock = Math.max(0, localStock + delta)
+    setLocalStock(nextStock)
+    latestStockRef.current = nextStock
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    setStatusState('saving')
+    debounceTimerRef.current = setTimeout(() => {
+      void flushSave(latestStockRef.current)
+    }, 400)
   }
 
   return (
-    <div className="inline-flex items-center gap-1.5 select-none">
+    <div className="inline-flex items-center gap-1.5 select-none relative">
       <span className="px-2 py-0.5 rounded bg-surface-variant text-xs font-semibold text-on-surface tabular-nums">
-        {currentStock} шт.
+        {localStock} шт.
       </span>
       <div className="flex flex-col gap-0.5">
         <button
@@ -629,7 +664,7 @@ function StockInlineEditor({
         </button>
         <button
           type="button"
-          disabled={currentStock <= 0}
+          disabled={localStock <= 0}
           onClick={() => handleAdjust(-1)}
           className="w-4 h-3.5 bg-surface border border-gray-200 rounded-xs flex items-center justify-center text-[9px] text-on-surface hover:bg-primary hover:text-white hover:border-primary active:scale-95 transition-all cursor-pointer disabled:opacity-40 leading-none"
           title="Уменьшить на 1"
@@ -637,6 +672,18 @@ function StockInlineEditor({
           ▼
         </button>
       </div>
+
+      {statusState === 'saving' && (
+        <span className="text-[10px] text-amber-600 font-medium animate-pulse ml-0.5 whitespace-nowrap">
+          ...
+        </span>
+      )}
+      {statusState === 'saved' && (
+        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
+          <Icon name="check" className="text-xs text-emerald-600" />
+          <span>Сохранено</span>
+        </span>
+      )}
     </div>
   )
 }
