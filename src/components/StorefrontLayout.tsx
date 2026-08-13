@@ -356,18 +356,18 @@ export default function StorefrontLayout() {
             <div className="relative group flex items-stretch">
               <button type="button" className={linkIdle}>
                 Выкуп с официальных сайтов
-                <span className="material-symbols-outlined text-[18px] leading-none translate-y-px">
+                <span className="material-symbols-outlined text-[18px] leading-none translate-y-px opacity-60 group-hover:opacity-100 transition-opacity">
                   keyboard_arrow_down
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8 overflow-x-auto">
+                <div className="bg-surface/98 backdrop-blur-md rounded-2xl shadow-[0_16px_36px_-8px_rgba(0,0,0,0.08)] border border-surface-dim/80 p-6 flex gap-8 overflow-x-auto min-w-[440px]">
                   {activeOfficialStores.map((store) => (
-                    <div key={store.id} className="flex-1 min-w-[150px]">
-                      <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
+                    <div key={store.id} className="flex-1 min-w-[140px]">
+                      <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-3 pb-2 border-b border-surface-dim/50">
                         {store.name}
                       </h3>
-                      <ul className="flex flex-col gap-2">
+                      <ul className="flex flex-col gap-0.5">
                         {store.countries.map((c) => {
                           const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
                           const name = item ? String(item.name || '') : String(c || '')
@@ -377,10 +377,12 @@ export default function StorefrontLayout() {
 
                           const content = (
                             <>
-                              <span className="font-medium text-sm">{name}</span>
+                              <span className="text-xs sm:text-sm font-medium text-on-surface group-hover/item:text-primary transition-colors">
+                                {name}
+                              </span>
                               {rate && (
-                                <span className="text-[11px] font-semibold text-primary bg-[#8b2691]/10 group-hover/item:bg-white/20 group-hover/item:text-white px-2.5 py-1 rounded-full transition-colors shrink-0 tabular-nums">
-                                  Курс: {rate}
+                                <span className="text-[11px] font-mono text-on-surface-variant/80 font-normal group-hover/item:text-primary transition-colors tabular-nums">
+                                  {rate}
                                 </span>
                               )}
                             </>
@@ -390,7 +392,7 @@ export default function StorefrontLayout() {
                             <li key={name}>
                               {isExternal ? (
                                 <a
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-3 group/item"
+                                  className="group/item flex items-center justify-between gap-4 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -399,7 +401,7 @@ export default function StorefrontLayout() {
                                 </a>
                               ) : (
                                 <Link
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-3 group/item"
+                                  className="group/item flex items-center justify-between gap-4 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
                                 >
                                   {content}
