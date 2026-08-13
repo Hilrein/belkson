@@ -10,8 +10,7 @@ import {
   type CatalogProduct,
 } from './store/catalog'
 import { BaseCatalogLayout } from './components/shop/BaseCatalogLayout'
-import { QuickViewModal } from './components/shop/QuickViewModal'
-import type { Product, SortOption } from './types/shop'
+import type { SortOption } from './types/shop'
 
 const FILTER_ALL = 'all'
 const FILTER_SALE = 'sale'
@@ -24,7 +23,6 @@ export default function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [sortBy, setSortBy] = useState<SortOption>('featured')
-  const [quickViewProduct, setQuickViewProduct] = useState<CatalogProduct | null>(null)
 
   const rawCategoryParam = searchParams.get('category')
   const activeFilter = useMemo(() => {
@@ -227,52 +225,8 @@ export default function CatalogPage() {
     setSortBy('featured')
   }
 
-  // Convert CatalogProduct to Product for QuickViewModal
-  const modalProduct: Product | null = useMemo(() => {
-    if (!quickViewProduct) return null
-    const sizes =
-      quickViewProduct.sizes && quickViewProduct.sizes.length > 0
-        ? quickViewProduct.sizes
-        : ['68-74 см', '74-80 см', '80-86 см', '86-92 см', '92-98 см']
-    return {
-      id: String(quickViewProduct.id),
-      title: quickViewProduct.name,
-      brand: quickViewProduct.brand || 'belkson',
-      region: 'spain',
-      category: 'all',
-      originalPrice: Math.round(quickViewProduct.priceRub / 100),
-      currencySymbol: '€',
-      priceRub: quickViewProduct.priceRub,
-      isSale: quickViewProduct.isSale,
-      salePriceRub: quickViewProduct.salePriceRub,
-      description: `${
-        quickViewProduct.brand ? `Бренд: ${quickViewProduct.brand}. ` : ''
-      }${quickViewProduct.name} из авторской коллекции Belkson. Премиальный комфортный трикотаж для детей. Артикул: ${quickViewProduct.sku}.`,
-      composition: '100% органический хлопок',
-      sku: quickViewProduct.sku,
-      originalUrl: '',
-      images: [quickViewProduct.image, ...(quickViewProduct.images || [])].filter(Boolean),
-      sizes,
-      colors: [quickViewProduct.color || 'Стандартный'],
-      isNew: quickViewProduct.isNew,
-      isBestSeller: quickViewProduct.isFavorite,
-      stock: quickViewProduct.stock != null ? quickViewProduct.stock : 10,
-    }
-  }, [quickViewProduct])
-
   return (
     <>
-      <QuickViewModal
-        product={modalProduct}
-        onClose={() => setQuickViewProduct(null)}
-        onAddToCart={() => {
-          if (quickViewProduct) {
-            openAddToCartModal(quickViewProduct)
-            setQuickViewProduct(null)
-          }
-        }}
-      />
-
       <BaseCatalogLayout<CatalogProduct>
         title="Каталог Belkson"
         subtitle="Мягкие вещи для малышей — выбирайте по возрасту или листайте всё."
@@ -295,7 +249,7 @@ export default function CatalogPage() {
         renderItem={(product) => (
           <article
             key={product.id}
-            onClick={() => setQuickViewProduct(product)}
+            onClick={(e) => handleAddToCart(product, e)}
             className="group flex flex-col cursor-pointer"
           >
             <div className="relative aspect-[3/4] overflow-hidden bg-surface-container-low mb-3 md:mb-4">
