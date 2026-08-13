@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
 import { getVkProfileUrl } from './lib/vk'
+import { getMaxUrl } from './lib/maxOrder'
+import { useMessengerSettings } from './store/MessengerSettingsContext'
 
 export default function ContactsPage() {
   const vkUrl = getVkProfileUrl()
+  const { getSetting } = useMessengerSettings()
+  const maxSetting = getSetting('max')
+  const maxUrl = (maxSetting?.value && maxSetting.value.trim()) || getMaxUrl()
 
   return (
     <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
@@ -47,6 +52,26 @@ export default function ContactsPage() {
           </span>
         </a>
 
+        {/* MAX Messenger */}
+        <a
+          href={maxUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+        >
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+              MAX
+            </span>
+            <span className="text-xs text-outline font-normal">
+              Мессенджер MAX для консультаций и оформления заказов
+            </span>
+          </div>
+          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
+            north_east
+          </span>
+        </a>
+
         {/* VK Community */}
         <a
           href={vkUrl}
@@ -56,7 +81,7 @@ export default function ContactsPage() {
         >
           <div className="flex flex-col gap-1">
             <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
-              ВКонтакте
+              VK
             </span>
             <span className="text-xs text-outline font-normal">
               Новости бренда, фотографии коллекций и консультации
