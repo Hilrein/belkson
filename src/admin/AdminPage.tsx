@@ -588,6 +588,89 @@ function AdminMessengerSettingsView() {
   )
 }
 
+function StockInlineEditor({
+  product,
+  onUpdate,
+}: {
+  product: Product
+  onUpdate: (id: number, patch: Partial<Product>) => Promise<void>
+}) {
+  const currentStock = product.stock != null ? product.stock : 10
+  const [stockVal, setStockVal] = useState(String(currentStock))
+  const [updating, setUpdating] = useState(false)
+
+  useEffect(() => {
+    setStockVal(String(currentStock))
+  }, [currentStock])
+
+  const saveStock = async (newVal: number) => {
+    const valid = Math.max(0, newVal)
+    if (valid === currentStock) return
+    setUpdating(true)
+    try {
+      const autoStatus =
+        valid === 0
+          ? 'Нет в наличии'
+          : product.status === 'Нет в наличии'
+            ? 'В наличии'
+            : product.status
+      await onUpdate(product.id, { stock: valid, status: autoStatus })
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Ошибка изменения остатка')
+      setStockVal(String(currentStock))
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  return (
+    <div className="inline-flex items-center gap-0.5 bg-surface border border-gray-200 rounded-md p-0.5 shadow-2xs">
+      <button
+        type="button"
+        disabled={updating || currentStock <= 0}
+        onClick={() => void saveStock(currentStock - 1)}
+        className="w-5 h-5 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant font-bold text-xs disabled:opacity-30 cursor-pointer select-none"
+        title="Уменьшить на 1"
+      >
+        −
+      </button>
+      <input
+        type="number"
+        min="0"
+        value={stockVal}
+        disabled={updating}
+        onChange={(e) => setStockVal(e.target.value)}
+        onBlur={() => {
+          const num = parseInt(stockVal, 10)
+          if (!isNaN(num)) {
+            void saveStock(num)
+          } else {
+            setStockVal(String(currentStock))
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.currentTarget.blur()
+          }
+        }}
+        className="w-10 text-center font-bold text-xs bg-transparent text-on-surface focus:outline-none focus:bg-white rounded py-0.5 tabular-nums"
+      />
+      <span className="text-[10px] font-medium text-on-surface-variant pr-1 select-none">
+        шт
+      </span>
+      <button
+        type="button"
+        disabled={updating}
+        onClick={() => void saveStock(currentStock + 1)}
+        className="w-5 h-5 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant font-bold text-xs disabled:opacity-30 cursor-pointer select-none"
+        title="Увеличить на 1"
+      >
+        +
+      </button>
+    </div>
+  )
+}
+
 /**
  * Port of static-admin/admin.html — responsive products admin.
  */
@@ -2029,7 +2112,6 @@ export default function AdminPage() {
                             <p className="text-xs text-on-surface-variant mt-0.5">
                               #{product.id} · {product.category}
                               {product.brand ? ` · ${product.brand}` : ''}
-                              <span className="font-semibold text-primary ml-1">· {product.stock != null ? product.stock : 10} шт.</span>
                             </p>
                           </div>
                           <button
@@ -2041,13 +2123,16 @@ export default function AdminPage() {
                             <EditIcon />
                           </button>
                         </div>
-                        <div className="flex items-center justify-between gap-2 mt-2">
+                        <div className="flex items-center justify-between gap-2 mt-2.5 flex-wrap">
                           <span className="text-sm font-medium text-on-surface">
                             {format(product.priceRub)}
                           </span>
-                          <span className="bg-surface-variant text-on-surface px-2 py-0.5 rounded-sm text-xs">
-                            {product.status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <StockInlineEditor product={product} onUpdate={updateProduct} />
+                            <span className="bg-surface-variant text-on-surface px-2 py-0.5 rounded-sm text-xs shrink-0">
+                              {product.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </article>
@@ -2061,10 +2146,10 @@ export default function AdminPage() {
                       <col className="w-[56px]" />
                       <col className="w-[72px]" />
                       <col />
-                      <col className="w-[130px]" />
                       <col className="w-[120px]" />
                       <col className="w-[110px]" />
-                      <col className="w-[90px]" />
+                      <col className="w-[100px]" />
+                      <col className="w-[130px]" />
                       <col className="w-[110px]" />
                       <col className="w-[88px]" />
                     </colgroup>
@@ -2134,10 +2219,8 @@ export default function AdminPage() {
                           <td className="p-3 align-middle whitespace-nowrap">
                             {format(product.priceRub)}
                           </td>
-                          <td className="p-3 align-middle whitespace-nowrap font-medium">
-                            <span className="px-2 py-0.5 rounded bg-surface-variant text-xs font-semibold text-on-surface">
-                              {product.stock != null ? product.stock : 10} шт.
-                            </span>
+                          <td className="p-3 align-middle whitespace-nowrap">
+                            <StockInlineEditor product={product} onUpdate={updateProduct} />
                           </td>
                           <td className="p-3 align-middle">
                             <span className="inline-block bg-surface-variant text-on-surface px-2 py-1 rounded-sm text-xs">
