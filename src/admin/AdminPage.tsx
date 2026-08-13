@@ -3077,48 +3077,85 @@ export default function AdminPage() {
                 <option value="Нет в наличии">Нет в наличии</option>
               </select>
             </div>
-            <div className="flex flex-col gap-3 pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-body-sm text-on-surface">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-primary-container focus:ring-primary-container"
-                  checked={form.isNew}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, isNew: e.target.checked }))
-                  }
-                />
-                Показывать в «Новинки» на сайте
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-body-sm text-on-surface">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-primary-container focus:ring-primary-container"
-                  checked={form.isFavorite}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, isFavorite: e.target.checked }))
-                  }
-                />
-                Показывать в «Любимчики» на сайте
-              </label>
-              <div className="p-3 bg-[#ce7ed5]/10 border border-[#ce7ed5]/30 rounded-xl space-y-2.5">
-                <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-[#6f2879]">
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="p-3 bg-surface-container-lowest border border-gray-200 rounded-xl flex items-center justify-between gap-3">
+                <div>
+                  <span className="block text-body-sm font-medium text-on-surface">
+                    Показывать в «Новинки»
+                  </span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    Отметка NEW на товаре и показ во вкладке Новинки
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300 text-[#ce7ed5] focus:ring-[#ce7ed5]"
-                    checked={form.isSale}
+                    checked={form.isNew}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, isSale: e.target.checked }))
+                      setForm((f) => ({ ...f, isNew: e.target.checked }))
                     }
+                    className="sr-only peer"
                   />
-                  <span>Товар на распродаже (Раздел «Sale %»)</span>
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
                 </label>
+              </div>
+
+              <div className="p-3 bg-surface-container-lowest border border-gray-200 rounded-xl flex items-center justify-between gap-3">
+                <div>
+                  <span className="block text-body-sm font-medium text-on-surface">
+                    Показывать в «Любимчики»
+                  </span>
+                  <span className="text-[11px] text-on-surface-variant">
+                    Избранные популярные товары
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={form.isFavorite}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, isFavorite: e.target.checked }))
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+                </label>
+              </div>
+
+              {/* Sale % Card with toggle */}
+              <div className="p-3.5 bg-surface-container-lowest border border-gray-200 rounded-xl space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <span className="block text-body-sm font-bold text-on-surface flex items-center gap-1.5">
+                      <span>Товар на распродаже</span>
+                      <span className="text-[10px] bg-[#ce7ed5]/20 text-[#6f2879] px-1.5 py-0.5 rounded font-bold uppercase">
+                        Sale %
+                      </span>
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant">
+                      Поместить товар в категорию Распродажа
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={form.isSale}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, isSale: e.target.checked }))
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+                  </label>
+                </div>
+
                 {form.isSale && (
-                  <div className="pt-1">
-                    <label className="block text-xs font-medium text-on-surface mb-1">
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="block text-xs font-semibold text-on-surface mb-1">
                       Цена со скидкой (₽) <span className="text-red-500">*</span>
                     </label>
                     <input
-                      className="w-full p-2 bg-surface border border-gray-300 rounded-md text-sm font-bold text-[#6f2879] focus:outline-none focus:ring-1 focus:ring-[#ce7ed5]"
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-[#6f2879] focus:outline-none focus:border-[#8a4193] transition-colors"
                       type="number"
                       min="0"
                       step="1"
@@ -3128,9 +3165,13 @@ export default function AdminPage() {
                         setForm((f) => ({ ...f, salePriceRub: e.target.value }))
                       }
                     />
-                    <p className="text-[11px] text-on-surface-variant mt-1">
-                      Обычная цена ({form.price || 0} ₽) будет отображаться перечёркнутой: <span className="line-through">{form.price || 1990} ₽</span> <span className="font-bold text-[#6f2879]">{form.salePriceRub || 1490} ₽</span>
-                    </p>
+                    <div className="flex items-center justify-between text-[11px] text-on-surface-variant mt-1.5">
+                      <span>На сайте будет отображаться:</span>
+                      <div className="flex items-baseline gap-1.5 tabular-nums">
+                        <span className="line-through text-gray-400">{form.price || 1990} ₽</span>
+                        <span className="font-bold text-[#6f2879] text-xs">{form.salePriceRub || 1490} ₽</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
