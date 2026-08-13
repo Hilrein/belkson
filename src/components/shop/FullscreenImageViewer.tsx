@@ -116,9 +116,9 @@ export function FullscreenImageViewer({
         </button>
       </div>
 
-      {/* Main Image Container */}
+      {/* Main Image Container with Side-by-Side Thumbnails */}
       <div
-        className="relative flex-1 flex items-center justify-center p-2 sm:p-6 overflow-hidden"
+        className="relative flex-1 flex flex-col sm:flex-row items-center justify-center p-3 sm:p-6 overflow-hidden gap-4 sm:gap-6"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -129,20 +129,40 @@ export function FullscreenImageViewer({
           <button
             type="button"
             onClick={handlePrev}
-            className="absolute left-3 sm:left-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+            className="absolute left-3 sm:left-6 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
             aria-label="Предыдущее фото"
           >
             <span className="material-symbols-outlined text-2xl sm:text-3xl">chevron_left</span>
           </button>
         )}
 
-        {/* Display Image */}
+        {/* Side-by-side Thumbnails (Рядом с изображением) */}
+        {images.length > 1 && (
+          <div className="hidden sm:flex flex-col gap-2 shrink-0 max-h-[75vh] overflow-y-auto scrollbar-none z-20 pr-1">
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                className={`w-14 h-18 md:w-16 md:h-22 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                  currentIndex === idx
+                    ? 'border-white ring-2 ring-white/30 scale-105 shadow-xl opacity-100'
+                    : 'border-transparent opacity-45 hover:opacity-90'
+                }`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Display Main Image Frame */}
         <div className="relative max-w-full max-h-full flex items-center justify-center">
           <img
             key={currentIndex}
             src={images[currentIndex]}
             alt={title || `Фото ${currentIndex + 1}`}
-            className="max-h-[75vh] sm:max-h-[82vh] max-w-[92vw] object-contain rounded-xl shadow-2xl transition-all duration-300 animate-fade-in"
+            className="max-h-[72vh] sm:max-h-[82vh] max-w-[88vw] sm:max-w-[78vw] object-contain rounded-2xl shadow-2xl transition-all duration-300 animate-fade-in border border-white/10"
           />
         </div>
 
@@ -151,7 +171,7 @@ export function FullscreenImageViewer({
           <button
             type="button"
             onClick={handleNext}
-            className="absolute right-3 sm:right-6 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
+            className="absolute right-3 sm:right-6 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/40 hover:bg-black/75 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 cursor-pointer backdrop-blur-md"
             aria-label="Следующее фото"
           >
             <span className="material-symbols-outlined text-2xl sm:text-3xl">
@@ -161,9 +181,9 @@ export function FullscreenImageViewer({
         )}
       </div>
 
-      {/* Bottom Control Bar & Thumbnails */}
+      {/* Bottom Control Bar for Mobile & Color Selector */}
       <div
-        className="flex flex-col items-center gap-3 px-4 py-4 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
+        className="flex flex-col items-center gap-3 px-4 py-3 z-20 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Color / Variant Selector Pills */}
@@ -189,15 +209,15 @@ export function FullscreenImageViewer({
           </div>
         )}
 
-        {/* Thumbnail Ribbon */}
+        {/* Mobile Horizontal Thumbnail Ribbon */}
         {images.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto max-w-full px-2 py-1 scrollbar-none">
+          <div className="flex sm:hidden gap-2 overflow-x-auto max-w-full px-2 py-1 scrollbar-none">
             {images.map((img, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setCurrentIndex(idx)}
-                className={`w-12 h-16 sm:w-14 sm:h-18 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                className={`w-12 h-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
                   currentIndex === idx
                     ? 'border-white scale-105 shadow-md opacity-100'
                     : 'border-transparent opacity-50 hover:opacity-90'

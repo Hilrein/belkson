@@ -105,55 +105,59 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
 
-          {/* Left: Gallery Column — Enlarged gallery column (55% width on desktop) */}
-          <div className="w-full md:w-[55%] lg:w-[58%] bg-surface-container-low/40 p-5 sm:p-7 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-surface-dim/60">
-            <div
-              className="relative aspect-3/4 md:aspect-[4/5] lg:aspect-3/4 w-full max-h-[60vh] md:max-h-[68vh] overflow-hidden bg-surface mb-3 border border-surface-dim/60 shadow-xs rounded-2xl group cursor-zoom-in"
-              onClick={() => setIsFullscreen(true)}
-              title="Нажмите, чтобы развернуть во весь экран"
-            >
-              <img
-                src={activeImages[activeImageIndex] || product.images[0]}
-                alt={product.title}
-                className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
-              />
-              <span className="absolute top-3 left-3 text-[10px] tracking-[0.14em] uppercase font-bold text-primary bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
-                <span>{categoryLabel}</span>
-              </span>
+          {/* Left: Gallery Column — Enlarged gallery column with side-by-side thumbnails */}
+          <div className="w-full md:w-[58%] lg:w-[60%] bg-surface-container-low/30 p-4 sm:p-6 md:p-7 flex flex-col justify-between overflow-y-auto border-r border-gray-100">
+            {/* Side-by-side Gallery: Vertical Thumbnails + Main Photo */}
+            <div className="flex gap-3 sm:gap-3.5 items-start w-full">
+              {/* Vertical Side Thumbnails (Рядом с главным фото) */}
+              {activeImages.length > 1 && (
+                <div className="flex flex-col gap-2 shrink-0 max-h-[58vh] md:max-h-[66vh] overflow-y-auto scrollbar-none py-0.5">
+                  {activeImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`w-13 h-17 sm:w-15 sm:h-20 md:w-16 md:h-22 rounded-xl overflow-hidden border transition-all cursor-pointer ${
+                        activeImageIndex === idx
+                          ? 'border-primary ring-2 ring-primary/25 opacity-100 scale-[1.02]'
+                          : 'border-gray-200/70 opacity-55 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {/* Fullscreen zoom hint badge */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsFullscreen(true)
-                }}
-                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-md hover:scale-110 active:scale-95 cursor-pointer"
-                title="Развернуть во весь экран"
+              {/* Main Photo Frame */}
+              <div
+                className="relative flex-1 aspect-3/4 md:aspect-[4/5] lg:aspect-3/4 max-h-[58vh] md:max-h-[66vh] overflow-hidden bg-surface border border-gray-200/60 shadow-2xs rounded-2xl group cursor-zoom-in"
+                onClick={() => setIsFullscreen(true)}
+                title="Нажмите, чтобы развернуть во весь экран"
               >
-                <span className="material-symbols-outlined text-lg">fullscreen</span>
-              </button>
-            </div>
+                <img
+                  src={activeImages[activeImageIndex] || product.images[0]}
+                  alt={product.title}
+                  className="w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105"
+                />
+                <span className="absolute top-3 left-3 text-[10px] tracking-[0.14em] uppercase font-bold text-primary bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                  <span>{categoryLabel}</span>
+                </span>
 
-            {/* Thumbnails */}
-            {activeImages.length > 1 && (
-              <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
-                {activeImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`w-16 h-20 md:w-18 md:h-24 overflow-hidden shrink-0 border transition-all rounded-xl cursor-pointer ${
-                      activeImageIndex === idx
-                        ? 'border-primary ring-2 ring-primary/40 shadow-xs opacity-100'
-                        : 'border-surface-dim opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+                {/* Fullscreen zoom hint badge */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsFullscreen(true)
+                  }}
+                  className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/35 hover:bg-black/70 backdrop-blur-md flex items-center justify-center text-white transition-all shadow-sm hover:scale-110 active:scale-95 cursor-pointer"
+                  title="Развернуть во весь экран"
+                >
+                  <span className="material-symbols-outlined text-base">fullscreen</span>
+                </button>
               </div>
-            )}
+            </div>
           </div>
 
         {/* Right: Details & Options Column */}
