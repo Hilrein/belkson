@@ -674,14 +674,16 @@ function StockInlineEditor({
       </div>
 
       {statusState === 'saving' && (
-        <span className="text-[10px] text-amber-600 font-medium animate-pulse ml-0.5 whitespace-nowrap">
-          ...
+        <span title="Сохранение...">
+          <Icon
+            name="progress_activity"
+            className="text-xs text-amber-500 animate-spin shrink-0"
+          />
         </span>
       )}
       {statusState === 'saved' && (
-        <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-md whitespace-nowrap shadow-2xs">
-          <Icon name="check" className="text-xs text-emerald-600" />
-          <span>Сохранено</span>
+        <span className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0" title="Сохранено в БД">
+          <Icon name="check" className="text-[10px] text-emerald-700 font-bold" />
         </span>
       )}
     </div>
