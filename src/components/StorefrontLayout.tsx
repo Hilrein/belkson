@@ -630,43 +630,70 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div
-                className={`flex flex-col gap-5 overflow-hidden transition-all duration-300 ease-in-out ${
-                  resaleOpen ? 'max-h-96 mt-5' : 'max-h-0'
+                className={`flex flex-col gap-4 overflow-hidden transition-all duration-300 ease-in-out ${
+                  resaleOpen ? 'max-h-[800px] mt-4 pb-2' : 'max-h-0'
                 }`}
               >
                 <button
                   type="button"
-                  className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors text-left"
+                  className="text-on-surface font-body-lg text-base font-semibold hover:text-[#ce7ed5] transition-colors text-left border-b border-surface-dim/40 pb-2"
                   onClick={goToTerms}
                 >
                   Порядок и условия выкупа
                 </button>
-                {activeOfficialStores.map((store) => {
-                  const first = store.countries[0] as unknown
-                  const firstUrl = first && typeof first === 'object' ? String((first as { url?: string }).url || '') : ''
-                  const isExternal = firstUrl.startsWith('http://') || firstUrl.startsWith('https://')
-                  return isExternal ? (
-                    <a
-                      key={store.id}
-                      className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                      href={firstUrl || '#'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={toggleNavDrawer}
-                    >
+                {activeOfficialStores.map((store) => (
+                  <div key={store.id} className="flex flex-col gap-2 pt-1">
+                    <span className="text-[11px] uppercase tracking-[0.16em] font-semibold text-outline">
                       {store.name}
-                    </a>
-                  ) : (
-                    <Link
-                      key={store.id}
-                      className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                      to={firstUrl || `/shop/${store.name.toLowerCase()}`}
-                      onClick={toggleNavDrawer}
-                    >
-                      {store.name}
-                    </Link>
-                  )
-                })}
+                    </span>
+                    <ul className="flex flex-col gap-1.5 pl-1">
+                      {store.countries.map((c) => {
+                        const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
+                        const name = item ? String(item.name || '') : String(c || '')
+                        const url = item ? String(item.url || '#') : '#'
+                        const rate = item ? String(item.rate || '') : ''
+                        const isExternal = url.startsWith('http://') || url.startsWith('https://')
+
+                        const inner = (
+                          <>
+                            <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">
+                              {name}
+                            </span>
+                            {rate && (
+                              <span className="text-xs font-mono text-on-surface-variant/80 font-normal shrink-0 tabular-nums">
+                                {rate}
+                              </span>
+                            )}
+                          </>
+                        )
+
+                        return (
+                          <li key={name}>
+                            {isExternal ? (
+                              <a
+                                className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={toggleNavDrawer}
+                              >
+                                {inner}
+                              </a>
+                            ) : (
+                              <Link
+                                className="group flex items-center justify-between gap-4 py-1 text-on-surface hover:text-primary transition-colors"
+                                to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
+                                onClick={toggleNavDrawer}
+                              >
+                                {inner}
+                              </Link>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                ))}
               </div>
             </div>
             <hr className="border-t border-[#EAE6EE] my-2" />
