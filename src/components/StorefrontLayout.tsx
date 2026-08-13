@@ -224,36 +224,36 @@ export default function StorefrontLayout() {
     'absolute right-12 transition-all duration-300 ease-out bg-surface-container-low border border-outline-variant rounded-full py-2 px-4 focus:ring-2 focus:ring-primary-container focus:border-primary-container text-on-surface outline-none origin-right z-0 max-w-[min(12rem,calc(100vw-8rem))] ' +
     (searchOpen ? 'w-40 sm:w-48 md:w-64 opacity-100' : 'w-0 opacity-0 pointer-events-none')
 
-  // Shared nav item metrics so text baselines stay aligned (no py/pb jump on active)
+  // Shared nav item metrics so text baselines stay aligned (minimal luxury aesthetic)
   const navItem =
-    'inline-flex items-center gap-0.5 h-14 text-[15px] font-normal leading-none border-b-2 border-transparent transition-colors box-border'
+    'inline-flex items-center gap-1.5 h-14 text-xs tracking-[0.15em] uppercase font-medium border-b-2 border-transparent transition-all duration-200 box-border'
   const linkIdle =
-    navItem + ' text-on-surface-variant hover:text-primary'
-  const linkActive = navItem + ' text-primary border-primary'
+    navItem + ' text-on-surface-variant/80 hover:text-primary'
+  const linkActive = navItem + ' text-primary border-primary font-semibold'
 
   return (
     <>
       {splashVisible && <LoadingScreen fading={splashFading} />}
 
-      {/* ── Shared navbar (from home) ─────────────────────────────── */}
-      <header className="site-header bg-surface shadow-sm">
+      {/* ── Ultra-minimalist modern sticky header ─────────────────────────────── */}
+      <header className="site-header sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-surface-dim/40 transition-all duration-300">
         <div className="flex justify-between items-center w-full min-w-0 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto h-14 box-border">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <button
               type="button"
-              className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150"
+              className="w-9 h-9 flex items-center justify-center hover:bg-surface-variant/60 rounded-full transition-colors active:scale-95 duration-150"
               onClick={toggleNavDrawer}
               aria-label="Меню"
             >
-              <span className="material-symbols-outlined text-primary">menu</span>
+              <span className="material-symbols-outlined text-[20px] text-on-surface">menu</span>
             </button>
             <Link className="flex items-center gap-2 group" to="/">
               <img
                 alt="Belkson Logo"
-                className="shrink-0 object-contain w-8 h-8 group-hover:opacity-80 transition-opacity"
+                className="shrink-0 object-contain w-7 h-7 group-hover:opacity-80 transition-opacity"
                 src={LOGO_SRC}
               />
-              <span className="font-display-lg-mobile text-primary font-bold text-xl tracking-tight hidden sm:block">
+              <span className="font-bold text-xs tracking-[0.2em] uppercase text-on-surface group-hover:text-primary transition-colors hidden sm:block">
                 Belkson
               </span>
             </Link>
@@ -403,7 +403,7 @@ export default function StorefrontLayout() {
             </div>
           </nav>
 
-          <div className="flex items-center gap-2 text-primary dark:text-primary-fixed-dim">
+          <div className="flex items-center gap-1.5 text-on-surface">
             <form
               className="relative flex items-center justify-end"
               onSubmit={submitSearch}
@@ -419,7 +419,7 @@ export default function StorefrontLayout() {
               />
               <button
                 type="button"
-                className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative z-10 bg-surface"
+                className="w-9 h-9 flex items-center justify-center hover:bg-surface-variant/60 rounded-full transition-colors active:scale-95 duration-150 relative z-10 text-on-surface hover:text-primary"
                 onClick={() => {
                   if (searchOpen && searchQuery.trim()) {
                     submitSearch()
@@ -429,18 +429,18 @@ export default function StorefrontLayout() {
                 }}
                 aria-label="Поиск"
               >
-                <span className="material-symbols-outlined">search</span>
+                <span className="material-symbols-outlined text-[20px]">search</span>
               </button>
             </form>
             <button
               type="button"
-              className="w-10 h-10 flex items-center justify-center hover:bg-surface-variant rounded-full transition-colors active:scale-95 duration-150 relative"
+              className="w-9 h-9 flex items-center justify-center hover:bg-surface-variant/60 rounded-full transition-colors active:scale-95 duration-150 relative text-on-surface hover:text-primary"
               onClick={toggleCart}
               aria-label="Корзина"
             >
-              <span className="material-symbols-outlined">shopping_bag</span>
+              <span className="material-symbols-outlined text-[20px]">shopping_bag</span>
               {totalCount > 0 && (
-                <span className="absolute top-1 right-1 bg-primary text-on-primary text-[10px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-0.5 right-0.5 bg-primary text-on-primary text-[9px] min-w-3.5 h-3.5 px-0.5 rounded-full flex items-center justify-center font-bold leading-none shadow-2xs">
                   {totalCount > 99 ? '99+' : totalCount}
                 </span>
               )}
