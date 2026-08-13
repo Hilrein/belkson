@@ -24,7 +24,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
   const [quantity, setQuantity] = useState(1)
   const [selectedColor, setSelectedColor] = useState('')
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedSize, setSelectedSize] = useState('')
 
   const availableColors = useMemo(() => {
     if (!productToConfigure?.color || productToConfigure.color.trim() === '—') {
@@ -50,7 +50,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           ? productToConfigure.sizes
           : DEFAULT_CHILDREN_SIZES
 
-      setSelectedSizes(availSizes.length > 0 ? [availSizes[0]] : [])
+      setSelectedSize(availSizes.length > 0 ? availSizes[0] : '')
     }
   }, [productToConfigure])
 
@@ -61,19 +61,11 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
       ? productToConfigure.sizes
       : DEFAULT_CHILDREN_SIZES
 
-  const toggleSize = (size: string) => {
-    setSelectedSizes((prev) =>
-      prev.includes(size)
-        ? prev.filter((s) => s !== size)
-        : [...prev, size],
-    )
-  }
-
   const handleConfirm = () => {
     addToCart(productToConfigure, {
       qty: quantity,
       selectedColor,
-      selectedSizes,
+      selectedSizes: selectedSize ? [selectedSize] : [],
     })
     closeAddToCartModal()
     if (onOpenCart) {
@@ -168,16 +160,16 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           {/* Size Selection */}
           <div className="space-y-2">
             <label className="text-xs text-on-surface-variant block font-medium">
-              Выберите размеры (можно несколько):
+              Выберите размер: <span className="text-on-surface font-semibold">{selectedSize}</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {availableSizes.map((size) => {
-                const isSelected = selectedSizes.includes(size)
+                const isSelected = selectedSize === size
                 return (
                   <button
                     key={size}
                     type="button"
-                    onClick={() => toggleSize(size)}
+                    onClick={() => setSelectedSize(size)}
                     className={`px-3.5 py-2 text-xs rounded-2xl border transition-all ${
                       isSelected
                         ? 'bg-primary text-on-primary border-primary font-bold shadow-xs'
@@ -189,9 +181,9 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
                 )
               })}
             </div>
-            {selectedSizes.length === 0 && (
+            {!selectedSize && (
               <p className="text-[11px] text-error font-medium">
-                Пожалуйста, выберите хотя бы один размер
+                Пожалуйста, выберите размер
               </p>
             )}
           </div>
@@ -240,7 +232,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={selectedSizes.length === 0}
+            disabled={!selectedSize}
             className="px-6 py-3 rounded-full bg-primary text-on-primary text-xs font-bold hover:bg-on-primary-fixed-variant transition-all shadow-md active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-lg">add_shopping_cart</span>
