@@ -659,19 +659,37 @@ async function buildApp() {
     }
   }
 
+  function normalizeCountries(raw: unknown): { name: string; url: string; rate: string }[] {
+    let list: unknown[] = []
+    if (typeof raw === 'string') {
+      try { list = JSON.parse(raw) as unknown[] } catch { list = [] }
+    } else if (Array.isArray(raw)) {
+      list = raw
+    }
+    return list.map((item) => {
+      if (typeof item === 'string') return { name: item.trim(), url: '', rate: '' }
+      if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>
+        return {
+          name: String(obj.name ?? '').trim(),
+          url: String(obj.url ?? '').trim(),
+          rate: obj.rate != null ? String(obj.rate).trim() : '',
+        }
+      }
+      return { name: '—', url: '', rate: '' }
+    })
+  }
+
   async function handleGetOfficialStores(c: any) {
     await ensureOfficialStoresTable()
     const rows = await sql`SELECT * FROM official_stores ORDER BY sort_order ASC, id ASC`
-    return c.json({
-      stores: rows.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        slug: r.slug,
-        isActive: Boolean(r.is_active),
-        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
-        sortOrder: r.sort_order,
-      }))
-    })
+    return c.json(rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      countries: normalizeCountries(r.countries),
+      sortOrder: Number(r.sort_order ?? 0),
+      isActive: Boolean(r.is_active),
+    })))
   }
 
   async function handleCreateOfficialStore(c: any) {
@@ -679,22 +697,19 @@ async function buildApp() {
     const body = await c.req.json()
     const name = String(body.name || '').trim()
     const slug = String(body.slug || name.toLowerCase().replace(/\s+/g, '-')).trim()
-    const countries = Array.isArray(body.countries) ? JSON.stringify(body.countries) : '[]'
+    const countries = JSON.stringify(normalizeCountries(body.countries))
     const rows = await sql`
       INSERT INTO official_stores (name, slug, is_active, countries, sort_order)
-      VALUES (${name}, ${slug}, ${body.isActive ?? true}, ${countries}, ${body.sortOrder ?? 0})
+      VALUES (${name}, ${slug}, ${body.isActive ?? true}, ${countries}::jsonb, ${body.sortOrder ?? 0})
       RETURNING *
     `
     const r = rows[0]
     return c.json({
-      store: {
-        id: r.id,
-        name: r.name,
-        slug: r.slug,
-        isActive: Boolean(r.is_active),
-        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
-        sortOrder: r.sort_order,
-      }
+      id: r.id,
+      name: r.name,
+      countries: normalizeCountries(r.countries),
+      sortOrder: Number(r.sort_order ?? 0),
+      isActive: Boolean(r.is_active),
     })
   }
 
@@ -702,12 +717,14 @@ async function buildApp() {
     await ensureOfficialStoresTable()
     const id = Number(c.req.param('id'))
     const body = await c.req.json()
-    const countries = Array.isArray(body.countries) ? JSON.stringify(body.countries) : '[]'
+    const countries = body.countries !== undefined
+      ? JSON.stringify(normalizeCountries(body.countries))
+      : undefined
     const rows = await sql`
       UPDATE official_stores
-      SET name = COALESCE(${body.name}, name),
-          is_active = COALESCE(${body.isActive}, is_active),
-          countries = ${countries},
+      SET name = COALESCE(${body.name ?? null}, name),
+          is_active = COALESCE(${body.isActive ?? null}, is_active),
+          countries = COALESCE(${countries ?? null}::jsonb, countries),
           updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
@@ -715,14 +732,11 @@ async function buildApp() {
     const r = rows[0]
     if (!r) return c.json({ error: 'Not found' }, 404)
     return c.json({
-      store: {
-        id: r.id,
-        name: r.name,
-        slug: r.slug,
-        isActive: Boolean(r.is_active),
-        countries: typeof r.countries === 'string' ? JSON.parse(r.countries) : (r.countries || []),
-        sortOrder: r.sort_order,
-      }
+      id: r.id,
+      name: r.name,
+      countries: normalizeCountries(r.countries),
+      sortOrder: Number(r.sort_order ?? 0),
+      isActive: Boolean(r.is_active),
     })
   }
 

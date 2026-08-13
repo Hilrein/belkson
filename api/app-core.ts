@@ -685,6 +685,7 @@ app.put('/api/purchase-terms', handleUpdatePurchaseTerms)
 type CountryItem = {
   name: string
   url: string
+  rate: string
 }
 
 function normalizeCountries(raw: unknown): CountryItem[] {
