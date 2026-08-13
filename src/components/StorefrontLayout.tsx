@@ -237,7 +237,7 @@ export default function StorefrontLayout() {
 
       {/* ── Ultra-minimalist modern sticky header ─────────────────────────────── */}
       <header className="site-header sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-surface-dim/40 transition-all duration-300">
-        <div className="flex justify-between items-center w-full min-w-0 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto h-14 box-border">
+        <div className="relative flex justify-between items-center w-full min-w-0 px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto h-14 box-border">
           <div className="flex items-center gap-3 md:gap-4">
             <button
               type="button"
@@ -269,7 +269,7 @@ export default function StorefrontLayout() {
             </NavLink>
 
             {/* Categories mega menu */}
-            <div className="relative group flex items-stretch">
+            <div className="group flex items-stretch">
               <button
                 type="button"
                 className={isCatalog ? linkActive : linkIdle}
@@ -353,7 +353,7 @@ export default function StorefrontLayout() {
             </div>
 
             {/* Resale mega menu */}
-            <div className="relative group flex items-stretch">
+            <div className="group flex items-stretch">
               <button type="button" className={linkIdle}>
                 Выкуп с официальных сайтов
                 <span className="material-symbols-outlined text-[18px] leading-none translate-y-px opacity-60 group-hover:opacity-100 transition-opacity">
@@ -361,10 +361,10 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="bg-white rounded-2xl shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] border border-gray-100 p-6 sm:p-7 flex gap-8 overflow-x-auto w-[min(640px,calc(100vw-2rem))] min-w-[560px]">
+                <div className="bg-white rounded-2xl shadow-[0_20px_45px_-12px_rgba(0,0,0,0.12)] border border-gray-100 p-6 sm:p-8 flex gap-10 w-[min(760px,calc(100vw-3rem))]">
                   {activeOfficialStores.map((store) => (
-                    <div key={store.id} className="flex-1 min-w-[210px]">
-                      <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-3.5 pb-2 border-b border-surface-dim/50">
+                    <div key={store.id} className="flex-1 min-w-0">
+                      <h3 className="text-[11px] tracking-[0.16em] uppercase font-semibold text-outline mb-4 pb-2 border-b border-surface-dim/50">
                         {store.name}
                       </h3>
                       <ul className="flex flex-col gap-1">
@@ -392,7 +392,7 @@ export default function StorefrontLayout() {
                             <li key={name}>
                               {isExternal ? (
                                 <a
-                                  className="group/item flex items-center justify-between gap-6 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
+                                  className="group/item flex items-center justify-between gap-6 py-2 px-3 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -401,7 +401,7 @@ export default function StorefrontLayout() {
                                 </a>
                               ) : (
                                 <Link
-                                  className="group/item flex items-center justify-between gap-6 py-2 px-2.5 rounded-lg hover:bg-surface-variant/40 transition-colors"
+                                  className="group/item flex items-center justify-between gap-6 py-2 px-3 rounded-lg hover:bg-surface-variant/40 transition-colors"
                                   to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
                                 >
                                   {content}
