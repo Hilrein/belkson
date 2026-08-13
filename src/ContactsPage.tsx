@@ -32,19 +32,17 @@ export default function ContactsPage() {
           href="https://t.me/Belksonshop"
           target="_blank"
           rel="noopener noreferrer"
-          className="group py-5 flex items-center justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
         >
-          <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
               Telegram
             </span>
-            <div>
-              <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors block">
-                Официальный канал с анонсами новинок и выкупов
-              </span>
-            </div>
+            <span className="text-xs text-outline font-normal">
+              Официальный канал с анонсами новинок и выкупов
+            </span>
           </div>
-          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all">
+          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
             north_east
           </span>
         </a>
@@ -54,39 +52,32 @@ export default function ContactsPage() {
           href={vkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="group py-5 flex items-center justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
+          className="group py-5 flex items-start justify-between border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 px-2 rounded-xl transition-all duration-200"
         >
-          <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
               ВКонтакте
             </span>
-            <div>
-              <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors block">
-                Новости бренда, фотографии коллекций и консультации
-              </span>
-            </div>
+            <span className="text-xs text-outline font-normal">
+              Новости бренда, фотографии коллекций и консультации
+            </span>
           </div>
-          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all">
+          <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">
             north_east
           </span>
         </a>
 
         {/* Working Hours */}
-        <div className="py-5 flex items-center justify-between px-2">
-          <div className="flex items-center gap-4">
-            <span className="text-xs uppercase tracking-widest text-outline font-semibold w-24 shrink-0">
+        <div className="py-5 flex items-start justify-between px-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-on-surface">
               Режим работы
             </span>
-            <div>
-              <span className="text-sm font-semibold text-on-surface block">
-                09:00 — 21:00 МСК
-              </span>
-              <span className="text-xs text-outline font-normal">
-                Ежедневно без выходных
-              </span>
-            </div>
+            <span className="text-xs text-outline font-normal">
+              Принимаем заказы и отвечаем на сообщения ежедневно с 09:00 до 21:00 по МСК
+            </span>
           </div>
-          <span className="text-xs font-mono text-outline shrink-0">
+          <span className="text-xs font-mono text-outline shrink-0 mt-0.5">
             Онлайн
           </span>
         </div>
