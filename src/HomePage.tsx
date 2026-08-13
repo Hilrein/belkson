@@ -4,6 +4,7 @@ import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
 import { usePurchaseTerms } from './store/PurchaseTermsContext'
 import { useHeroBanners } from './store/HeroBannersContext'
+import { usePromoBlock } from './store/PromoBlockContext'
 import type { CatalogProduct } from './store/catalog'
 
 /**
@@ -14,6 +15,7 @@ export default function HomePage() {
   const { openAddToCartModal } = useCart()
   const { variants } = usePurchaseTerms()
   const { banners: allBanners } = useHeroBanners()
+  const { data: promoData } = usePromoBlock()
 
   const activeBanners = allBanners.filter((b) => b.isActive)
   const heroSlideCount = activeBanners.length > 0 ? activeBanners.length : 1
@@ -344,79 +346,95 @@ export default function HomePage() {
               </Link>
       </section>
       {/* Feature blocks - catalog style: photo + text, no overlay chrome */}
-      <section id="prochee" className="scroll-mt-[calc(3.5rem+env(safe-area-inset-top,0px))] max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-14 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 items-stretch">
-          {/* Collection: image on top, copy below (real shop layout) */}
-          <article className="md:col-span-8 flex flex-col rounded-2xl overflow-hidden bg-surface-container-lowest border border-surface-dim">
-            <div className="relative aspect-[16/10] md:aspect-[16/9] overflow-hidden bg-surface-container-low">
-              <img
-                className="w-full h-full object-cover object-center"
-                alt="Девочка в лавандовом жакете"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCcIoQstGiOoJsMha05qt-pi349QXUPBjNWLU-2s49dciEvoFl57vggXvK6J6EH9iyk6QZ2cfwKYheAz5kBYR0AOtjWwR4v_UsxNqxwQsJa7sFCbRMloAb-Yx04owsdwUXHC8VD8ug1TJEyOlcuOAdgkhRrRLGSbAaZjwME82bZDf-BKuNjuqV7PiJRg9MCi3H8yJCe-4owZdsYLAX-YB8Bz6I4gBzcHKiAE5CRzPxertAFZesXtzXVzA1sMm2LuDZYvbUW9ZpGAQu"
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 p-6 md:p-8">
-              <div className="max-w-md">
-                <p className="text-sm text-primary mb-1.5">Новая коллекция</p>
-                <h3 className="font-headline-md text-xl md:text-2xl text-on-surface mb-2">
-                  Коллекция для переменки
-                </h3>
-                <p className="text-on-surface-variant text-[15px] leading-relaxed">
-                  Одежда для приключений из экологичных и прочных тканей.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="shrink-0 self-start sm:self-auto bg-primary text-on-primary text-sm font-medium px-6 py-3 rounded-full hover:bg-on-primary-fixed-variant transition-colors"
-              >
-                Смотреть коллекцию
-              </button>
-            </div>
-          </article>
-
-          {/* Side stack */}
-          <div className="md:col-span-4 flex flex-col gap-5 md:gap-6">
-            {/* Materials note - product-fact style, not empty marketing card */}
-            <article className="flex-1 rounded-2xl border border-surface-dim bg-surface-container-lowest p-6 md:p-7 flex flex-col justify-center">
-              <h3 className="text-base md:text-lg font-medium text-on-surface mb-4">
-                С заботой о планете
-              </h3>
-              <ul className="text-[15px] text-on-surface-variant leading-relaxed">
-                <li className="py-2.5 border-b border-surface-dim">
-                  Органический хлопок
-                </li>
-                <li className="py-2.5 border-b border-surface-dim">
-                  Без агрессивных красителей
-                </li>
-                <li className="pt-2.5">
-                  Мягко для чувствительной кожи
-                </li>
-              </ul>
-            </article>
-
-            <article className="flex-1 rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest">
-              <div className="aspect-[4/3] overflow-hidden bg-surface-container-low">
+      {promoData?.isActive && (
+        <section id="prochee" className="scroll-mt-[calc(3.5rem+env(safe-area-inset-top,0px))] max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-14 md:py-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-6 items-stretch">
+            {/* Collection: image on top, copy below (real shop layout) */}
+            <article className="md:col-span-8 flex flex-col rounded-2xl overflow-hidden bg-surface-container-lowest border border-surface-dim">
+              <div className="relative aspect-[16/10] md:aspect-[16/9] overflow-hidden bg-surface-container-low">
                 <img
                   className="w-full h-full object-cover object-center"
-                  alt="Базовые вещи для малышей"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzfXQLCjEcOYa9JWefnJxVNtMvLW77hvpFU-BmxSFAJblnOkg2kDVj_ipKEcO19Gp6j7rjf7okmqUwjlf9JBeE44txITjk8ge7lKAVPCWjvMhYz_xHzqHbWeOWZBvYTmomsPaeXXrmt_5PbSQ8LjavhTyA3GXovY9RaVwRhZM2pLTrJVSQCT-7vcWsQKesLEN-0h3zXilKIgvkwCBKS5bXQoxOAC6OQ2QoXttUxQV4bPS9dRDamgduZScmoYtxUg1DPSdhpUTa7O1B"
+                  alt={promoData.mainCard.title}
+                  src={promoData.mainCard.image}
                 />
               </div>
-              <div className="p-5 md:p-6 flex items-center justify-between gap-3">
-                <h3 className="font-headline-md text-base md:text-lg text-on-surface leading-snug">
-                  Базовые вещи для малышей
-                </h3>
-                <a
-                  href="#"
-                  className="shrink-0 text-sm font-medium text-primary hover:text-on-primary-fixed-variant transition-colors"
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 p-6 md:p-8">
+                <div className="max-w-md">
+                  {promoData.mainCard.badge && (
+                    <p className="text-sm text-primary mb-1.5">{promoData.mainCard.badge}</p>
+                  )}
+                  <h3 className="font-headline-md text-xl md:text-2xl text-on-surface mb-2">
+                    {promoData.mainCard.title}
+                  </h3>
+                  <p className="text-on-surface-variant text-[15px] leading-relaxed">
+                    {promoData.mainCard.description}
+                  </p>
+                </div>
+                <Link
+                  to={promoData.mainCard.buttonLink || '/catalog'}
+                  className="shrink-0 self-start sm:self-auto bg-primary text-on-primary text-sm font-medium px-6 py-3 rounded-full hover:bg-on-primary-fixed-variant transition-colors inline-block text-center"
                 >
-                  Купить
-                </a>
+                  {promoData.mainCard.buttonText}
+                </Link>
               </div>
             </article>
+
+            {/* Side stack */}
+            <div className="md:col-span-4 flex flex-col gap-5 md:gap-6">
+              {/* Materials note - product-fact style, not empty marketing card */}
+              <article className="flex-1 rounded-2xl border border-surface-dim bg-surface-container-lowest p-6 md:p-7 flex flex-col justify-center">
+                <h3 className="text-base md:text-lg font-medium text-on-surface mb-4">
+                  {promoData.featuresCard.title}
+                </h3>
+                <ul className="text-[15px] text-on-surface-variant leading-relaxed">
+                  {promoData.featuresCard.items.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className={
+                        idx < promoData.featuresCard.items.length - 1
+                          ? 'py-2.5 border-b border-surface-dim'
+                          : 'pt-2.5'
+                      }
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="flex-1 rounded-2xl overflow-hidden border border-surface-dim bg-surface-container-lowest">
+                <div className="aspect-[4/3] overflow-hidden bg-surface-container-low">
+                  <img
+                    className="w-full h-full object-cover object-center"
+                    alt={promoData.secondaryCard.title}
+                    src={promoData.secondaryCard.image}
+                  />
+                </div>
+                <div className="p-5 md:p-6 flex items-center justify-between gap-3">
+                  <h3 className="font-headline-md text-base md:text-lg text-on-surface leading-snug">
+                    {promoData.secondaryCard.title}
+                  </h3>
+                  {promoData.secondaryCard.linkUrl?.startsWith('http') ? (
+                    <a
+                      href={promoData.secondaryCard.linkUrl}
+                      className="shrink-0 text-sm font-medium text-primary hover:text-on-primary-fixed-variant transition-colors"
+                    >
+                      {promoData.secondaryCard.linkText}
+                    </a>
+                  ) : (
+                    <Link
+                      to={promoData.secondaryCard.linkUrl || '/catalog'}
+                      className="shrink-0 text-sm font-medium text-primary hover:text-on-primary-fixed-variant transition-colors"
+                    >
+                      {promoData.secondaryCard.linkText}
+                    </Link>
+                  )}
+                </div>
+              </article>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       {/* Dynamic Purchase Terms Variants with original design styles restored */}
       <div id="usloviya-vykupa" className="scroll-mt-[calc(4rem+env(safe-area-inset-top,0px))]">
       {variants
