@@ -23,7 +23,8 @@ export function buildTelegramOrderMessage(
   customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
-    const sizesStr = line.sizes && line.sizes.length > 0 ? ` (${line.sizes.join(', ')})` : ''
+    const displaySizes = line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes
+    const sizesStr = displaySizes && displaySizes.length > 0 ? ` (${displaySizes.join(', ')})` : ''
     return `${i + 1}. ${line.name}${sizesStr} × ${line.quantity}`
   })
 

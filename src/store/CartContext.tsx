@@ -17,6 +17,7 @@ export type CartLine = {
   priceRub: number
   color: string
   sizes?: string[]
+  selectedSizes?: string[]
   quantity: number
 }
 
@@ -36,6 +37,7 @@ type CartContextValue = {
   addToCart: (product: CatalogProduct, qty?: number) => void
   removeFromCart: (productId: number) => void
   setQuantity: (productId: number, quantity: number) => void
+  toggleSize: (productId: number, size: string) => void
   clearCart: () => void
 }
 
@@ -105,6 +107,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), [])
 
+  const toggleSize = useCallback((productId: number, size: string) => {
+    setItems((prev) =>
+      prev.map((l) => {
+        if (l.productId !== productId) return l
+        const current = l.selectedSizes || []
+        const has = current.includes(size)
+        return {
+          ...l,
+          selectedSizes: has
+            ? current.filter((s) => s !== size)
+            : [...current, size],
+        }
+      }),
+    )
+  }, [])
+
   const totalCount = useMemo(
     () => items.reduce((s, l) => s + l.quantity, 0),
     [items],
@@ -162,6 +180,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       removeFromCart,
       setQuantity,
+      toggleSize,
       clearCart,
     }),
     [
@@ -175,6 +194,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       removeFromCart,
       setQuantity,
+      toggleSize,
       clearCart,
     ],
   )

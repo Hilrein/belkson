@@ -95,7 +95,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
       image: line.image,
       priceRub: line.priceRub,
       quantity: line.quantity,
-      sizes: line.sizes,
+      sizes: line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes,
     }))
 
     const reqBody = {
