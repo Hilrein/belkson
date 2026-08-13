@@ -12,7 +12,6 @@ import {
 } from '../lib/telegramOrder'
 import { buildMaxOrderMessage, getMaxUrl } from '../lib/maxOrder'
 import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
-import { getVkProfileUrl } from '../lib/vk'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { useMessengerSettings } from '../store/MessengerSettingsContext'
 import { LoadingScreen } from './LoadingScreen'
@@ -511,14 +510,12 @@ export default function StorefrontLayout() {
           >
             Доставка и возврат
           </button>
-          <a
+          <Link
             className="text-on-surface-variant hover:text-primary transition-colors font-medium"
-            href={getTelegramProfileUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
+            to="/contacts"
           >
             Контакты
-          </a>
+          </Link>
           <button
             type="button"
             onClick={goToTerms}
@@ -527,25 +524,6 @@ export default function StorefrontLayout() {
             Политика конфиденциальности
           </button>
         </nav>
-        <div className="flex items-center gap-6 my-1">
-          <a
-            className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium text-xs sm:text-sm"
-            href={getVkProfileUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="material-symbols-outlined text-[18px]">group</span>{' '}
-            ВКонтакте
-          </a>
-          <a
-            className="text-primary hover:text-[#ce7ed5] transition-colors flex items-center gap-2 font-medium text-xs sm:text-sm"
-            href="https://t.me/Belksonshop"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span className="material-symbols-outlined text-[18px]">send</span> Telegram
-          </a>
-        </div>
         <p className="text-outline font-body-md text-xs text-center">
           © {new Date().getFullYear()} Belkson Kids. Все права защищены.
         </p>
