@@ -291,8 +291,8 @@ export default function HomePage() {
         <p className="text-on-surface-variant col-span-full py-4">Пока нет любимчиков.</p>
       ) : (
         favorites.map((product) => (
-      <div key={product.id} className="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
-      <div className="relative rounded-2xl overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
+      <div key={product.id} className="bg-surface-container-lowest rounded-[26px] p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
+      <div className="relative rounded-[10px] overflow-hidden aspect-[4/5] mb-4 bg-surface-container-low">
       <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" alt={product.name} src={product.image} />
       <button type="button" className="absolute top-3 right-3 z-20 w-10 h-10 bg-surface/80 backdrop-blur-sm rounded-full flex items-center justify-center text-outline hover:text-error transition-colors" aria-label="В избранное">
       <span className="material-symbols-outlined">favorite</span>
@@ -372,9 +372,12 @@ export default function HomePage() {
                 </div>
                 <Link
                   to={promoData.mainCard.buttonLink || '/catalog'}
-                  className="shrink-0 self-start sm:self-auto bg-primary text-on-primary text-sm font-medium px-6 py-3 rounded-full hover:bg-on-primary-fixed-variant transition-colors inline-block text-center"
+                  className="shrink-0 self-start sm:self-auto text-sm font-medium text-on-surface border border-outline-variant/80 px-6 py-2.5 rounded-full hover:border-primary hover:text-primary transition-all duration-300 inline-flex items-center gap-2 group/btn"
                 >
-                  {promoData.mainCard.buttonText}
+                  <span>{promoData.mainCard.buttonText}</span>
+                  <svg className="w-4 h-4 text-primary transition-transform group-hover/btn:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               </div>
             </article>
