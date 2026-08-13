@@ -214,10 +214,10 @@ export default function StorefrontLayout() {
     'fixed inset-0 z-50 flex justify-end' +
     (cartOpen ? '' : ' pointer-events-none')
   const cartBackdropClass =
-    'absolute inset-0 bg-black/40 transition-opacity duration-300 ease-in-out' +
+    'absolute inset-0 bg-black/45 backdrop-blur-md transition-opacity duration-300 ease-in-out' +
     (cartOpen ? ' opacity-100' : ' opacity-0')
   const cartPanelClass =
-    'relative w-full max-w-md h-full bg-surface shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out' +
+    'relative w-full max-w-md h-full bg-surface/95 backdrop-blur-xl border-l border-white/40 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out' +
     (cartOpen ? ' translate-x-0' : ' translate-x-full')
 
   const searchInputClass =
@@ -705,28 +705,28 @@ export default function StorefrontLayout() {
           onClick={toggleCart}
         />
         <div className={cartPanelClass} id="cart-panel">
-          <div className="px-6 py-5 border-b border-surface-dim flex justify-between items-center bg-surface-container-low">
+          <div className="sticky top-0 z-20 px-6 py-4 border-b border-surface-dim/40 flex justify-between items-center bg-surface/90 backdrop-blur-md">
             {cartStep === 'checkout' ? (
               <button
                 type="button"
-                className="flex items-center gap-2 text-primary hover:text-on-primary-fixed-variant font-headline-md text-base transition-colors"
+                className="flex items-center gap-2 text-primary font-headline-md text-sm font-semibold transition-colors hover:opacity-80 cursor-pointer"
                 onClick={() => setCartStep('items')}
               >
-                <span className="material-symbols-outlined">arrow_back</span>
+                <span className="material-symbols-outlined text-lg">arrow_back</span>
                 Назад к товарам
               </button>
             ) : (
-              <h2 className="font-headline-md text-primary font-bold flex items-center gap-2">
-                <span className="material-symbols-outlined">shopping_bag</span>
+              <h2 className="font-headline-md text-primary font-bold text-lg flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">shopping_bag</span>
                 Ваша корзина
               </h2>
             )}
             <button
               type="button"
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant hover:text-error transition-colors"
+              className="w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
               onClick={toggleCart}
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
 
@@ -1202,10 +1202,10 @@ export default function StorefrontLayout() {
                 <button
                   type="button"
                   disabled={cartItems.length === 0}
-                  className={`w-full bg-primary text-on-primary font-label-sm py-4 rounded-full shadow-md transition-colors ${
+                  className={`w-full bg-[#8b2691] hover:bg-[#731b78] text-white font-semibold text-xs tracking-[0.14em] uppercase py-4 rounded-full shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer ${
                     cartItems.length === 0
                       ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-on-primary-fixed-variant active:scale-[0.99]'
+                      : 'active:scale-[0.98]'
                   }`}
                   onClick={() => {
                     if (cartItems.length === 0) return

@@ -118,7 +118,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-md transition-opacity duration-300"
       onTouchMove={(e) => {
         if (e.target === e.currentTarget) {
           e.preventDefault()
@@ -135,7 +135,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
       {/* Modal Dialog Card */}
       <div
-        className="relative w-full max-w-lg bg-white rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col border border-neutral-100"
+        className="relative w-full max-w-lg bg-surface/95 backdrop-blur-xl rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden z-10 max-h-[92vh] flex flex-col border border-white/60"
         style={{
           transform: `translateY(${dragOffsetY}px)`,
           transition: isDragging ? 'none' : 'transform 0.25s ease-out',
@@ -143,24 +143,24 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
       >
         {/* Top Handle Pill (Mobile Sheet Drag & Click Handle) */}
         <div
-          className="pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+          className="pt-3 pb-1.5 flex justify-center cursor-grab active:cursor-grabbing select-none touch-none bg-surface/80 backdrop-blur-md"
           onClick={closeAddToCartModal}
           onTouchStart={handleHandleTouchStart}
           onTouchMove={handleHandleTouchMove}
           onTouchEnd={handleHandleTouchEnd}
           title="Нажмите или смахните вниз, чтобы закрыть"
         >
-          <div className="w-12 h-1.5 rounded-full bg-neutral-300 hover:bg-neutral-400 active:bg-neutral-500 transition-colors" />
+          <div className="w-12 h-1.5 rounded-full bg-surface-dim hover:bg-on-surface-variant/40 active:bg-on-surface-variant/60 transition-colors" />
         </div>
 
         {/* Close Button */}
         <button
           type="button"
           onClick={closeAddToCartModal}
-          className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-neutral-100/80 hover:bg-neutral-200/80 flex items-center justify-center text-neutral-500 hover:text-neutral-900 transition-colors"
+          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95"
           aria-label="Закрыть"
         >
-          <span className="material-symbols-outlined text-lg">close</span>
+          <span className="material-symbols-outlined text-xl">close</span>
         </button>
 
         {/* Body content */}
@@ -168,7 +168,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           {/* Main Layout: Product Image + Details Grid */}
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
             {/* Compact Vertical Product Image */}
-            <div className="w-24 sm:w-28 aspect-3/4 rounded-2xl overflow-hidden bg-neutral-50 border border-neutral-200/60 shrink-0 shadow-xs">
+            <div className="w-24 sm:w-28 aspect-3/4 rounded-2xl overflow-hidden bg-surface-container-low border border-surface-dim/60 shrink-0 shadow-2xs">
               <img
                 src={productToConfigure.image}
                 alt={productToConfigure.name}
@@ -179,19 +179,20 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
             {/* Right Product Overview & Selectors */}
             <div className="flex-1 min-w-0 space-y-3.5 w-full">
               <div>
-                <span className="text-[10px] font-semibold text-primary uppercase tracking-widest block mb-0.5">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-[0.18em] block mb-0.5 opacity-90">
                   {productToConfigure.brand || 'BELKSON'}
                 </span>
-                <h3 className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2">
+                <h3 className="text-xs sm:text-sm font-headline-md font-semibold text-on-surface leading-snug line-clamp-2">
                   {productToConfigure.name}
                 </h3>
-                <div className="flex items-center justify-between gap-2 mt-1">
-                  <p className="text-sm sm:text-base font-bold text-primary tabular-nums">
+                <div className="flex items-center justify-between gap-2 mt-1.5">
+                  <p className="text-base sm:text-lg font-bold text-primary tabular-nums">
                     {format(productToConfigure.priceRub)}
                   </p>
                   {productToConfigure.stock != null && (
-                    <span className="text-[11px] font-medium text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
-                      Остаток: {productToConfigure.stock} шт.
+                    <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span>В наличии: {productToConfigure.stock} шт.</span>
                     </span>
                   )}
                 </div>
@@ -200,9 +201,9 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
               {/* Color Selector */}
               {availableColors.length > 0 && (
                 <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                  <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant">
                     <span>Цвет</span>
-                    <span className="text-neutral-900 font-bold normal-case text-xs">{selectedColor}</span>
+                    <span className="text-on-surface font-bold normal-case text-xs">{selectedColor}</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {availableColors.map((col) => {
@@ -212,10 +213,10 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
                           key={col}
                           type="button"
                           onClick={() => setSelectedColor(col)}
-                          className={`px-2.5 py-1 text-xs rounded-xl border transition-all ${
+                          className={`px-3 py-1.5 text-xs rounded-xl border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
-                              : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:border-primary/40 font-medium'
+                              ? 'bg-[#ce7ed5] text-white border-[#ce7ed5] font-semibold shadow-xs'
+                              : 'bg-surface-container-low text-on-surface border-surface-dim hover:border-[#ce7ed5]/60 font-medium'
                           }`}
                         >
                           {col}
@@ -228,10 +229,10 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
               {/* Size Selector */}
               <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-on-surface-variant">
                   <span>Размер</span>
                   {selectedSize && (
-                    <span className="text-neutral-900 font-bold normal-case text-xs">{selectedSize}</span>
+                    <span className="text-on-surface font-bold normal-case text-xs">{selectedSize}</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -242,10 +243,10 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
                         key={size}
                         type="button"
                         onClick={() => setSelectedSize(size)}
-                        className={`h-8 min-w-10 px-2.5 text-xs rounded-xl border transition-all ${
+                        className={`h-9 min-w-11 px-3 text-xs rounded-xl border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
-                            : 'bg-neutral-50 text-neutral-800 border-neutral-200/80 hover:border-primary/40 font-medium'
+                            ? 'bg-[#ce7ed5] text-white border-[#ce7ed5] font-semibold shadow-xs'
+                            : 'bg-surface-container-low text-on-surface border-surface-dim hover:border-[#ce7ed5]/60 font-medium'
                         }`}
                       >
                         {size}
@@ -253,46 +254,56 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
                     )
                   })}
                 </div>
-                {!selectedSize && (
-                  <p className="text-[11px] text-red-500 font-medium pt-0.5">
-                    Пожалуйста, выберите размер
-                  </p>
-                )}
               </div>
+            </div>
+          </div>
 
-              {/* Stepper Quantity */}
-              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
-                  Количество
-                </span>
-                <div className="inline-flex items-center border border-neutral-200 rounded-xl bg-neutral-50 h-8 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-7 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-xs"
-                    aria-label="Уменьшить"
-                  >
-                    −
-                  </button>
-                  <span className="w-7 text-center text-xs font-bold text-neutral-900 tabular-nums">
-                    {quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="w-7 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-xs"
-                    aria-label="Увеличить"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+          {/* Quantity Selector */}
+          <div className="flex items-center justify-between pt-3 border-t border-surface-dim/60">
+            <span className="text-xs uppercase tracking-wider font-semibold text-on-surface-variant">
+              Количество
+            </span>
+            <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-2xl border border-surface-dim">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1}
+                className="w-8 h-8 rounded-xl bg-surface hover:bg-surface-variant flex items-center justify-center text-on-surface disabled:opacity-40 disabled:hover:bg-surface transition-colors cursor-pointer"
+                aria-label="Уменьшить количество"
+              >
+                <span className="material-symbols-outlined text-base">remove</span>
+              </button>
+              <span className="w-8 text-center text-sm font-bold text-on-surface tabular-nums">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setQuantity((q) =>
+                    productToConfigure.stock != null ? Math.min(productToConfigure.stock, q + 1) : q + 1,
+                  )
+                }
+                disabled={productToConfigure.stock != null && quantity >= productToConfigure.stock}
+                className="w-8 h-8 rounded-xl bg-surface hover:bg-surface-variant flex items-center justify-center text-on-surface disabled:opacity-40 disabled:hover:bg-surface transition-colors cursor-pointer"
+                aria-label="Увеличить количество"
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Footer Button */}
-        <div className="p-4 sm:px-6 sm:py-5 border-t border-neutral-100 bg-white">
+        {/* Footer Confirm Action */}
+        <div className="p-4 sm:p-5 bg-surface/90 backdrop-blur-md border-t border-surface-dim/60 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <span className="text-[10px] text-on-surface-variant uppercase tracking-wider block font-medium">
+              Итого к покупке
+            </span>
+            <span className="text-base sm:text-xl font-bold text-primary tabular-nums">
+              {format(totalPrice)}
+            </span>
+          </div>
+
           <button
             type="button"
             onClick={handleConfirm}

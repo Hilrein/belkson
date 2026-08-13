@@ -55,7 +55,6 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
       ? activeVariant.images
       : product.images
 
-  const currentImage = activeImages[activeImageIndex] || activeImages[0] || product.images[0] || ''
   const categoryLabel = CATEGORY_LABELS[product.category] || 'Zara Kids'
 
   const handleAdd = (e: MouseEvent) => {
@@ -72,20 +71,21 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
   const brandName = product.brand === 'belkson' ? 'Belkson' : product.brand === 'zara' ? 'Zara Kids' : String(product.brand).toUpperCase()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in">
-      {/* Editorial Glassmorphism Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/45 backdrop-blur-md transition-opacity duration-300">
+      {/* Backdrop click */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity"
+        className="absolute inset-0"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Dialog container — matching CatalogPage.tsx editorial style */}
-      <div className="relative w-full max-w-4xl bg-surface shadow-2xl overflow-hidden z-10 flex flex-col md:flex-row max-h-[92vh] border border-surface-dim/80">
+      {/* Dialog container — matching navbar glassmorphism design */}
+      <div className="relative w-full max-w-4xl bg-surface/95 backdrop-blur-xl rounded-[28px] shadow-2xl overflow-hidden z-10 flex flex-col md:flex-row max-h-[92vh] border border-white/60">
         {/* Minimalist Close button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-9 h-9 bg-surface/80 hover:bg-primary hover:text-white text-on-surface rounded-full flex items-center justify-center transition-all shadow-sm border border-surface-dim/40"
+          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-surface-variant/60 hover:bg-surface-variant flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all duration-200 hover:scale-105 active:scale-95"
           aria-label="Закрыть"
         >
           <span className="material-symbols-outlined text-xl">close</span>
@@ -93,13 +93,13 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
 
         {/* Left: Gallery Column */}
         <div className="w-full md:w-1/2 bg-surface-container-low/40 p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-surface-dim/60">
-          <div className="relative aspect-[3/4] overflow-hidden bg-surface-container-low mb-4 shadow-xs">
+          <div className="relative aspect-3/4 w-full overflow-hidden bg-surface mb-3 border border-surface-dim/60 shadow-2xs rounded-2xl">
             <img
-              src={currentImage}
+              src={activeImages[activeImageIndex] || product.images[0]}
               alt={product.title}
               className="w-full h-full object-cover object-center transition-all duration-500"
             />
-            <span className="absolute top-3 left-3 text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2.5 py-1 flex items-center gap-1.5 shadow-xs">
+            <span className="absolute top-3 left-3 text-[10px] tracking-[0.14em] uppercase font-bold text-primary bg-surface/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
               <span>{categoryLabel}</span>
             </span>
           </div>
@@ -112,9 +112,9 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
                   key={idx}
                   type="button"
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-14 h-18 overflow-hidden shrink-0 border transition-all ${
+                  className={`w-14 h-18 overflow-hidden shrink-0 border transition-all rounded-xl cursor-pointer ${
                     activeImageIndex === idx
-                      ? 'border-primary ring-1 ring-primary shadow-xs opacity-100 scale-95'
+                      ? 'border-primary ring-2 ring-primary/40 shadow-xs opacity-100'
                       : 'border-surface-dim opacity-60 hover:opacity-100'
                   }`}
                 >
@@ -145,14 +145,14 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
           </div>
 
           {/* Title */}
-          <h2 className="text-xl md:text-2xl font-headline-md font-semibold text-on-surface mb-3 leading-snug tracking-tight">
+          <h2 className="text-xl md:text-2xl font-headline-md font-bold text-on-surface mb-3 leading-snug tracking-tight">
             {product.title}
           </h2>
 
           {/* Price Row */}
           <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-surface-dim/60 flex-wrap">
             <div className="flex items-baseline gap-3">
-              <span className="text-2xl md:text-3xl font-semibold text-primary tabular-nums">
+              <span className="text-2xl md:text-3xl font-bold text-primary tabular-nums">
                 {product.priceRub.toLocaleString('ru-RU')} ₽
               </span>
               {product.brand !== 'belkson' && (
@@ -161,7 +161,7 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
                 </span>
               )}
             </div>
-            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
+            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full inline-flex items-center gap-1.5 shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>В наличии: {product.stock != null ? product.stock : 10} шт.</span>
             </span>
@@ -187,9 +187,9 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
                     key={idx}
                     type="button"
                     onClick={() => handleSelectColor(idx)}
-                    className={`py-1.5 px-3 rounded-full text-xs font-medium border flex items-center gap-2 transition-all ${
+                    className={`py-1.5 px-3.5 rounded-full text-xs font-medium border flex items-center gap-2 transition-all cursor-pointer ${
                       isActive
-                        ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs ring-1 ring-primary'
+                        ? 'border-[#ce7ed5] bg-[#ce7ed5]/10 text-primary font-semibold shadow-xs ring-1 ring-[#ce7ed5]'
                         : 'border-surface-dim text-on-surface-variant hover:border-on-surface-variant'
                     }`}
                   >
@@ -218,10 +218,10 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
                       key={idx}
                       type="button"
                       onClick={() => setSelectedSizeIndex(idx)}
-                      className={`py-1.5 px-3 rounded-full text-xs font-medium border transition-all ${
+                      className={`h-9 min-w-11 px-3 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                         isActive
-                          ? 'border-primary bg-primary/10 text-primary font-semibold shadow-xs ring-1 ring-primary'
-                          : 'border-surface-dim text-on-surface-variant hover:border-on-surface-variant'
+                          ? 'border-[#ce7ed5] bg-[#ce7ed5] text-white font-semibold shadow-xs'
+                          : 'border-surface-dim text-on-surface-variant hover:border-primary/60'
                       }`}
                     >
                       {size}
@@ -235,22 +235,22 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
           {/* Quantity Selector & Add to Cart CTA */}
           <div className="mt-auto pt-5 border-t border-surface-dim/60 flex items-center gap-3">
             {/* Minimalist Quantity selector */}
-            <div className="flex items-center border border-surface-dim/80 bg-surface py-1 px-2">
+            <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-2xl border border-surface-dim">
               <button
                 type="button"
                 disabled={quantity <= 1}
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-7 h-7 flex items-center justify-center text-on-surface hover:text-primary disabled:opacity-30 transition-colors"
+                className="w-8 h-8 rounded-xl bg-surface hover:bg-surface-variant flex items-center justify-center text-on-surface disabled:opacity-40 transition-colors cursor-pointer"
               >
                 −
               </button>
-              <span className="w-8 text-center text-xs sm:text-sm font-semibold text-on-surface tabular-nums">
+              <span className="w-8 text-center text-xs sm:text-sm font-bold text-on-surface tabular-nums">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => setQuantity((q) => q + 1)}
-                className="w-7 h-7 flex items-center justify-center text-on-surface hover:text-primary transition-colors"
+                className="w-8 h-8 rounded-xl bg-surface hover:bg-surface-variant flex items-center justify-center text-on-surface transition-colors cursor-pointer"
               >
                 +
               </button>
@@ -260,7 +260,7 @@ export function QuickViewModal({ product, onClose, onAddToCart }: QuickViewModal
             <button
               type="button"
               onClick={handleAdd}
-              className="flex-1 py-3.5 px-6 bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container text-xs tracking-[0.14em] uppercase font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-sm"
+              className="flex-1 py-3.5 px-6 rounded-full bg-[#8b2691] hover:bg-[#731b78] text-white text-xs tracking-[0.14em] uppercase font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-md hover:shadow-lg cursor-pointer"
             >
               <span className="material-symbols-outlined text-base">shopping_bag</span>
               В корзину ({(product.priceRub * quantity).toLocaleString('ru-RU')} ₽)
