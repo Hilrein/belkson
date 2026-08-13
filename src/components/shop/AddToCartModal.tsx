@@ -102,116 +102,121 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
         {/* Body content */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
-          {/* Compact Product Header Card */}
-          <div className="flex gap-4 items-center p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
-            <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-white border border-neutral-200/60 shadow-xs">
+          {/* Main Layout: Product Image + Details Grid */}
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
+            {/* Compact Vertical Product Image */}
+            <div className="w-24 sm:w-28 aspect-3/4 rounded-2xl overflow-hidden bg-neutral-50 border border-neutral-200/60 shrink-0 shadow-xs">
               <img
                 src={productToConfigure.image}
                 alt={productToConfigure.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-semibold text-primary uppercase tracking-widest block mb-0.5">
-                {productToConfigure.brand || 'BELKSON'}
-              </span>
-              <h3 className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2">
-                {productToConfigure.name}
-              </h3>
-              <p className="text-sm sm:text-base font-bold text-primary mt-1 tabular-nums">
-                {format(productToConfigure.priceRub)}
-              </p>
-            </div>
-          </div>
 
-          {/* Color Selector */}
-          {availableColors.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
-                <span>Цвет</span>
-                <span className="text-neutral-900 font-bold normal-case text-xs">{selectedColor}</span>
+            {/* Right Product Overview & Selectors */}
+            <div className="flex-1 min-w-0 space-y-3.5 w-full">
+              <div>
+                <span className="text-[10px] font-semibold text-primary uppercase tracking-widest block mb-0.5">
+                  {productToConfigure.brand || 'BELKSON'}
+                </span>
+                <h3 className="text-xs sm:text-sm font-semibold text-neutral-900 leading-snug line-clamp-2">
+                  {productToConfigure.name}
+                </h3>
+                <p className="text-sm sm:text-base font-bold text-primary mt-1 tabular-nums">
+                  {format(productToConfigure.priceRub)}
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {availableColors.map((col) => {
-                  const isSelected = selectedColor === col
-                  return (
-                    <button
-                      key={col}
-                      type="button"
-                      onClick={() => setSelectedColor(col)}
-                      className={`px-3 py-1.5 text-xs rounded-xl border transition-all ${
-                        isSelected
-                          ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
-                          : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:border-primary/40 font-medium'
-                      }`}
-                    >
-                      {col}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
 
-          {/* Size Selector */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
-              <span>Размер</span>
-              {selectedSize && (
-                <span className="text-neutral-900 font-bold normal-case text-xs">{selectedSize}</span>
+              {/* Color Selector */}
+              {availableColors.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                    <span>Цвет</span>
+                    <span className="text-neutral-900 font-bold normal-case text-xs">{selectedColor}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableColors.map((col) => {
+                      const isSelected = selectedColor === col
+                      return (
+                        <button
+                          key={col}
+                          type="button"
+                          onClick={() => setSelectedColor(col)}
+                          className={`px-2.5 py-1 text-xs rounded-xl border transition-all ${
+                            isSelected
+                              ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
+                              : 'bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:border-primary/40 font-medium'
+                          }`}
+                        >
+                          {col}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {availableSizes.map((size) => {
-                const isSelected = selectedSize === size
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-9 min-w-11 px-3 text-xs rounded-xl border transition-all ${
-                      isSelected
-                        ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
-                        : 'bg-neutral-50 text-neutral-800 border-neutral-200/80 hover:border-primary/40 font-medium'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                )
-              })}
-            </div>
-            {!selectedSize && (
-              <p className="text-[11px] text-red-500 font-medium pt-0.5">
-                Пожалуйста, выберите размер
-              </p>
-            )}
-          </div>
 
-          {/* Stepper Quantity */}
-          <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
-              Количество
-            </span>
-            <div className="inline-flex items-center border border-neutral-200 rounded-xl bg-neutral-50 h-9 p-0.5">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-8 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-sm"
-                aria-label="Уменьшить"
-              >
-                −
-              </button>
-              <span className="w-8 text-center text-xs font-bold text-neutral-900 tabular-nums">
-                {quantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-8 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-sm"
-                aria-label="Увеличить"
-              >
-                +
-              </button>
+              {/* Size Selector */}
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                  <span>Размер</span>
+                  {selectedSize && (
+                    <span className="text-neutral-900 font-bold normal-case text-xs">{selectedSize}</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableSizes.map((size) => {
+                    const isSelected = selectedSize === size
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`h-8 min-w-10 px-2.5 text-xs rounded-xl border transition-all ${
+                          isSelected
+                            ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
+                            : 'bg-neutral-50 text-neutral-800 border-neutral-200/80 hover:border-primary/40 font-medium'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    )
+                  })}
+                </div>
+                {!selectedSize && (
+                  <p className="text-[11px] text-red-500 font-medium pt-0.5">
+                    Пожалуйста, выберите размер
+                  </p>
+                )}
+              </div>
+
+              {/* Stepper Quantity */}
+              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-neutral-400">
+                  Количество
+                </span>
+                <div className="inline-flex items-center border border-neutral-200 rounded-xl bg-neutral-50 h-8 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="w-7 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-xs"
+                    aria-label="Уменьшить"
+                  >
+                    −
+                  </button>
+                  <span className="w-7 text-center text-xs font-bold text-neutral-900 tabular-nums">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="w-7 h-full rounded-lg flex items-center justify-center text-primary font-bold hover:bg-white transition-colors text-xs"
+                    aria-label="Увеличить"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
