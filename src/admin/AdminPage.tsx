@@ -1100,7 +1100,7 @@ function StockInlineEditor({
 export default function AdminPage() {
   const [authChecking, setAuthChecking] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loginUsername, setLoginUsername] = useState('belkson')
+  const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginBusy, setLoginBusy] = useState(false)
@@ -2029,7 +2029,7 @@ export default function AdminPage() {
                 autoFocus
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
-                placeholder="belkson"
+                placeholder="username"
                 className="w-full bg-surface-container-lowest border border-gray-200 rounded-md px-3.5 py-2.5 text-body-sm font-body-sm text-on-surface placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container transition-colors"
               />
             </div>
