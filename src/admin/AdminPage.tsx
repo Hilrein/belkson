@@ -16,6 +16,12 @@ import { useMessengerSettings, type MessengerSetting } from '../store/MessengerS
 import { useContactsSettings, type ContactItem } from '../store/ContactsSettingsContext'
 import { useAboutSettings, type AboutSetting } from '../store/AboutSettingsContext'
 import { useHeroBanners, type HeroBanner } from '../store/HeroBannersContext'
+import {
+  usePromoBlock,
+  type PromoBlockData,
+  type PromoMainCard,
+  type PromoSecondaryCard,
+} from '../store/PromoBlockContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
 
@@ -1094,6 +1100,399 @@ function StockInlineEditor({
   )
 }
 
+function AdminPromoBlockView() {
+  const { data, loading, updateData } = usePromoBlock()
+  const [formData, setFormData] = useState<PromoBlockData>(data)
+  const [saving, setSaving] = useState(false)
+  const [savedSuccess, setSavedSuccess] = useState(false)
+
+  useEffect(() => {
+    if (data) {
+      setFormData(data)
+    }
+  }, [data])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await updateData(formData)
+      setSavedSuccess(true)
+      setTimeout(() => setSavedSuccess(false), 3000)
+    } catch (err) {
+      console.error('Failed to save promo block:', err)
+      alert('Ошибка при сохранении промо-блока')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleMainCardChange = (field: keyof PromoMainCard, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      mainCard: { ...prev.mainCard, [field]: value },
+    }))
+  }
+
+  const handleFeaturesTitleChange = (title: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      featuresCard: { ...prev.featuresCard, title },
+    }))
+  }
+
+  const handleFeatureItemChange = (index: number, value: string) => {
+    setFormData((prev) => {
+      const newItems = [...prev.featuresCard.items]
+      newItems[index] = value
+      return {
+        ...prev,
+        featuresCard: { ...prev.featuresCard, items: newItems },
+      }
+    })
+  }
+
+  const handleAddFeatureItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      featuresCard: {
+        ...prev.featuresCard,
+        items: [...prev.featuresCard.items, ''],
+      },
+    }))
+  }
+
+  const handleDeleteFeatureItem = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      featuresCard: {
+        ...prev.featuresCard,
+        items: prev.featuresCard.items.filter((_, i) => i !== index),
+      },
+    }))
+  }
+
+  const handleSecondaryCardChange = (field: keyof PromoSecondaryCard, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      secondaryCard: { ...prev.secondaryCard, [field]: value },
+    }))
+  }
+
+  if (loading && !formData) {
+    return <p className="text-sm text-on-surface-variant">Загрузка данных промо-блока...</p>
+  }
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
+        <div>
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-on-surface mb-2">
+            Редактирование промо-блока
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Управление промо-баннерами и карточкой преимуществ на главной странице.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {savedSuccess && (
+            <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-xs">
+              <Icon name="check_circle" className="text-base text-emerald-600" />
+              Изменения успешно сохранены!
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-5 py-2.5 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-2"
+          >
+            <Icon name="save" className="text-base" />
+            <span>{saving ? 'Сохранение...' : 'Сохранить изменения'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Toggle isActive */}
+      <div className="bg-surface-container-lowest border border-gray-200 rounded-2xl p-5 shadow-xs flex items-center justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-sm text-on-surface mb-1">
+            Показывать промо-блок на главной странице
+          </h3>
+          <p className="text-xs text-on-surface-variant">
+            Включение или отключение отображения промо-блока для покупателей.
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            checked={formData?.isActive ?? true}
+            onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+        </label>
+      </div>
+
+      {/* Grid: Left Section (Main Card) & Right Sections (Features + Secondary) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Section 1: Главная карточка (слева) */}
+        <div className="bg-surface-container-lowest border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="border-b border-gray-100 pb-3 flex items-center gap-2">
+            <Icon name="view_agenda" className="text-[#8a4193]" />
+            <h2 className="font-bold text-base text-on-surface">1. Главная карточка (слева)</h2>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              URL Изображения
+            </label>
+            <input
+              type="text"
+              value={formData?.mainCard?.image || ''}
+              onChange={(e) => handleMainCardChange('image', e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+            />
+            {formData?.mainCard?.image && (
+              <div className="mt-2.5 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 h-44 relative">
+                <img
+                  src={formData.mainCard.image}
+                  alt="Превью главной карточки"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    ;(e.target as HTMLElement).style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              Бэйдж (badge)
+            </label>
+            <input
+              type="text"
+              value={formData?.mainCard?.badge || ''}
+              onChange={(e) => handleMainCardChange('badge', e.target.value)}
+              placeholder="Например: Новая коллекция"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              Заголовок (title)
+            </label>
+            <input
+              type="text"
+              value={formData?.mainCard?.title || ''}
+              onChange={(e) => handleMainCardChange('title', e.target.value)}
+              placeholder="Например: Коллекция для переменки"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-semibold"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-on-surface-variant mb-1">
+              Описание (description)
+            </label>
+            <textarea
+              rows={3}
+              value={formData?.mainCard?.description || ''}
+              onChange={(e) => handleMainCardChange('description', e.target.value)}
+              placeholder="Краткое описание коллекции или предложения..."
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Текст кнопки (buttonText)
+              </label>
+              <input
+                type="text"
+                value={formData?.mainCard?.buttonText || ''}
+                onChange={(e) => handleMainCardChange('buttonText', e.target.value)}
+                placeholder="Смотреть коллекцию"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Ссылка кнопки (buttonLink)
+              </label>
+              <input
+                type="text"
+                value={formData?.mainCard?.buttonLink || ''}
+                onChange={(e) => handleMainCardChange('buttonLink', e.target.value)}
+                placeholder="/catalog"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Section 2 & Section 3 */}
+        <div className="space-y-6">
+          {/* Section 2: Карточка преимуществ (справа вверху) */}
+          <div className="bg-surface-container-lowest border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Icon name="verified" className="text-[#8a4193]" />
+                <h2 className="font-bold text-base text-on-surface">2. Карточка преимуществ (справа вверху)</h2>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Заголовок (title)
+              </label>
+              <input
+                type="text"
+                value={formData?.featuresCard?.title || ''}
+                onChange={(e) => handleFeaturesTitleChange(e.target.value)}
+                placeholder="Например: С заботой о планете"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-semibold"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-medium text-on-surface-variant">
+                  Пункты списка (items)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddFeatureItem}
+                  className="text-xs font-semibold text-[#8a4193] hover:text-[#793782] flex items-center gap-1 cursor-pointer"
+                >
+                  <Icon name="add" className="text-sm" />
+                  <span>+ Добавить пункт</span>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {formData?.featuresCard?.items?.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-400 w-5 text-center">{idx + 1}.</span>
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleFeatureItemChange(idx, e.target.value)}
+                      placeholder={`Пункт #${idx + 1}`}
+                      className="flex-1 px-4 py-2 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFeatureItem(idx)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Удалить пункт"
+                    >
+                      <Icon name="delete" className="text-base" />
+                    </button>
+                  </div>
+                ))}
+                {(!formData?.featuresCard?.items || formData.featuresCard.items.length === 0) && (
+                  <p className="text-xs text-gray-400 italic py-2">Нет добавленных пунктов.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Вторичная карточка (справа внизу) */}
+          <div className="bg-surface-container-lowest border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="border-b border-gray-100 pb-3 flex items-center gap-2">
+              <Icon name="subtitles" className="text-[#8a4193]" />
+              <h2 className="font-bold text-base text-on-surface">3. Вторичная карточка (справа внизу)</h2>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                URL Изображения
+              </label>
+              <input
+                type="text"
+                value={formData?.secondaryCard?.image || ''}
+                onChange={(e) => handleSecondaryCardChange('image', e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+              />
+              {formData?.secondaryCard?.image && (
+                <div className="mt-2.5 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 h-36 relative">
+                  <img
+                    src={formData.secondaryCard.image}
+                    alt="Превью вторичной карточки"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      ;(e.target as HTMLElement).style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                Заголовок (title)
+              </label>
+              <input
+                type="text"
+                value={formData?.secondaryCard?.title || ''}
+                onChange={(e) => handleSecondaryCardChange('title', e.target.value)}
+                placeholder="Например: Базовые вещи для малышей"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-semibold"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Текст ссылки (linkText)
+                </label>
+                <input
+                  type="text"
+                  value={formData?.secondaryCard?.linkText || ''}
+                  onChange={(e) => handleSecondaryCardChange('linkText', e.target.value)}
+                  placeholder="Купить"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                  Ссылка (linkUrl)
+                </label>
+                <input
+                  type="text"
+                  value={formData?.secondaryCard?.linkUrl || ''}
+                  onChange={(e) => handleSecondaryCardChange('linkUrl', e.target.value)}
+                  placeholder="/catalog"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Save Button */}
+      <div className="flex justify-end pt-4 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="px-6 py-3 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors shadow-sm disabled:opacity-50 cursor-pointer flex items-center gap-2"
+        >
+          <Icon name="save" className="text-base" />
+          <span>{saving ? 'Сохранение...' : 'Сохранить изменения'}</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Port of static-admin/admin.html — responsive products admin.
  */
@@ -1202,7 +1601,7 @@ export default function AdminPage() {
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
   const { newOrdersCount } = useOrders()
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'contacts' | 'about' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'promo-block' | 'contacts' | 'about' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
 
   // Hero Banners Drawer state
   const [bannerDrawerOpen, setBannerDrawerOpen] = useState(false)
@@ -2861,6 +3260,8 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          ) : activeTab === 'promo-block' ? (
+            <AdminPromoBlockView />
           ) : (
             <>
               <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
