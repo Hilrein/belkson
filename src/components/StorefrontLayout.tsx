@@ -23,6 +23,20 @@ const LOGO_SRC =
 const PROMO_SRC =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap'
 
+function getCountryFlag(countryName: string): string {
+  const c = countryName.toLowerCase()
+  if (c.includes('spain') || c.includes('испания')) return '🇪🇸'
+  if (c.includes('uk') || c.includes('великобритания') || c.includes('англия')) return '🇬🇧'
+  if (c.includes('poland') || c.includes('польша')) return '🇵🇱'
+  if (c.includes('germany') || c.includes('германия')) return '🇩🇪'
+  if (c.includes('kazakhstan') || c.includes('казахстан')) return '🇰🇿'
+  if (c.includes('usa') || c.includes('сша') || c.includes('америка')) return '🇺🇸'
+  if (c.includes('turkey') || c.includes('турция')) return '🇹🇷'
+  if (c.includes('france') || c.includes('франция')) return '🇫🇷'
+  if (c.includes('italy') || c.includes('италия')) return '🇮🇹'
+  return '🌐'
+}
+
 /**
  * Shared storefront chrome: navbar, footer, nav drawer, cart.
  * All shop pages render as children via React Router <Outlet />.
@@ -361,46 +375,58 @@ export default function StorefrontLayout() {
                 </span>
               </button>
               <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-2 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all duration-200">
-                <div className="w-[min(700px,calc(100vw-2rem))] bg-surface-container-lowest rounded-3xl shadow-[0_20px_40px_-12px_rgba(138,65,147,0.15)] border border-surface-dim p-8 xl:p-10 flex gap-6 xl:gap-8 overflow-x-auto">
+                <div className="w-[min(720px,calc(100vw-2rem))] bg-surface/95 backdrop-blur-xl rounded-[28px] shadow-[0_25px_50px_-12px_rgba(138,65,147,0.22)] border border-white/60 p-6 sm:p-8 flex gap-6 sm:gap-8 overflow-x-auto">
                   {activeOfficialStores.map((store) => (
-                    <div key={store.id} className="flex-1 min-w-[140px]">
-                      <h3 className="font-display-lg-mobile text-2xl text-primary mb-6 font-normal pb-4 border-b border-surface-dim">
-                        {store.name}
-                      </h3>
-                      <ul className="flex flex-col gap-2">
+                    <div key={store.id} className="flex-1 min-w-[200px]">
+                      <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-surface-dim/80">
+                        <h3 className="font-display-lg-mobile text-xl text-primary font-bold tracking-tight">
+                          {store.name}
+                        </h3>
+                        <span className="text-[10px] tracking-wider uppercase font-bold text-[#8b2691] bg-[#8b2691]/10 px-2 py-0.5 rounded-full">
+                          Официальный магазин
+                        </span>
+                      </div>
+                      <ul className="flex flex-col gap-2.5">
                         {store.countries.map((c) => {
                           const item = typeof c === 'object' && c !== null ? (c as { name?: string; url?: string; rate?: string }) : null
                           const name = item ? String(item.name || '') : String(c || '')
                           const url = item ? String(item.url || '#') : '#'
                           const rate = item ? String(item.rate || '') : ''
                           const isExternal = url.startsWith('http://') || url.startsWith('https://')
+                          const flag = getCountryFlag(name)
+
+                          const content = (
+                            <>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-base shrink-0 leading-none">{flag}</span>
+                                <span className="font-medium text-xs sm:text-sm truncate">{name}</span>
+                              </div>
+                              {rate && (
+                                <div className="shrink-0 flex items-center gap-1 bg-surface/80 group-hover/item:bg-white/20 border border-primary/10 group-hover/item:border-transparent px-2.5 py-1 rounded-full text-[11px] font-bold text-primary group-hover/item:text-white transition-all shadow-2xs">
+                                  <span className="opacity-75 font-normal text-[10px]">курс</span>
+                                  <span className="font-mono text-xs">{rate}</span>
+                                </div>
+                              )}
+                            </>
+                          )
+
                           return (
                             <li key={name}>
                               {isExternal ? (
                                 <a
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-2 group/item"
+                                  className="text-on-surface-variant bg-surface-container-low/50 hover:bg-[#8b2691] hover:text-white px-3.5 py-2.5 rounded-2xl transition-all font-normal text-sm flex items-center justify-between gap-3 group/item border border-surface-dim/40 hover:border-transparent hover:shadow-md hover:-translate-y-0.5"
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
-                                  <span>{name}</span>
-                                  {rate && (
-                                    <span className="text-[11px] font-semibold text-primary group-hover/item:text-white transition-colors">
-                                      Курс: {rate}
-                                    </span>
-                                  )}
+                                  {content}
                                 </a>
                               ) : (
                                 <Link
-                                  className="text-on-surface-variant hover:bg-[#ce7ed5] hover:text-white px-4 py-3 rounded-2xl transition-colors font-normal text-sm flex items-center justify-between gap-2 group/item"
+                                  className="text-on-surface-variant bg-surface-container-low/50 hover:bg-[#8b2691] hover:text-white px-3.5 py-2.5 rounded-2xl transition-all font-normal text-sm flex items-center justify-between gap-3 group/item border border-surface-dim/40 hover:border-transparent hover:shadow-md hover:-translate-y-0.5"
                                   to={url !== '#' ? url : `/shop/${store.name.toLowerCase()}/${name.toLowerCase()}`}
                                 >
-                                  <span>{name}</span>
-                                  {rate && (
-                                    <span className="text-[11px] font-semibold text-primary group-hover/item:text-white transition-colors">
-                                      Курс: {rate}
-                                    </span>
-                                  )}
+                                  {content}
                                 </Link>
                               )}
                             </li>
