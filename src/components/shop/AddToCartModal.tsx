@@ -37,6 +37,7 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
 
   useEffect(() => {
     if (productToConfigure) {
+      document.body.style.overflow = 'hidden'
       setQuantity(1)
       const colors =
         productToConfigure.color && productToConfigure.color.trim() !== '—'
@@ -50,6 +51,12 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           : DEFAULT_CHILDREN_SIZES
 
       setSelectedSize(availSizes.length > 0 ? availSizes[0] : '')
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
     }
   }, [productToConfigure])
 
