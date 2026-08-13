@@ -989,9 +989,11 @@ export default function StorefrontLayout() {
                     }}
                     className="w-full bg-[#2AABEE] hover:bg-[#229ED9] text-white font-semibold py-3.5 px-4 rounded-2xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 text-xs sm:text-sm tracking-wide cursor-pointer"
                   >
-                    <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.43.53-.47-.01-1.38-.27-2.05-.49-.83-.27-1.49-.42-1.43-.89.03-.25.38-.51 1.07-.78 4.2-1.83 7-3.04 8.4-3.63 4-.17 4.84.52 4.84 1.34z"/>
-                    </svg>
+                    <img
+                      src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/telegram-white-icon.png"
+                      alt="Telegram"
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
                     <span>Оформить через Telegram</span>
                   </button>
                 )}
@@ -1049,7 +1051,11 @@ export default function StorefrontLayout() {
                         }}
                         className="w-full bg-primary hover:bg-[#793782] text-on-primary font-semibold py-3.5 px-3 rounded-2xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs tracking-wide truncate cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-lg shrink-0">chat_bubble</span>
+                        <img
+                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5lowDklQLtanDE6qYGFyfmQYjOG8y0KE-icDpPopCSswDPUo_8ZKWp-zw&s=10"
+                          alt="Max"
+                          className="w-5 h-5 rounded-md object-cover shrink-0"
+                        />
                         <span className="truncate">через Max</span>
                       </button>
                     )}
@@ -1103,9 +1109,11 @@ export default function StorefrontLayout() {
                         }}
                         className="w-full bg-[#0077FF] hover:bg-[#0066CC] text-white font-semibold py-3.5 px-3 rounded-2xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-xs tracking-wide truncate cursor-pointer"
                       >
-                        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-                          <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.644c-.624 0-.816-.495-1.94-1.623-1.002-.977-1.446-1.104-1.696-1.104-.35 0-.45.1-.45.584v1.542c0 .42-.136.601-1.25.601-1.848 0-3.896-1.12-5.334-3.2-2.164-3.08-2.756-5.4-2.756-5.867 0-.256.096-.495.584-.495h1.644c.438 0 .6.2.77.68.847 2.47 2.27 4.634 2.856 4.634.22 0 .32-.1.32-.648V9.897c-.07-.1.14-.1.14-.1s.36-.1.67-.1c.32 0 .61.05.77.21.14.14.1.42.1.84v3.107c0 .34.14.46.24.46.22 0 .4-.1.82-.52 1.28-1.42 2.19-3.62 2.19-3.62.12-.25.32-.49.75-.49h1.644c.49 0 .61.26.5.6-.2 1.05-2.43 4.18-2.43 4.18-.19.3-.27.44 0 .8.19.25 1.05 1.03 1.59 1.66.98 1.13 1.73 2.08 1.93 2.73.2.65-.08.97-.73.97z"/>
-                        </svg>
+                        <img
+                          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRfzyu_617G_zP5jQ9rHH8-ozFo7CA5VEFiPaWalqTfKn-mSGEycKFc0-V&s=10"
+                          alt="VK"
+                          className="w-5 h-5 rounded-md object-cover shrink-0"
+                        />
                         <span className="truncate">через VK</span>
                       </button>
                     )}
