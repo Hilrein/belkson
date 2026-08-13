@@ -10,7 +10,7 @@ import {
   getTelegramProfileUrl,
   type DeliveryMethod,
 } from '../lib/telegramOrder'
-import { openMaxOrder } from '../lib/maxOrder'
+import { buildMaxOrderMessage, getMaxUrl } from '../lib/maxOrder'
 import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
 import { getInstagramProfileUrl } from '../lib/instagram'
 import { useMessengerSettings } from '../store/MessengerSettingsContext'
@@ -79,8 +79,10 @@ export default function StorefrontLayout() {
   const [resaleOpen, setResaleOpen] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
-  const [vkModalOpen, setVkModalOpen] = useState(false)
-  const [pendingVkUrl, setPendingVkUrl] = useState<string | null>(null)
+  const [redirectModal, setRedirectModal] = useState<{
+    messenger: 'VK' | 'Max'
+    url: string
+  } | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const { getSetting } = useMessengerSettings()
@@ -1020,16 +1022,27 @@ export default function StorefrontLayout() {
                             messenger: 'Max',
                           })
 
-                          openMaxOrder(
+                          const maxText = buildMaxOrderMessage(
                             cartItems,
                             format(totalRub),
                             discountLabel,
                             deliveryMethod,
                             addressNotes,
-                            maxValue,
                             customerName,
                             customerPhone,
                           )
+
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(maxText).catch(() => {})
+                          }
+
+                          const maxBaseUrl = maxValue || getMaxUrl()
+                          const maxUrl = `${maxBaseUrl}${maxBaseUrl.includes('?') ? '&' : '?'}text=${encodeURIComponent(maxText)}`
+
+                          setRedirectModal({
+                            messenger: 'Max',
+                            url: maxUrl,
+                          })
                         }}
                         className="w-full bg-primary text-on-primary font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-on-primary-fixed-variant active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
                       >
@@ -1064,7 +1077,7 @@ export default function StorefrontLayout() {
                             messenger: 'VK',
                           })
 
-                          const text = buildVkOrderMessage(
+                          const vkText = buildVkOrderMessage(
                             cartItems,
                             format(totalRub),
                             discountLabel,
@@ -1075,12 +1088,14 @@ export default function StorefrontLayout() {
                           )
 
                           if (navigator.clipboard && navigator.clipboard.writeText) {
-                            navigator.clipboard.writeText(text).catch(() => {})
+                            navigator.clipboard.writeText(vkText).catch(() => {})
                           }
 
-                          const url = getVkOrderUrl(text, vkValue)
-                          setPendingVkUrl(url)
-                          setVkModalOpen(true)
+                          const vkUrl = getVkOrderUrl(vkText, vkValue)
+                          setRedirectModal({
+                            messenger: 'VK',
+                            url: vkUrl,
+                          })
                         }}
                         className="w-full bg-[#0077FF] text-white font-label-sm py-3.5 px-2 rounded-full shadow-md hover:bg-[#0066CC] active:scale-[0.99] transition-colors flex items-center justify-center text-center truncate"
                       >
@@ -1179,11 +1194,17 @@ export default function StorefrontLayout() {
         </div>
       </div>
 
-      {/* ── VK Redirect & Instructions Modal ──────────────────────── */}
-      {vkModalOpen && (
+      {/* ── Redirect & Instructions Modal (VK & MAX) ──────────────────────── */}
+      {redirectModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-surface-container-lowest border border-gray-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#0077FF]/10 text-[#0077FF] flex items-center justify-center mx-auto">
+            <div
+              className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
+                redirectModal.messenger === 'VK'
+                  ? 'bg-[#0077FF]/10 text-[#0077FF]'
+                  : 'bg-primary/10 text-primary'
+              }`}
+            >
               <span className="material-symbols-outlined text-2xl">content_paste</span>
             </div>
 
@@ -1192,7 +1213,8 @@ export default function StorefrontLayout() {
                 Заказ скопирован в буфер!
               </h3>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                В чате VK зажмите поле ввода сообщения и выберите <strong className="text-on-surface font-semibold">«Вставить»</strong> (или нажмите Ctrl+V).
+                В чате {redirectModal.messenger} зажмите поле ввода сообщения и выберите{' '}
+                <strong className="text-on-surface font-semibold">«Вставить»</strong> (или нажмите Ctrl+V).
               </p>
             </div>
 
@@ -1200,22 +1222,26 @@ export default function StorefrontLayout() {
               <button
                 type="button"
                 onClick={() => {
-                  if (pendingVkUrl) {
-                    window.open(pendingVkUrl, '_blank', 'noopener,noreferrer')
+                  if (redirectModal.url) {
+                    window.open(redirectModal.url, '_blank', 'noopener,noreferrer')
                   }
-                  setVkModalOpen(false)
+                  setRedirectModal(null)
                 }}
-                className="w-full bg-[#0077FF] hover:bg-[#0066CC] text-white py-3 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                className={`w-full text-white py-3 rounded-full text-xs font-semibold shadow-sm transition-colors cursor-pointer ${
+                  redirectModal.messenger === 'VK'
+                    ? 'bg-[#0077FF] hover:bg-[#0066CC]'
+                    : 'bg-primary hover:bg-[#793782]'
+                }`}
               >
-                Перейти в VK сейчас
+                Перейти в {redirectModal.messenger} сейчас
               </button>
 
               <button
                 type="button"
-                onClick={() => setVkModalOpen(false)}
+                onClick={() => setRedirectModal(null)}
                 className="w-full py-2 text-xs text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer"
               >
-                Отмена
+                Закрыть
               </button>
             </div>
           </div>
