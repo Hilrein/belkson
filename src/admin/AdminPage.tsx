@@ -1555,7 +1555,7 @@ export default function AdminPage() {
                 type="button"
                 className={`w-full text-left cursor-pointer flex items-center justify-between ${navLinkClass(isActive)}`}
                 onClick={() => {
-                  setActiveTab(item.id as 'orders' | 'products' | 'official-stores' | 'purchase-terms' | 'discounts')
+                  setActiveTab(item.id as any)
                   closeNav()
                 }}
               >
@@ -1659,7 +1659,7 @@ export default function AdminPage() {
           )}
           {activeTab === 'orders' ? (
             <AdminOrdersView />
-          ) : activeTab === 'messengers' ? (
+          ) : activeTab === 'contacts' || activeTab === 'messengers' ? (
             <AdminMessengerSettingsView />
           ) : activeTab === 'purchase-terms' ? (
             <div className="space-y-6 max-w-4xl">
