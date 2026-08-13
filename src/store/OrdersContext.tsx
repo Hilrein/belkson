@@ -89,17 +89,14 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
     addressNotes?: string
     messenger: 'Telegram' | 'Max' | 'VK'
   }): Promise<Order | null> => {
-    const formattedItems: OrderItem[] = payload.items.map((line) => {
-      const chosenSize = line.selectedSize || (line.sizes && line.sizes.length > 0 ? line.sizes[0] : undefined)
-      return {
-        productId: line.productId,
-        name: line.name,
-        image: line.image,
-        priceRub: line.priceRub,
-        quantity: line.quantity,
-        sizes: chosenSize ? [chosenSize] : undefined,
-      }
-    })
+    const formattedItems: OrderItem[] = payload.items.map((line) => ({
+      productId: line.productId,
+      name: line.name,
+      image: line.image,
+      priceRub: line.priceRub,
+      quantity: line.quantity,
+      sizes: line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes,
+    }))
 
     const reqBody = {
       items: formattedItems,

@@ -17,7 +17,7 @@ export type CartLine = {
   priceRub: number
   color: string
   sizes?: string[]
-  selectedSize?: string
+  selectedSizes?: string[]
   quantity: number
 }
 
@@ -37,7 +37,7 @@ type CartContextValue = {
   addToCart: (product: CatalogProduct, qty?: number) => void
   removeFromCart: (productId: number) => void
   setQuantity: (productId: number, quantity: number) => void
-  selectSize: (productId: number, size: string) => void
+  toggleSize: (productId: number, size: string) => void
   clearCart: () => void
 }
 
@@ -71,7 +71,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = useCallback((product: CatalogProduct, qty = 1) => {
     const n = Math.max(1, qty)
     setItems((prev) => {
-      const defaultSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : undefined
       const i = prev.findIndex((l) => l.productId === product.id)
       if (i === -1) {
         return [
@@ -83,7 +82,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
             priceRub: product.priceRub,
             color: product.color,
             sizes: product.sizes,
-            selectedSize: defaultSize,
             quantity: n,
           },
         ]
@@ -109,13 +107,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), [])
 
-  const selectSize = useCallback((productId: number, size: string) => {
+  const toggleSize = useCallback((productId: number, size: string) => {
     setItems((prev) =>
       prev.map((l) => {
         if (l.productId !== productId) return l
+        const current = l.selectedSizes || []
+        const has = current.includes(size)
         return {
           ...l,
-          selectedSize: l.selectedSize === size ? undefined : size,
+          selectedSizes: has
+            ? current.filter((s) => s !== size)
+            : [...current, size],
         }
       }),
     )
@@ -178,7 +180,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       removeFromCart,
       setQuantity,
-      selectSize,
+      toggleSize,
       clearCart,
     }),
     [
@@ -192,7 +194,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       removeFromCart,
       setQuantity,
-      selectSize,
+      toggleSize,
       clearCart,
     ],
   )

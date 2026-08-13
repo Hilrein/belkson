@@ -50,8 +50,8 @@ export function buildVkOrderMessage(
   customerPhone?: string,
 ): string {
   const lines = items.map((line, i) => {
-    const chosenSize = line.selectedSize || (line.sizes && line.sizes.length > 0 ? line.sizes[0] : undefined)
-    const sizesStr = chosenSize ? ` (${chosenSize})` : ''
+    const displaySizes = line.selectedSizes && line.selectedSizes.length > 0 ? line.selectedSizes : line.sizes
+    const sizesStr = displaySizes && displaySizes.length > 0 ? ` (${displaySizes.join(', ')})` : ''
     return `${i + 1}. ${line.name}${sizesStr} × ${line.quantity}`
   })
 
