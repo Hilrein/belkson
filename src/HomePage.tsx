@@ -15,6 +15,30 @@ export default function HomePage() {
   const [heroIndex, setHeroIndex] = useState(0)
   const newArrivalsRef = useRef<HTMLDivElement>(null)
   const heroSlideCount = 2
+  const touchStartXRef = useRef<number | null>(null)
+  const touchEndXRef = useRef<number | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX
+    touchEndXRef.current = null
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndXRef.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchStartXRef.current || !touchEndXRef.current) return
+    const distance = touchStartXRef.current - touchEndXRef.current
+    const minSwipeDistance = 40
+    if (distance > minSwipeDistance) {
+      // Swipe left -> next
+      setHeroIndex((i) => (i + 1) % heroSlideCount)
+    } else if (distance < -minSwipeDistance) {
+      // Swipe right -> prev
+      setHeroIndex((i) => (i - 1 + heroSlideCount) % heroSlideCount)
+    }
+  }
 
   const handleAddToCart = useCallback(
     (product: CatalogProduct, e?: MouseEvent) => {
@@ -52,9 +76,14 @@ export default function HomePage() {
   return (
 <main>
       {/* Hero — photo + refined copy (soft local glow, elegant btn) */}
-      <section className="relative w-full overflow-hidden h-[560px] md:h-[640px] bg-surface-container-low">
+      <section
+        className="relative w-full overflow-hidden h-[560px] md:h-[640px] bg-surface-container-low group/hero"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
-          className="carousel-track h-full w-full"
+          className="carousel-track h-full w-full transition-transform duration-700 ease-out"
           id="hero-carousel"
           style={{ transform: `translateX(-${heroIndex * 100}%)` }}
         >
@@ -65,17 +94,26 @@ export default function HomePage() {
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap"
             />
             {/* Full-bleed fade is light; local glow sits under .hero-copy */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.55)] via-[rgba(251,248,252,0.12)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.65)] via-[rgba(251,248,252,0.18)] to-transparent" />
             <div className="absolute inset-0 flex items-end">
               <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
                 <div className="hero-copy">
+                  <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-primary block mb-2 opacity-90">
+                    Коллекция 2026
+                  </span>
                   <h1 className="hero-title">Весенняя нежность</h1>
                   <p className="hero-lead">
                     Мягкая одежда для малышей: прогулки, игры и каждый день.
                   </p>
                   <div className="hero-actions">
-                    <Link to="/catalog?category=new" className="btn-hero">
-                      Смотреть новинки
+                    <Link
+                      to="/catalog?category=new"
+                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#5a2063] text-on-primary text-xs tracking-[0.14em] uppercase font-semibold py-3.5 px-7 rounded-full shadow-md hover:shadow-lg active:scale-98 transition-all duration-200 group/btn"
+                    >
+                      <span>Смотреть новинки</span>
+                      <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
+                        arrow_forward
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -89,17 +127,26 @@ export default function HomePage() {
               alt="Ткань детского свитера Belkson"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8XYOqM6k1V0yN9OxYE3KD3vUisD4kg3HENS3WhujMMEi1vweZXTfbqxf_gMVmXS3BxO3xhuNShDRdDGpgd_dC2YWaMLWhh9DaJoQymdWpGNX-7E3zC5JpTWwLPoqWwsZD46MK841lM3bvdLReNjLgKBzZOZDuQj6x8yCoihcD7f3TOr6gE1i-HO9NlZA9-TQfrglWzkecr7PxoNuovqPLQCtN8W5d1rQk7XGWDqLQwJiargBAigg616CwuYyRyCXzdpUihQVawbcF"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.55)] via-[rgba(251,248,252,0.12)] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[rgba(251,248,252,0.65)] via-[rgba(251,248,252,0.18)] to-transparent" />
             <div className="absolute inset-0 flex items-end">
               <div className="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop pb-16 md:pb-24">
                 <div className="hero-copy">
+                  <span className="text-[11px] tracking-[0.2em] uppercase font-bold text-primary block mb-2 opacity-90">
+                    Премиум трикотаж
+                  </span>
                   <h1 className="hero-title">Создано для комфорта</h1>
                   <p className="hero-lead">
                     Нежные ткани и удобная посадка для активного дня ребёнка.
                   </p>
                   <div className="hero-actions">
-                    <Link to="/catalog" className="btn-hero">
-                      В каталог
+                    <Link
+                      to="/catalog"
+                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#5a2063] text-on-primary text-xs tracking-[0.14em] uppercase font-semibold py-3.5 px-7 rounded-full shadow-md hover:shadow-lg active:scale-98 transition-all duration-200 group/btn"
+                    >
+                      <span>В каталог</span>
+                      <span className="material-symbols-outlined text-[16px] group-hover/btn:translate-x-1 transition-transform">
+                        arrow_forward
+                      </span>
                     </Link>
                   </div>
                 </div>
@@ -108,23 +155,37 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-1.5 z-10">
-          <button
-            type="button"
-            onClick={() => setHeroIndex(0)}
-            aria-label="Слайд 1"
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              heroIndex === 0 ? 'w-5 bg-primary' : 'w-1.5 bg-outline-variant/90 hover:bg-outline'
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setHeroIndex(1)}
-            aria-label="Слайд 2"
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              heroIndex === 1 ? 'w-5 bg-primary' : 'w-1.5 bg-outline-variant/90 hover:bg-outline'
-            }`}
-          />
+        {/* Side navigation arrows for desktop */}
+        <button
+          type="button"
+          onClick={() => setHeroIndex((i) => (i - 1 + heroSlideCount) % heroSlideCount)}
+          className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
+          aria-label="Предыдущий слайд"
+        >
+          <span className="material-symbols-outlined text-xl">chevron_left</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setHeroIndex((i) => (i + 1) % heroSlideCount)}
+          className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/70 hover:bg-white text-on-surface backdrop-blur-md items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer opacity-0 group-hover/hero:opacity-100"
+          aria-label="Следующий слайд"
+        >
+          <span className="material-symbols-outlined text-xl">chevron_right</span>
+        </button>
+
+        {/* Glassmorphic pagination bar */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/50 shadow-2xs">
+          {Array.from({ length: heroSlideCount }).map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setHeroIndex(idx)}
+              aria-label={`Слайд ${idx + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                heroIndex === idx ? 'w-6 bg-primary' : 'w-1.5 bg-neutral-400/60 hover:bg-neutral-600'
+              }`}
+            />
+          ))}
         </div>
       </section>
 
