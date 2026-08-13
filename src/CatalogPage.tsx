@@ -304,13 +304,20 @@ export default function CatalogPage() {
                 alt={product.name}
                 src={product.image}
               />
-              {product.isNew && (
-                <span className="absolute top-3 left-3 text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1">
-                  New
-                </span>
-              )}
+              <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                {product.isSale && (
+                  <span className="text-[10px] tracking-[0.12em] uppercase font-bold text-white bg-[#ce7ed5] px-2 py-1 shadow-xs rounded-xs">
+                    Sale
+                  </span>
+                )}
+                {product.isNew && !product.isSale && (
+                  <span className="text-[10px] tracking-[0.12em] uppercase font-semibold text-primary bg-surface/90 px-2 py-1">
+                    New
+                  </span>
+                )}
+              </div>
               {product.status === 'Мало' && (
-                <span className="absolute top-3 right-3 text-[10px] tracking-[0.12em] uppercase font-medium text-on-surface-variant bg-surface/90 px-2 py-1">
+                <span className="absolute top-3 right-3 text-[10px] tracking-[0.12em] uppercase font-medium text-on-surface-variant bg-surface/90 px-2 py-1 z-10">
                   Мало
                 </span>
               )}
@@ -334,9 +341,20 @@ export default function CatalogPage() {
                     {product.name}
                   </h2>
                 </div>
-                <span className="text-sm md:text-[15px] font-medium text-primary shrink-0 tabular-nums">
-                  {format(product.priceRub)}
-                </span>
+                {product.isSale && product.salePriceRub ? (
+                  <div className="flex flex-col items-end shrink-0 tabular-nums">
+                    <span className="text-[11px] font-normal text-on-surface-variant/70 line-through">
+                      {format(product.priceRub)}
+                    </span>
+                    <span className="text-sm md:text-[15px] font-bold text-[#6f2879]">
+                      {format(product.salePriceRub)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm md:text-[15px] font-medium text-primary shrink-0 tabular-nums">
+                    {format(product.priceRub)}
+                  </span>
+                )}
               </div>
               <div className="flex items-center justify-between gap-2 mt-1">
                 <p className="text-xs text-on-surface-variant truncate">
