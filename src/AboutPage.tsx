@@ -6,9 +6,9 @@ export default function AboutPage() {
   const activeItems = items.filter((item) => item.isActive)
 
   return (
-    <main className="max-w-[800px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
-      {/* Navigation Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-outline mb-8 tracking-wide">
+    <main className="max-w-[640px] mx-auto px-margin-mobile md:px-margin-desktop py-12 md:py-20">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-outline mb-10 tracking-wide">
         <Link to="/" className="hover:text-primary transition-colors">
           Главная
         </Link>
@@ -16,52 +16,33 @@ export default function AboutPage() {
         <span className="text-on-surface font-medium">О нас</span>
       </div>
 
-      {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-on-surface mb-3">
-          О нас
-        </h1>
-        <p className="text-on-surface-variant text-sm md:text-base leading-relaxed max-w-xl">
-          Магазин детской одежды BELKSON — только оригиналы любимых брендов.
-        </p>
-      </div>
+      {/* Title */}
+      <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-on-surface mb-10">
+        О нас
+      </h1>
 
-      {/* Ultra-Minimalist List Layout */}
-      <div className="flex flex-col border-t border-b border-gray-100 mb-12">
-        {loading && activeItems.length === 0 ? (
-          <div className="py-8 text-center text-xs text-outline font-medium">
-            Загрузка информации...
-          </div>
-        ) : (
-          activeItems.map((block) => (
-            <div
-              key={block.id}
-              className="py-7 border-b border-gray-100 last:border-b-0 px-2 flex flex-col gap-2.5 transition-all duration-200"
-            >
-              {(block.title || block.badge) && (
-                <div className="flex items-center justify-between gap-4">
-                  {block.title && (
-                    <h3 className="text-base font-semibold text-on-surface">
-                      {block.title}
-                    </h3>
-                  )}
-                  {block.badge && (
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10 shrink-0">
-                      {block.badge}
-                    </span>
-                  )}
-                </div>
+      {/* Content */}
+      {loading && activeItems.length === 0 ? (
+        <p className="text-sm text-outline">Загрузка…</p>
+      ) : (
+        <div className="space-y-6">
+          {activeItems.map((block) => (
+            <div key={block.id}>
+              {block.title && (
+                <h3 className="text-sm font-semibold text-on-surface mb-1.5 tracking-wide">
+                  {block.title}
+                </h3>
               )}
-              <p className="text-sm text-on-surface-variant leading-relaxed font-normal whitespace-pre-line">
+              <p className="text-sm text-on-surface-variant leading-[1.75] whitespace-pre-line">
                 {block.content}
               </p>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Action Links */}
-      <div className="flex items-center justify-between pt-2">
+      {/* Footer link */}
+      <div className="mt-14 pt-6 border-t border-gray-100">
         <Link
           to="/contacts"
           className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-primary hover:text-[#8b2691] transition-colors"
