@@ -217,7 +217,7 @@ export default function HomePage() {
       </div>
       <div className="overflow-x-auto hide-scroll flex items-stretch gap-6 pb-6 snap-x snap-mandatory" id="new-arrivals-container" ref={newArrivalsRef} style={{ scrollBehavior: 'smooth' }}>
       {newArrivals.length === 0 ? (
-        <p className="text-on-surface-variant py-8">Пока нет новинок. Добавьте товары в админке.</p>
+        <p className="text-on-surface-variant py-8">Пока нет новинок.</p>
       ) : (
         newArrivals.map((product) => (
       <div
@@ -286,7 +286,7 @@ export default function HomePage() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {favorites.length === 0 ? (
-        <p className="text-on-surface-variant col-span-full py-4">Пока нет любимчиков. Отметьте товары в админке.</p>
+        <p className="text-on-surface-variant col-span-full py-4">Пока нет любимчиков.</p>
       ) : (
         favorites.map((product) => (
       <div key={product.id} className="bg-surface-container-lowest rounded-2xl p-4 shadow-[0_10px_30px_-15px_rgba(138,65,147,0.08)] hover:shadow-[0_20px_40px_-12px_rgba(138,65,147,0.12)] transition-all duration-300 group cursor-pointer border border-transparent hover:border-surface-dim">
