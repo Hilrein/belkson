@@ -90,6 +90,35 @@ export default function CatalogPage() {
     [openAddToCartModal]
   )
 
+  const rawSizeParam = searchParams.get('size')
+  const selectedSize = rawSizeParam || 'all'
+
+  const setSizeFilter = useCallback(
+    (value: string) => {
+      const next = new URLSearchParams(searchParams)
+      if (value === 'all' || !value) next.delete('size')
+      else next.set('size', value)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams]
+  )
+
+  const availableSizes = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of products) {
+      if (p.sizes && p.sizes.length > 0) {
+        for (const s of p.sizes) {
+          if (s && s.trim()) set.add(s.trim())
+        }
+      }
+    }
+    const extractNum = (str: string) => {
+      const match = str.match(/\d+/)
+      return match ? parseInt(match[0], 10) : 999
+    }
+    return Array.from(set).sort((a, b) => extractNum(a) - extractNum(b))
+  }, [products])
+
   const filtered = useMemo(() => {
     let list = products.filter((p) => p.status !== 'Нет в наличии')
     if (activeFilter === FILTER_SALE) {
@@ -106,6 +135,12 @@ export default function CatalogPage() {
       list = list.filter((p) => categoriesMatch(p.subcategory, activeSubcategory))
     }
 
+    if (selectedSize !== 'all') {
+      list = list.filter((p) =>
+        p.sizes && p.sizes.some((s) => s.toLowerCase().trim() === selectedSize.toLowerCase().trim())
+      )
+    }
+
     const q = query.trim().toLowerCase()
     if (q) {
       list = list.filter(
@@ -118,16 +153,33 @@ export default function CatalogPage() {
       )
     }
 
+    const getMinSizeNum = (p: CatalogProduct) => {
+      if (!p.sizes || p.sizes.length === 0) return 999
+      let min = 999
+      for (const s of p.sizes) {
+        const match = s.match(/\d+/)
+        if (match) {
+          const val = parseInt(match[0], 10)
+          if (val < min) min = val
+        }
+      }
+      return min
+    }
+
     if (sortBy === 'price_asc') {
       list = [...list].sort((a, b) => (a.isSale && a.salePriceRub ? a.salePriceRub : a.priceRub) - (b.isSale && b.salePriceRub ? b.salePriceRub : b.priceRub))
     } else if (sortBy === 'price_desc') {
-      list = [...list].sort((a, b) => (b.isSale && b.salePriceRub ? b.salePriceRub : b.priceRub) - (a.isSale && a.salePriceRub ? a.salePriceRub : a.priceRub))
+      list = [...list].sort((a, b) => (b.isSale && b.salePriceRub ? b.salePriceRub : a.priceRub) - (a.isSale && a.salePriceRub ? a.salePriceRub : a.priceRub))
+    } else if (sortBy === 'size_asc') {
+      list = [...list].sort((a, b) => getMinSizeNum(a) - getMinSizeNum(b))
+    } else if (sortBy === 'size_desc') {
+      list = [...list].sort((a, b) => getMinSizeNum(b) - getMinSizeNum(a))
     } else if (sortBy === 'newest') {
       list = [...list].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
     }
 
     return list
-  }, [products, activeFilter, activeSubcategory, query, sortBy])
+  }, [products, activeFilter, activeSubcategory, selectedSize, query, sortBy])
 
   const navItems = useMemo(() => {
     const fixed: { id: string; label: string }[] = [
@@ -171,6 +223,7 @@ export default function CatalogPage() {
     onQueryChange('')
     setFilter(FILTER_ALL)
     setSubcategoryFilter('all')
+    setSizeFilter('all')
     setSortBy('featured')
   }
 
@@ -229,6 +282,9 @@ export default function CatalogPage() {
         subcategories={subcategoryItems}
         activeSubcategory={activeSubcategory}
         onSelectSubcategory={setSubcategoryFilter}
+        availableSizes={availableSizes}
+        selectedSize={selectedSize}
+        onSelectSize={setSizeFilter}
         searchQuery={query}
         onSearchChange={onQueryChange}
         sortBy={sortBy}

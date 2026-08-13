@@ -112,6 +112,8 @@ export function ZaraKidsFilterBar({
             <option value="featured">По популярности</option>
             <option value="price_asc">Сначала дешевле</option>
             <option value="price_desc">Сначала дороже</option>
+            <option value="size_asc">Размер: от меньшего</option>
+            <option value="size_desc">Размер: от большего</option>
             <option value="newest">Новинки</option>
           </select>
 

@@ -1,6 +1,6 @@
 export type StoreId = 'belkson' | 'zara' | 'hm' | 'next'
 export type RegionId = 'spain' | 'uk' | 'poland' | 'germany' | 'kazakhstan'
-export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest'
+export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest' | 'size_asc' | 'size_desc'
 
 export type ProductCategory =
   | 'all'

@@ -39,7 +39,7 @@ export const ZARA_SUBCATEGORIES: SubcategoryMeta[] = [
   { id: 'accessories', label: 'Аксессуары и сумки', parentCategories: ['shoes_acc', 'girl', 'boy', 'sale'] },
 ]
 
-export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest'
+export type SortOption = 'featured' | 'price_asc' | 'price_desc' | 'newest' | 'size_asc' | 'size_desc'
 
 export interface CatalogQueryOptions {
   region: RegionId
