@@ -39,10 +39,7 @@ export default function ContactsPage() {
               Telegram
             </span>
             <div>
-              <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors block">
-                @Belksonshop
-              </span>
-              <span className="text-xs text-outline font-normal">
+              <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors block">
                 Официальный канал с анонсами новинок и выкупов
               </span>
             </div>
@@ -64,10 +61,7 @@ export default function ContactsPage() {
               ВКонтакте
             </span>
             <div>
-              <span className="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors block">
-                Сообщество Belkson
-              </span>
-              <span className="text-xs text-outline font-normal">
+              <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors block">
                 Новости бренда, фотографии коллекций и консультации
               </span>
             </div>
