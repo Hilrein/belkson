@@ -1997,58 +1997,59 @@ export default function AdminPage() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F0D15] text-white p-4 font-[Inter,sans-serif]">
-        <div className="w-8 h-8 border-2 border-[#ce7ed5] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm text-gray-400">Проверка доступа к панели администратора...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-on-surface p-4 font-[Inter,sans-serif]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-body-sm font-body-sm text-on-surface-variant">Проверка доступа к панели администратора...</p>
       </div>
     )
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#0F0D15] text-gray-100 p-4 font-[Inter,sans-serif]">
-        <div className="w-full max-w-md bg-[#181524] border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-white mb-2">BELKSON</h1>
-            <p className="text-xs uppercase tracking-widest text-[#ce7ed5] font-semibold">Вход в панель администратора</p>
+      <div className="min-h-screen w-full flex items-center justify-center bg-background text-on-surface p-4 font-[Inter,sans-serif]">
+        <div className="w-full max-w-sm bg-surface-container-lowest border border-gray-200 rounded-md shadow-sm">
+          <div className="px-8 pt-8 pb-2 border-b border-gray-100">
+            <h1 className="text-headline-lg font-headline-lg text-on-surface tracking-tight">Belkson</h1>
+            <p className="text-label-md font-label-md text-on-surface-variant mt-1">Панель администратора</p>
           </div>
 
-          <form onSubmit={handleLoginSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleLoginSubmit} className="px-8 py-6 flex flex-col gap-5">
             {loginError && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-xs px-4 py-3 rounded-xl flex items-center gap-2">
+              <div className="bg-red-50 border border-red-200 text-red-800 text-xs px-4 py-3 rounded-md flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm shrink-0">error</span>
                 <span>{loginError}</span>
               </div>
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-gray-300 font-medium">Имя пользователя (Username)</label>
+              <label className="text-label-md font-label-md text-on-surface-variant">Имя пользователя</label>
               <input
                 type="text"
                 required
+                autoFocus
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
                 placeholder="belkson"
-                className="w-full bg-[#0F0D15] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ce7ed5] transition-colors"
+                className="w-full bg-surface-container-lowest border border-gray-200 rounded-md px-3.5 py-2.5 text-body-sm font-body-sm text-on-surface placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container transition-colors"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-gray-300 font-medium">Пароль (Password)</label>
+              <label className="text-label-md font-label-md text-on-surface-variant">Пароль</label>
               <input
                 type="password"
                 required
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#0F0D15] border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ce7ed5] transition-colors"
+                className="w-full bg-surface-container-lowest border border-gray-200 rounded-md px-3.5 py-2.5 text-body-sm font-body-sm text-on-surface placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loginBusy}
-              className="mt-2 w-full py-3.5 px-4 bg-[#8a4193] hover:bg-[#a14bb0] active:scale-[0.99] text-white text-xs uppercase tracking-wider font-bold rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+              className="mt-2 w-full py-3 px-4 bg-[#8a4193] hover:bg-[#793782] active:scale-[0.99] text-white text-button font-button rounded-md transition-all shadow-sm disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
             >
               {loginBusy ? (
                 <>
@@ -2061,8 +2062,8 @@ export default function AdminPage() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/10 text-center">
-            <Link to="/" className="text-xs text-gray-400 hover:text-white transition-colors inline-flex items-center gap-1">
+          <div className="px-8 py-5 border-t border-gray-100 text-center">
+            <Link to="/" className="text-xs text-on-surface-variant hover:text-primary transition-colors inline-flex items-center gap-1">
               <span>← На главную витрину</span>
             </Link>
           </div>

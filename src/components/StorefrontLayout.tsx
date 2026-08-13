@@ -12,7 +12,6 @@ import {
 } from '../lib/telegramOrder'
 import { buildMaxOrderMessage, getMaxUrl } from '../lib/maxOrder'
 import { buildVkOrderMessage, getVkOrderUrl } from '../lib/vkOrder'
-import { getInstagramProfileUrl } from '../lib/instagram'
 import { useMessengerSettings } from '../store/MessengerSettingsContext'
 import { LoadingScreen } from './LoadingScreen'
 import { AddToCartModal } from './shop/AddToCartModal'
@@ -728,17 +727,6 @@ export default function StorefrontLayout() {
               <h3 className="font-headline-md text-sm uppercase tracking-wider text-outline mb-1">
                 Соцсети
               </h3>
-              <a
-                className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3"
-                href={getInstagramProfileUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="material-symbols-outlined text-primary">
-                  photo_camera
-                </span>{' '}
-                Instagram
-              </a>
               <a
                 className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors flex items-center gap-3"
                 href={getTelegramProfileUrl()}
