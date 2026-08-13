@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCart } from '../../store/CartContext'
 import { useCatalog } from '../../store/CatalogContext'
 
@@ -14,17 +14,6 @@ const DEFAULT_CHILDREN_SIZES = [
   '110-116',
 ]
 
-const POPULAR_COLORS = [
-  'Молочный',
-  'Бежевый',
-  'Розовый',
-  'Голубой',
-  'Серый',
-  'Мятный',
-  'Шоколадный',
-  'Черный',
-]
-
 type AddToCartModalProps = {
   onOpenCart?: () => void
 }
@@ -37,10 +26,23 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
   const [selectedColor, setSelectedColor] = useState('')
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
 
+  const availableColors = useMemo(() => {
+    if (!productToConfigure?.color || productToConfigure.color.trim() === '—') {
+      return []
+    }
+    return productToConfigure.color
+      .split(/[,/]/)
+      .map((c) => c.trim())
+      .filter(Boolean)
+  }, [productToConfigure])
+
   useEffect(() => {
     if (productToConfigure) {
       setQuantity(1)
-      setSelectedColor(productToConfigure.color || 'Молочный')
+      const colors = productToConfigure.color && productToConfigure.color.trim() !== '—'
+        ? productToConfigure.color.split(/[,/]/).map((c) => c.trim()).filter(Boolean)
+        : []
+      setSelectedColor(colors.length > 0 ? colors[0] : (productToConfigure.color || ''))
 
       // Use product sizes if available, otherwise default to first available
       const availSizes =
@@ -136,30 +138,32 @@ export function AddToCartModal({ onOpenCart }: AddToCartModalProps) {
           </div>
 
           {/* Color Selection */}
-          <div className="space-y-2">
-            <label className="text-xs text-on-surface-variant block font-medium">
-              Цвет: <span className="text-on-surface font-semibold">{selectedColor}</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_COLORS.map((col) => {
-                const isSelected = selectedColor === col
-                return (
-                  <button
-                    key={col}
-                    type="button"
-                    onClick={() => setSelectedColor(col)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
-                      isSelected
-                        ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
-                        : 'bg-surface-container-low text-on-surface-variant border-surface-dim hover:border-primary/50'
-                    }`}
-                  >
-                    {col}
-                  </button>
-                )
-              })}
+          {availableColors.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs text-on-surface-variant block font-medium">
+                Цвет: <span className="text-on-surface font-semibold">{selectedColor}</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {availableColors.map((col) => {
+                  const isSelected = selectedColor === col
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => setSelectedColor(col)}
+                      className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                        isSelected
+                          ? 'bg-primary text-on-primary border-primary font-semibold shadow-xs'
+                          : 'bg-surface-container-low text-on-surface-variant border-surface-dim hover:border-primary/50'
+                      }`}
+                    >
+                      {col}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Size Selection */}
           <div className="space-y-2">
