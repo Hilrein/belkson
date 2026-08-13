@@ -73,7 +73,7 @@ export default function ContactsPage() {
                     {setting.label || setting.id.toUpperCase()}
                   </span>
                   <span className="text-xs text-outline font-normal">
-                    {setting.value}
+                    {setting.description || setting.value}
                   </span>
                 </div>
                 <span className="material-symbols-outlined text-[20px] text-outline group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all mt-0.5">

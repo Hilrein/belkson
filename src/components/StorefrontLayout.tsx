@@ -104,7 +104,7 @@ export default function StorefrontLayout() {
   const vkActive = vkSetting ? vkSetting.isActive : true
 
   const tgValue = tgSetting?.value || 'belkson'
-  const maxValue = maxSetting?.value || 'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
+  const maxValue = maxSetting?.value || 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo'
   const vkValue = vkSetting?.value || '94968923'
 
   // Direction-aware animation for the "Ещё X ₽ до скидки" amount

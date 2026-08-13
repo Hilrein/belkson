@@ -4,6 +4,7 @@ export type MessengerSetting = {
   id: 'telegram' | 'max' | 'vk' | string
   label: string
   value: string
+  description?: string
   isActive: boolean
   updatedAt?: string
 }
@@ -17,9 +18,27 @@ type MessengerSettingsContextValue = {
 }
 
 const DEFAULT_SETTINGS: MessengerSetting[] = [
-  { id: 'telegram', label: 'Telegram', value: 'belkson', isActive: true },
-  { id: 'max', label: 'Max', value: 'https://max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo', isActive: true },
-  { id: 'vk', label: 'VK', value: '94968923', isActive: true },
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    value: 'https://t.me/Belksonshop',
+    description: 'Официальный канал с анонсами новинок и выкупов',
+    isActive: true,
+  },
+  {
+    id: 'max',
+    label: 'MAX',
+    value: 'https://web.max.ru/u/f9LHodD0cOKVbrxghT0d8KoNtlR6WdagEWPgauFxCl5D2WpF9Euc-C2vFWo',
+    description: 'Консультации и обработка заказов в MAX',
+    isActive: true,
+  },
+  {
+    id: 'vk',
+    label: 'VK',
+    value: '94968923',
+    description: 'Новости бренда, фотографии коллекций и консультации',
+    isActive: true,
+  },
 ]
 
 const MessengerSettingsContext = createContext<MessengerSettingsContextValue | null>(null)
