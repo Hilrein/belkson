@@ -489,13 +489,12 @@ export default function StorefrontLayout() {
           >
             Каталог
           </Link>
-          <button
-            type="button"
-            onClick={goToTerms}
+          <Link
+            to="/about"
             className="text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer"
           >
             О нас
-          </button>
+          </Link>
           <button
             type="button"
             onClick={goToTerms}

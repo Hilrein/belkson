@@ -1115,6 +1115,113 @@ async function buildApp() {
   app.delete('/messenger-settings/:id', handleDeleteMessengerSetting)
   app.delete('/api/messenger-settings/:id', handleDeleteMessengerSetting)
 
+  /* ─── ABOUT SETTINGS ─────────────────────────────────────────────── */
+
+  type DbAboutSettingRow = {
+    id: string
+    title: string
+    content: string
+    badge?: string
+    sort_order: number
+    is_active: boolean
+    updated_at: string
+  }
+
+  async function ensureAboutSettingsTable() {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS about_settings (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL DEFAULT '',
+          content TEXT NOT NULL DEFAULT '',
+          badge TEXT NOT NULL DEFAULT '',
+          sort_order INT NOT NULL DEFAULT 1,
+          is_active BOOLEAN NOT NULL DEFAULT true,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+    } catch (err) {
+      console.warn('ensureAboutSettingsTable error:', err)
+    }
+  }
+
+  function mapAboutSetting(r: DbAboutSettingRow) {
+    return {
+      id: r.id,
+      title: r.title || '',
+      content: r.content || '',
+      badge: r.badge || '',
+      sortOrder: Number(r.sort_order || 1),
+      isActive: Boolean(r.is_active),
+      updatedAt: r.updated_at,
+    }
+  }
+
+  async function handleGetAboutSettings(c: any) {
+    await ensureAboutSettingsTable()
+    const rows = (await sql`SELECT * FROM about_settings ORDER BY sort_order ASC, updated_at ASC`) as DbAboutSettingRow[]
+    return c.json({ items: rows.map(mapAboutSetting) })
+  }
+
+  async function handlePutAboutSettings(c: any) {
+    const body = await c.req.json()
+    await ensureAboutSettingsTable()
+
+    const list = Array.isArray(body) ? body : Array.isArray(body.items) ? body.items : [body]
+
+    const validIds: string[] = []
+    for (const item of list) {
+      if (!item || !item.id) continue
+      const id = String(item.id).trim()
+      if (!id) continue
+      validIds.push(id)
+
+      const title = item.title !== undefined ? String(item.title).trim() : ''
+      const content = item.content !== undefined ? String(item.content).trim() : ''
+      const badge = item.badge !== undefined ? String(item.badge).trim() : ''
+      const sortOrder = Number(item.sortOrder) || 1
+      const isActive = item.isActive === true
+
+      await sql`
+        INSERT INTO about_settings (id, title, content, badge, sort_order, is_active, updated_at)
+        VALUES (${id}, ${title}, ${content}, ${badge}, ${sortOrder}, ${isActive}, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          content = EXCLUDED.content,
+          badge = EXCLUDED.badge,
+          sort_order = EXCLUDED.sort_order,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()
+      `
+    }
+
+    if (validIds.length > 0) {
+      await sql`DELETE FROM about_settings WHERE NOT (id = ANY(${validIds}))`
+    } else {
+      await sql`DELETE FROM about_settings`
+    }
+
+    const rows = (await sql`SELECT * FROM about_settings ORDER BY sort_order ASC, updated_at ASC`) as DbAboutSettingRow[]
+    return c.json({ items: rows.map(mapAboutSetting) })
+  }
+
+  async function handleDeleteAboutSetting(c: any) {
+    const id = c.req.param('id')
+    await ensureAboutSettingsTable()
+    if (id) {
+      await sql`DELETE FROM about_settings WHERE id = ${id}`
+    }
+    const rows = (await sql`SELECT * FROM about_settings ORDER BY sort_order ASC, updated_at ASC`) as DbAboutSettingRow[]
+    return c.json({ items: rows.map(mapAboutSetting) })
+  }
+
+  app.get('/about-settings', handleGetAboutSettings)
+  app.get('/api/about-settings', handleGetAboutSettings)
+  app.put('/about-settings', handlePutAboutSettings)
+  app.put('/api/about-settings', handlePutAboutSettings)
+  app.delete('/about-settings/:id', handleDeleteAboutSetting)
+  app.delete('/api/about-settings/:id', handleDeleteAboutSetting)
+
   app.onError((err, c) => {
     console.error(err)
     return c.json(

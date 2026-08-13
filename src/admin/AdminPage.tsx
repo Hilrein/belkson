@@ -13,6 +13,7 @@ import {
 } from '../store/PurchaseTermsContext'
 import { useOrders, type Order, type OrderItem, type OrderStatus } from '../store/OrdersContext'
 import { useMessengerSettings, type MessengerSetting } from '../store/MessengerSettingsContext'
+import { useAboutSettings, type AboutSetting } from '../store/AboutSettingsContext'
 import { useHeroBanners, type HeroBanner } from '../store/HeroBannersContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
@@ -656,6 +657,203 @@ function AdminMessengerSettingsView() {
   )
 }
 
+function AdminAboutSettingsView() {
+  const { items, updateSettings, deleteSetting, loading } = useAboutSettings()
+  const [localItems, setLocalItems] = useState<AboutSetting[]>(items)
+  const [savedSuccess, setSavedSuccess] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setLocalItems(items)
+  }, [items])
+
+  const handleToggle = (id: string) => {
+    setLocalItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, isActive: !item.isActive } : item,
+      ),
+    )
+  }
+
+  const handleChangeField = (id: string, field: keyof AboutSetting, value: any) => {
+    setLocalItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    )
+  }
+
+  const handleAddBlock = () => {
+    const newId = `about_block_${Date.now()}`
+    const newItem: AboutSetting = {
+      id: newId,
+      title: 'Новый раздел',
+      badge: 'Информация',
+      content: '',
+      sortOrder: localItems.length + 1,
+      isActive: true,
+    }
+    setLocalItems((prev) => [...prev, newItem])
+  }
+
+  const handleDeleteBlock = async (id: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот блок страницы «О нас»?')) return
+    setLocalItems((prev) => prev.filter((item) => item.id !== id))
+    await deleteSetting(id)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    await updateSettings(localItems)
+    setSaving(false)
+    setSavedSuccess(true)
+    setTimeout(() => setSavedSuccess(false), 2500)
+  }
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 border-b border-gray-200 pb-5">
+        <div>
+          <h1 className="text-2xl lg:text-[32px] font-semibold text-on-surface mb-2">
+            Страница «О нас»
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Управление блоками информации, ценностями бренда и текстом страницы «О нас». Данные сохраняются напрямую в базе данных Neon.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {savedSuccess && (
+            <span className="text-xs text-emerald-600 font-medium bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+              Сохранено
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleAddBlock}
+            className="px-4 py-2.5 bg-gray-100 text-on-surface hover:bg-gray-200 text-xs font-semibold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <Icon name="add" className="text-base" />
+            <span>Добавить блок</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || loading}
+            className="px-5 py-2.5 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить изменения'}
+          </button>
+        </div>
+      </div>
+
+      {localItems.length === 0 ? (
+        <div className="p-8 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <p className="text-sm text-on-surface-variant mb-3">В базе данных пока нет блоков для страницы «О нас».</p>
+          <button
+            type="button"
+            onClick={handleAddBlock}
+            className="px-4 py-2 bg-[#8a4193] text-white text-xs font-semibold rounded-full hover:bg-[#793782] transition-colors cursor-pointer"
+          >
+            + Добавить первый блок
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {localItems.map((item) => (
+            <div
+              key={item.id}
+              className={`p-5 rounded-2xl border transition-all ${
+                item.isActive
+                  ? 'bg-white border-gray-200 shadow-xs'
+                  : 'bg-gray-50 border-gray-200 opacity-60'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-base text-on-surface">
+                    {item.title || 'Блок без названия'}
+                  </span>
+                  <span
+                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium ${
+                      item.isActive
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {item.isActive ? 'Отображается на сайте' : 'Скрыт'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={item.isActive}
+                      onChange={() => handleToggle(item.id)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#8a4193]"></div>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteBlock(item.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Удалить блок"
+                  >
+                    <Icon name="delete" className="text-lg" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                      Заголовок раздела
+                    </label>
+                    <input
+                      type="text"
+                      value={item.title || ''}
+                      onChange={(e) => handleChangeField(item.id, 'title', e.target.value)}
+                      placeholder="Например: О бренде Belkson"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                      Бейдж / Мета-метка
+                    </label>
+                    <input
+                      type="text"
+                      value={item.badge || ''}
+                      onChange={(e) => handleChangeField(item.id, 'badge', e.target.value)}
+                      placeholder="Например: Миссия"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-on-surface-variant mb-1">
+                    Текст сообщения / описание
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={item.content || ''}
+                    onChange={(e) => handleChangeField(item.id, 'content', e.target.value)}
+                    placeholder="Подробное описание..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors resize-y"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StockInlineEditor({
   product,
   onUpdate,
@@ -802,7 +1000,7 @@ export default function AdminPage() {
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
   const { newOrdersCount } = useOrders()
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'contacts' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'contacts' | 'about' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
 
   // Hero Banners Drawer state
   const [bannerDrawerOpen, setBannerDrawerOpen] = useState(false)
@@ -1662,6 +1860,8 @@ export default function AdminPage() {
             <AdminOrdersView />
           ) : activeTab === 'contacts' || activeTab === 'messengers' ? (
             <AdminMessengerSettingsView />
+          ) : activeTab === 'about' ? (
+            <AdminAboutSettingsView />
           ) : activeTab === 'purchase-terms' ? (
             <div className="space-y-6 max-w-4xl">
               {/* Header */}
