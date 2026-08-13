@@ -62,6 +62,7 @@ export default function CatalogPage() {
       const next = new URLSearchParams(searchParams)
       if (value === FILTER_ALL) next.delete('category')
       else next.set('category', value)
+      next.delete('subcategory')
       setSearchParams(next, { replace: true })
     },
     [searchParams, setSearchParams]

@@ -1179,7 +1179,12 @@ function PromoCardLinkSelector({
 
   const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCat = e.target.value
-    const newUrl = generateCatalogLink(newCat, parsed.subcategories)
+    const newUrl = generateCatalogLink(newCat, [])
+    onLinkChange(newUrl)
+  }
+
+  const handleClearSubcategories = () => {
+    const newUrl = generateCatalogLink(parsed.category, [])
     onLinkChange(newUrl)
   }
 
@@ -1227,9 +1232,20 @@ function PromoCardLinkSelector({
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-on-surface-variant mb-1.5">
-          Подкатегории (мультивыбор)
-        </label>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-xs font-medium text-on-surface-variant">
+            Подкатегории
+          </label>
+          {parsed.subcategories.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearSubcategories}
+              className="text-[11px] text-[#8a4193] hover:underline font-medium"
+            >
+              Сбросить выбор ({parsed.subcategories.length})
+            </button>
+          )}
+        </div>
         <div className="p-3 bg-surface-container-low/50 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
           {SUBCATEGORIES.map((sub) => {
             const checked = parsed.subcategories.includes(sub)
