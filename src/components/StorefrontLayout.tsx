@@ -309,15 +309,9 @@ export default function StorefrontLayout() {
                     </Link>
                     <Link
                       className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
-                      to={isHome ? '#lyubimchiki' : '/#lyubimchiki'}
+                      to="/catalog?category=sale"
                     >
                       Топ распродаж
-                    </Link>
-                    <Link
-                      className="text-on-surface-variant hover:text-[#ce7ed5] text-lg transition-colors block font-body-lg font-medium"
-                      to={isHome ? '#prochee' : '/#prochee'}
-                    >
-                      Прочее
                     </Link>
                     <hr className="my-2 border-[#ce7ed5]/30" />
                     <Link
@@ -590,17 +584,10 @@ export default function StorefrontLayout() {
               </Link>
               <Link
                 className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                to="/#lyubimchiki"
+                to="/catalog?category=sale"
                 onClick={toggleNavDrawer}
               >
                 Топ распродаж
-              </Link>
-              <Link
-                className="text-on-surface font-body-lg text-lg hover:text-[#ce7ed5] transition-colors"
-                to="/#prochee"
-                onClick={toggleNavDrawer}
-              >
-                Прочее
               </Link>
               <hr className="border-t border-[#EAE6EE] my-2" />
               {CATEGORIES.map((cat) => (
