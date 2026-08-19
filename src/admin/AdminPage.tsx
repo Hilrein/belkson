@@ -1762,6 +1762,7 @@ export default function AdminPage() {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false)
   const [ordersInitialSearch, setOrdersInitialSearch] = useState('')
+  const [productsSearch, setProductsSearch] = useState('')
 
   // Hero Banners Drawer state
   const [bannerDrawerOpen, setBannerDrawerOpen] = useState(false)
@@ -2335,23 +2336,28 @@ export default function AdminPage() {
   const globalSearchResults = useMemo(() => {
     const q = globalSearchQuery.trim().toLowerCase()
     if (!q) return { products: [], orders: [] }
-    const matchedProducts = products
-      .filter((p) =>
-        [p.name, p.sku, p.brand, p.color, p.category, p.subcategory]
-          .filter(Boolean)
-          .some((f) => String(f).toLowerCase().includes(q)),
-      )
-      .slice(0, 5)
-    const matchedOrders = orders
-      .filter((o) => {
-        if (String(o.id).includes(q)) return true
-        if (o.addressNotes?.toLowerCase().includes(q)) return true
-        if (o.items.some((i) => i.name.toLowerCase().includes(q))) return true
-        return false
-      })
-      .slice(0, 5)
+    const matchedProducts = products.filter((p) =>
+      p.name.toLowerCase().includes(q),
+    )
+    const matchedOrders = orders.filter((o) => {
+      if (String(o.id).includes(q)) return true
+      if (o.addressNotes?.toLowerCase().includes(q)) return true
+      if (o.items.some((i) => i.name.toLowerCase().includes(q))) return true
+      return false
+    })
     return { products: matchedProducts, orders: matchedOrders }
   }, [globalSearchQuery, products, orders])
+
+  const visibleProducts = useMemo(() => {
+    const q = productsSearch.trim().toLowerCase()
+    if (!q) return products
+    return products.filter((p) => p.name.toLowerCase().includes(q))
+  }, [products, productsSearch])
+
+  const applyGlobalSearch = () => {
+    setProductsSearch(globalSearchQuery.trim())
+    setGlobalSearchOpen(false)
+  }
 
   const applyImageUrl = () => {
     const url = form.imageUrlDraft.trim()
@@ -2715,8 +2721,13 @@ export default function AdminPage() {
                   setGlobalSearchOpen(true)
                 }}
                 onFocus={() => setGlobalSearchOpen(true)}
+                onBlur={() => applyGlobalSearch()}
                 onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
+                  if (e.key === 'Enter') {
+                    setActiveTab('products')
+                    applyGlobalSearch()
+                    ;(e.target as HTMLInputElement).blur()
+                  } else if (e.key === 'Escape') {
                     setGlobalSearchOpen(false)
                     ;(e.target as HTMLInputElement).blur()
                   }
@@ -3561,7 +3572,7 @@ export default function AdminPage() {
                       Управление товарами
                     </h1>
                     <span className="px-3 py-1 bg-primary/10 text-primary font-bold text-xs rounded-full border border-primary/20 shrink-0">
-                      {products.length} {products.length === 1 ? 'товар' : products.length > 1 && products.length < 5 ? 'товара' : 'товаров'}
+                      {visibleProducts.length} {visibleProducts.length === 1 ? 'товар' : visibleProducts.length > 1 && visibleProducts.length < 5 ? 'товара' : 'товаров'}
                     </span>
                   </div>
                   <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
@@ -3585,8 +3596,21 @@ export default function AdminPage() {
                       Каталог товаров
                     </h3>
                     <span className="text-xs font-semibold text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-full">
-                      {products.length} шт.
+                      {visibleProducts.length} шт.
                     </span>
+                    {productsSearch.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductsSearch('')
+                          setGlobalSearchQuery('')
+                        }}
+                        className="text-xs font-medium text-[#ce7ed5] hover:text-primary flex items-center gap-1 cursor-pointer"
+                      >
+                        <Icon name="close" className="text-sm" />
+                        Сбросить поиск
+                      </button>
+                    )}
                   </div>
                   <div className="flex gap-2 flex-wrap items-center">
                     <div className="relative inline-block">
@@ -3634,8 +3658,25 @@ export default function AdminPage() {
                 </div>
 
                 {/* Mobile cards */}
+                {visibleProducts.length === 0 ? (
+                  <div className="bg-surface-container-lowest border border-gray-200 rounded-md p-8 text-center">
+                    <p className="text-sm text-on-surface-variant">
+                      Ничего не найдено по запросу «{productsSearch.trim()}»
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProductsSearch('')
+                        setGlobalSearchQuery('')
+                      }}
+                      className="mt-3 text-xs font-medium text-[#ce7ed5] hover:text-primary cursor-pointer"
+                    >
+                      Сбросить поиск
+                    </button>
+                  </div>
+                ) : (
                 <div className="md:hidden space-y-3">
-                  {products.map((product) => (
+                  {visibleProducts.map((product) => (
                     <article
                       key={product.id}
                       className="bg-surface-container-lowest border border-gray-200 rounded-md p-3 flex gap-3"
@@ -3682,6 +3723,7 @@ export default function AdminPage() {
                     </article>
                   ))}
                 </div>
+                )}
 
                 {/* Desktop table — full width of content area */}
                 <div className="hidden md:block w-full bg-surface-container-lowest border border-gray-200 rounded-md overflow-hidden">
@@ -3729,7 +3771,17 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody className="text-body-sm font-body-sm text-on-surface">
-                      {products.map((product) => (
+                      {visibleProducts.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={9}
+                            className="p-8 text-center text-on-surface-variant"
+                          >
+                            Ничего не найдено по запросу «{productsSearch.trim()}»
+                          </td>
+                        </tr>
+                      ) : (
+                        visibleProducts.map((product) => (
                         <tr
                           key={product.id}
                           className="border-b border-gray-200 last:border-b-0 hover:bg-surface transition-colors"
@@ -3796,7 +3848,8 @@ export default function AdminPage() {
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
