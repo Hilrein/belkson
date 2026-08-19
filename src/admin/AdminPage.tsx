@@ -172,9 +172,9 @@ const ICON_CATEGORIES = [
   },
 ]
 
-function AdminOrdersView() {
+function AdminOrdersView({ initialSearch = '' }: { initialSearch?: string }) {
   const { orders, loading, fetchOrders, updateOrderStatus, deleteOrder } = useOrders()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'completed' | 'cancelled'>('all')
   const [messengerFilter, setMessengerFilter] = useState<'all' | 'Telegram' | 'Max' | 'VK'>('all')
 
@@ -1755,9 +1755,13 @@ export default function AdminPage() {
   } = useHeroBanners()
 
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
-  const { newOrdersCount } = useOrders()
+  const { orders, newOrdersCount } = useOrders()
 
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'promo-block' | 'contacts' | 'about' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
+
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('')
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false)
+  const [ordersInitialSearch, setOrdersInitialSearch] = useState('')
 
   // Hero Banners Drawer state
   const [bannerDrawerOpen, setBannerDrawerOpen] = useState(false)
@@ -2316,6 +2320,39 @@ export default function AdminPage() {
     setImageBusy(false)
   }
 
+  const globalSearchRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onClick = (e: PointerEvent) => {
+      if (globalSearchRef.current && !globalSearchRef.current.contains(e.target as Node)) {
+        setGlobalSearchOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onClick)
+    return () => document.removeEventListener('pointerdown', onClick)
+  }, [])
+
+  const globalSearchResults = useMemo(() => {
+    const q = globalSearchQuery.trim().toLowerCase()
+    if (!q) return { products: [], orders: [] }
+    const matchedProducts = products
+      .filter((p) =>
+        [p.name, p.sku, p.brand, p.color, p.category, p.subcategory]
+          .filter(Boolean)
+          .some((f) => String(f).toLowerCase().includes(q)),
+      )
+      .slice(0, 5)
+    const matchedOrders = orders
+      .filter((o) => {
+        if (String(o.id).includes(q)) return true
+        if (o.addressNotes?.toLowerCase().includes(q)) return true
+        if (o.items.some((i) => i.name.toLowerCase().includes(q))) return true
+        return false
+      })
+      .slice(0, 5)
+    return { products: matchedProducts, orders: matchedOrders }
+  }, [globalSearchQuery, products, orders])
+
   const applyImageUrl = () => {
     const url = form.imageUrlDraft.trim()
     if (!url) {
@@ -2663,7 +2700,7 @@ export default function AdminPage() {
             >
               <Icon name="menu" />
             </button>
-            <div className="relative w-full min-w-0">
+            <div className="relative w-full min-w-0" ref={globalSearchRef}>
               <Icon
                 name="search"
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm"
@@ -2672,7 +2709,101 @@ export default function AdminPage() {
                 className="w-full pl-10 pr-4 py-2 bg-surface border border-gray-200 rounded-md text-body-sm focus:outline-none focus:ring-1 focus:ring-primary-container focus:border-primary-container placeholder-on-surface-variant text-on-surface"
                 placeholder="Поиск товаров, заказов..."
                 type="search"
+                value={globalSearchQuery}
+                onChange={(e) => {
+                  setGlobalSearchQuery(e.target.value)
+                  setGlobalSearchOpen(true)
+                }}
+                onFocus={() => setGlobalSearchOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setGlobalSearchOpen(false)
+                    ;(e.target as HTMLInputElement).blur()
+                  }
+                }}
               />
+              {globalSearchOpen && globalSearchQuery.trim() && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-md shadow-lg z-50 overflow-hidden max-h-[70vh] overflow-y-auto">
+                  {globalSearchResults.products.length === 0 &&
+                  globalSearchResults.orders.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-on-surface-variant">
+                      Ничего не найдено
+                    </p>
+                  ) : (
+                    <>
+                      {globalSearchResults.products.length > 0 && (
+                        <div>
+                          <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                            Товары
+                          </p>
+                          {globalSearchResults.products.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              className="w-full flex items-center gap-3 px-4 py-2 hover:bg-surface-variant text-left cursor-pointer"
+                              onClick={() => {
+                                setActiveTab('products')
+                                openEdit(p)
+                                setGlobalSearchQuery('')
+                                setGlobalSearchOpen(false)
+                              }}
+                            >
+                              <img
+                                src={p.image}
+                                alt=""
+                                className="w-9 h-9 rounded object-cover bg-surface-variant shrink-0"
+                              />
+                              <span className="min-w-0">
+                                <span className="block text-sm text-on-surface truncate">
+                                  {p.name}
+                                </span>
+                                <span className="block text-xs text-on-surface-variant truncate">
+                                  #{p.id} · {p.sku}
+                                </span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {globalSearchResults.orders.length > 0 && (
+                        <div>
+                          <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                            Заказы
+                          </p>
+                          {globalSearchResults.orders.map((o) => (
+                            <button
+                              key={o.id}
+                              type="button"
+                              className="w-full flex items-center gap-3 px-4 py-2 hover:bg-surface-variant text-left cursor-pointer"
+                              onClick={() => {
+                                setOrdersInitialSearch(String(o.id))
+                                setActiveTab('orders')
+                                setGlobalSearchQuery('')
+                                setGlobalSearchOpen(false)
+                              }}
+                            >
+                              <span className="w-9 h-9 rounded bg-surface-variant flex items-center justify-center shrink-0">
+                                <Icon
+                                  name="receipt_long"
+                                  className="text-sm text-on-surface-variant"
+                                />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm text-on-surface">
+                                  Заказ #{o.id}
+                                </span>
+                                <span className="block text-xs text-on-surface-variant truncate">
+                                  {o.items.map((i) => i.name).join(', ')}
+                                </span>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -2698,7 +2829,10 @@ export default function AdminPage() {
             <p className="text-sm text-on-surface-variant">Загрузка из Neon…</p>
           )}
           {activeTab === 'orders' ? (
-            <AdminOrdersView />
+            <AdminOrdersView
+              key={ordersInitialSearch}
+              initialSearch={ordersInitialSearch}
+            />
           ) : activeTab === 'messengers' ? (
             <AdminMessengerSettingsView />
           ) : activeTab === 'contacts' ? (
