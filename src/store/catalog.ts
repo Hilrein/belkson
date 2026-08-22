@@ -44,7 +44,8 @@ export const SUBCATEGORIES = [
   'Комбинезоны и боди',
   'Костюмы',
   'Платья и юбки',
-  'Футболки',
+  'Футболки и лонгсливы',
+  'Рубашки',
   'Кофты и свитшоты',
   'Брюки, джинсы, шорты',
   'Нижнее белье и пижамы',
@@ -58,11 +59,14 @@ export type Subcategory = (typeof SUBCATEGORIES)[number]
 
 /** Normalize category for compare / URL (trim, collapse spaces, casefold). */
 export function normalizeCategory(value: string | null | undefined): string {
-  return String(value ?? '')
+  const n = String(value ?? '')
     .replace(/\u00a0/g, ' ')
     .trim()
     .replace(/\s+/g, ' ')
     .toLocaleLowerCase('ru-RU')
+  // legacy alias: old "Футболки" -> new "Футболки и лонгсливы"
+  if (n === 'футболки') return 'футболки и лонгсливы'
+  return n
 }
 
 export function categoriesMatch(
