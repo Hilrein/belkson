@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useCatalog } from './store/CatalogContext'
 import { useCart } from './store/CartContext'
@@ -18,11 +18,14 @@ const FILTER_NEW = 'new'
 const FILTER_FAVORITE = 'favorite'
 
 export default function CatalogPage() {
-  const { products, format } = useCatalog()
+  const { products, format, loading, loadingMore, hasMore, loadMore } = useCatalog()
   const { openAddToCartModal } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [sortBy, setSortBy] = useState<SortOption>('featured')
+
+  // Infinite scroll sentinel — load next chunk only when scrolled to bottom
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   const rawCategoryParam = searchParams.get('category')
   const activeFilter = useMemo(() => {
@@ -229,6 +232,22 @@ export default function CatalogPage() {
     setSortBy('featured')
   }
 
+  // Load next chunk only when sentinel becomes visible (scrolled to bottom)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMore || loadingMore || loading) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          void loadMore()
+        }
+      },
+      { threshold: 0.1, rootMargin: '320px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, loadingMore, loading, loadMore])
+
   return (
     <>
       <BaseCatalogLayout<CatalogProduct>
@@ -249,6 +268,9 @@ export default function CatalogPage() {
         onSortChange={setSortBy}
         items={filtered}
         totalCount={filtered.length}
+        loadingInitial={loading && products.length === 0}
+        loadingMore={loadingMore}
+        sentinelRef={sentinelRef}
         onResetAll={handleResetAll}
         renderItem={(product) => (
           <article

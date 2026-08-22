@@ -452,14 +452,15 @@ export function BaseCatalogLayout<T>({
           <>
             <div className={gridClass}>{items.map((item) => renderItem(item))}</div>
 
-            {/* Chunk Loader Placeholder */}
+            {/* Infinite scroll loader — circle only visible when scrolled to bottom */}
             {loadingMore && (
-              <div className="mt-8">
-                <ProductGridSkeleton cols={cols} count={4} />
+              <div className="mt-10 flex flex-col items-center gap-3">
+                <div className="w-9 h-9 rounded-full border-[3px] border-surface-dim border-t-primary animate-spin" aria-label="Загрузка" />
+                <span className="text-xs tracking-[0.12em] uppercase font-medium text-on-surface-variant">Загружаем ещё…</span>
               </div>
             )}
 
-            {/* Sentinel for Infinite Scroll */}
+            {/* Sentinel for Infinite Scroll — triggers next page only when visible */}
             {sentinelRef && <div ref={sentinelRef} className="h-10 w-full" />}
           </>
         )}

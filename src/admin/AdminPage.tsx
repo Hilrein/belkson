@@ -1726,6 +1726,9 @@ export default function AdminPage() {
     updateProduct,
     deleteProduct,
     loading,
+    loadingMore: catalogLoadingMore,
+    hasMore: catalogHasMore,
+    loadMore: catalogLoadMore,
     error,
     refresh,
   } = useCatalog()
@@ -3853,6 +3856,25 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
+                {/* Admin infinite scroll — only loads next chunk when requested */}
+                {catalogHasMore && (
+                  <div className="mt-6 flex flex-col items-center gap-3">
+                    {catalogLoadingMore ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-9 h-9 rounded-full border-[3px] border-gray-200 border-t-[#ce7ed5] animate-spin" aria-label="Загрузка" />
+                        <span className="text-xs tracking-[0.12em] uppercase font-medium text-on-surface-variant">Загружаем ещё…</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void catalogLoadMore()}
+                        className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-semibold tracking-[0.12em] uppercase text-on-surface hover:border-[#ce7ed5] hover:text-[#ce7ed5] transition-colors shadow-sm"
+                      >
+                        Загрузить ещё ({products.length} из {products.length + (catalogHasMore ? 50 : 0)}+)
+                      </button>
+                    )}
+                  </div>
+                )}
               </section>
             </>
           )}

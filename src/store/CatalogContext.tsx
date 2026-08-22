@@ -18,8 +18,12 @@ type CatalogContextValue = {
   products: CatalogProduct[]
   currency: CurrencyCode
   loading: boolean
+  loadingMore: boolean
+  hasMore: boolean
+  total: number
   error: string | null
   refresh: () => Promise<void>
+  loadMore: () => Promise<void>
   setCurrency: (c: CurrencyCode) => Promise<void>
   format: (priceRub: number) => string
   addProduct: (input: Omit<CatalogProduct, 'id'>) => Promise<CatalogProduct>
@@ -36,51 +40,56 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [currency, setCurrencyState] = useState<CurrencyCode>('RUB')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
 
+  const LIMIT = 50
+
   const refresh = useCallback(async () => {
-    let firstPageDone = false
     try {
       setError(null)
       setLoading(true)
+      setHasMore(false)
 
-      // Chunked loading — avoids Neon 64 MB HTTP 507 by fetching 50 items at a time
-      // First page hides splash immediately, remaining pages stream in background.
-      const limit = 50
-      let page = 1
-      let all: CatalogProduct[] = []
-
-      while (true) {
-        const chunk = await api.getCatalogPage(page, limit)
-        if (!firstPageDone) {
-          setCurrencyState(chunk.currency)
-        }
-        all = page === 1 ? chunk.products : [...all, ...chunk.products]
-        setProducts(all)
-
-        if (!firstPageDone) {
-          setLoading(false)
-          firstPageDone = true
-        }
-
-        const hasMore =
-          typeof chunk.hasMore === 'boolean'
-            ? chunk.hasMore
-            : chunk.products.length === limit && all.length < (chunk.total ?? Infinity)
-
-        if (!hasMore || chunk.products.length === 0) break
-        page += 1
-        if (page > 500) break // safety: ~25k products
-      }
+      // Load first page only — remaining pages load on scroll (avoids 507 + lazy)
+      const chunk = await api.getCatalogPage(1, LIMIT)
+      setCurrencyState(chunk.currency)
+      setProducts(chunk.products)
+      setTotal(chunk.total ?? chunk.products.length)
+      setHasMore(Boolean(chunk.hasMore))
+      setPage(1)
     } catch (e) {
       const message =
         e instanceof Error ? e.message : 'Не удалось загрузить каталог'
       setError(message)
       setProducts([])
+      setHasMore(false)
     } finally {
-      if (!firstPageDone) setLoading(false)
+      setLoading(false)
     }
   }, [])
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || !hasMore) return
+    try {
+      setLoadingMore(true)
+      const nextPage = page + 1
+      const chunk = await api.getCatalogPage(nextPage, LIMIT)
+      setProducts((prev) => [...prev, ...chunk.products])
+      setTotal(chunk.total ?? total)
+      setHasMore(Boolean(chunk.hasMore))
+      setPage(nextPage)
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : 'Не удалось загрузить каталог'
+      setError(message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, loading, hasMore, page, total])
 
   useEffect(() => {
     void refresh()
@@ -147,8 +156,12 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       products,
       currency,
       loading,
+      loadingMore,
+      hasMore,
+      total,
       error,
       refresh,
+      loadMore,
       setCurrency,
       format,
       addProduct,
@@ -162,8 +175,12 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       products,
       currency,
       loading,
+      loadingMore,
+      hasMore,
+      total,
       error,
       refresh,
+      loadMore,
       setCurrency,
       format,
       addProduct,
