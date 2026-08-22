@@ -1,7 +1,6 @@
 import { useState, type ReactNode, type RefObject } from 'react'
 import { ClipLoader, PulseLoader } from 'react-spinners'
 import type { SortOption } from '../../types/shop'
-import { ProductGridSkeleton } from './ProductGridSkeleton'
 
 export interface CategoryTabItem {
   id: string
