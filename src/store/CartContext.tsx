@@ -20,6 +20,8 @@ export type CartLine = {
   sizes?: string[]
   selectedSizes?: string[]
   quantity: number
+  /** Sale items do not participate in loyalty program */
+  isSale?: boolean
 }
 
 export type AddToCartOptions = {
@@ -31,15 +33,19 @@ export type AddToCartOptions = {
 type CartContextValue = {
   items: CartLine[]
   totalCount: number
-  /** Sum of all line totals before any discount */
+  /** Sum of all line totals before any discount (including sale) */
   subtotalRub: number
-  /** Ruble amount automatically discounted (0 if none applies) */
+  /** Sum of loyalty-eligible lines (non-sale only) */
+  loyaltySubtotalRub: number
+  /** Sum of sale lines (excluded from loyalty) */
+  saleSubtotalRub: number
+  /** Ruble amount automatically discounted (0 if none applies) — only from loyalty part */
   discountRub: number
   /** Final payable amount after the automatic discount */
   totalRub: number
-  /** The applied discount rule, or null */
+  /** The applied discount rule, or null (based on loyalty subtotal) */
   activeDiscount: Discount | null
-  /** Next discount rule that becomes available as subtotal grows, or null */
+  /** Next discount rule that becomes available as loyalty subtotal grows, or null */
   nextDiscount: Discount | null
   addToCart: (product: CatalogProduct, options?: AddToCartOptions | number) => void
   removeFromCart: (id: string | number) => void
@@ -114,6 +120,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const finalColor = selectedColor || product.color || 'Стандартный'
       const finalSizes = selectedSizes || product.sizes
       const targetId = makeCartLineId(product.id, finalColor, finalSizes)
+      const isSale = Boolean(product.isSale)
 
       setItems((prev) => {
         const i = prev.findIndex((l) => l.id === targetId)
@@ -130,6 +137,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               sizes: product.sizes,
               selectedSizes: finalSizes,
               quantity: n,
+              isSale,
             },
           ]
         }
@@ -137,6 +145,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           idx === i
             ? {
                 ...l,
+                // keep original isSale if already set, otherwise use product flag
+                isSale: l.isSale ?? isSale,
                 quantity: l.quantity + n,
               }
             : l,
@@ -194,35 +204,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items],
   )
 
+  // Sale items are excluded from loyalty program
+  const loyaltySubtotalRub = useMemo(
+    () => items.filter((l) => !l.isSale).reduce((s, l) => s + l.priceRub * l.quantity, 0),
+    [items],
+  )
+
+  const saleSubtotalRub = useMemo(
+    () => items.filter((l) => Boolean(l.isSale)).reduce((s, l) => s + l.priceRub * l.quantity, 0),
+    [items],
+  )
+
   /**
    * Best applicable automatic discount: the active rule with the largest
-   * threshold still below the subtotal (matches the -5% / -10% ladder).
+   * threshold still below the LOYALTY subtotal (sale excluded).
    */
   const activeDiscount = useMemo(() => {
     const applicable = discounts
-      .filter((d) => d.isActive && d.thresholdRub <= subtotalRub)
+      .filter((d) => d.isActive && d.thresholdRub <= loyaltySubtotalRub)
       .sort((a, b) => b.thresholdRub - a.thresholdRub)
     if (applicable.length === 0) return null
     return applicable[0]
-  }, [discounts, subtotalRub])
+  }, [discounts, loyaltySubtotalRub])
 
-  /** Next rule that becomes available when the subtotal grows */
+  /** Next rule that becomes available when the loyalty subtotal grows */
   const nextDiscount = useMemo(() => {
     const upcoming = discounts
-      .filter((d) => d.isActive && d.thresholdRub > subtotalRub)
+      .filter((d) => d.isActive && d.thresholdRub > loyaltySubtotalRub)
       .sort((a, b) => a.thresholdRub - b.thresholdRub)
     if (upcoming.length === 0) return null
     return upcoming[0]
-  }, [discounts, subtotalRub])
+  }, [discounts, loyaltySubtotalRub])
 
   const discountRub = useMemo(() => {
     if (!activeDiscount) return 0
     const amount =
       activeDiscount.type === 'percent'
-        ? Math.floor((subtotalRub * activeDiscount.value) / 100)
+        ? Math.floor((loyaltySubtotalRub * activeDiscount.value) / 100)
         : Math.floor(activeDiscount.value)
-    return Math.max(0, Math.min(subtotalRub, amount))
-  }, [activeDiscount, subtotalRub])
+    return Math.max(0, Math.min(loyaltySubtotalRub, amount))
+  }, [activeDiscount, loyaltySubtotalRub])
 
   const totalRub = useMemo(
     () => Math.max(0, subtotalRub - discountRub),
@@ -234,6 +255,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       totalCount,
       subtotalRub,
+      loyaltySubtotalRub,
+      saleSubtotalRub,
       discountRub,
       totalRub,
       activeDiscount,
@@ -251,6 +274,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       totalCount,
       subtotalRub,
+      loyaltySubtotalRub,
+      saleSubtotalRub,
       discountRub,
       totalRub,
       activeDiscount,

@@ -34,6 +34,7 @@ export default function StorefrontLayout() {
     items: cartItems,
     totalCount,
     subtotalRub,
+    loyaltySubtotalRub,
     discountRub,
     totalRub,
     activeDiscount,
@@ -110,11 +111,12 @@ export default function StorefrontLayout() {
     ? tgValue
     : `https://t.me/${tgValue.replace(/^@/, '')}`
 
-  // Direction-aware animation for the "Ещё X ₽ до скидки" amount
+  // Direction-aware animation for the "Ещё X ₽ до скидки" amount — sale excluded
   const nextNeed = useMemo(
-    () => (nextDiscount ? nextDiscount.thresholdRub - subtotalRub : 0),
-    [nextDiscount, subtotalRub],
+    () => (nextDiscount ? nextDiscount.thresholdRub - loyaltySubtotalRub : 0),
+    [nextDiscount, loyaltySubtotalRub],
   )
+  const hasSaleInCart = useMemo(() => cartItems.some((l) => Boolean(l.isSale)), [cartItems])
   const [needDirection, setNeedDirection] = useState<'up' | 'down' | null>(null)
   const prevNeedRef = useRef<number | null>(null)
 
@@ -1196,13 +1198,18 @@ export default function StorefrontLayout() {
                           width: `${Math.min(
                             100,
                             Math.round(
-                              (subtotalRub / nextDiscount.thresholdRub) * 100,
+                              (loyaltySubtotalRub / nextDiscount.thresholdRub) * 100,
                             ),
                           )}%`,
                         }}
                       />
                     </div>
                   </div>
+                )}
+                {hasSaleInCart && (
+                  <p className="mb-3 text-[11px] leading-snug text-on-surface-variant/70 italic">
+                    Товары по акции не участвуют в программе лояльности
+                  </p>
                 )}
                 <div className="flex justify-between items-center mb-2 font-headline-md text-on-surface">
                   <span>Сумма</span>
