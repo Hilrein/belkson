@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { ClipLoader } from 'react-spinners'
 import { CATEGORIES, SUBCATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
@@ -3856,13 +3857,13 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
-                {/* Admin infinite scroll — only loads next chunk when requested */}
+                {/* Admin infinite scroll — react-spinners default */}
                 {catalogHasMore && (
                   <div className="mt-6 flex flex-col items-center gap-3">
                     {catalogLoadingMore ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-9 h-9 rounded-full border-[3px] border-gray-200 border-t-[#ce7ed5] animate-spin" aria-label="Загрузка" />
-                        <span className="text-xs tracking-[0.12em] uppercase font-medium text-on-surface-variant">Загружаем ещё…</span>
+                      <div className="flex flex-col items-center gap-3 py-4">
+                        <ClipLoader color="#ce7ed5" size={32} speedMultiplier={0.85} />
+                        <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем ещё…</span>
                       </div>
                     ) : (
                       <button

@@ -1,4 +1,5 @@
 import { useState, type ReactNode, type RefObject } from 'react'
+import { ClipLoader, PulseLoader } from 'react-spinners'
 import type { SortOption } from '../../types/shop'
 import { ProductGridSkeleton } from './ProductGridSkeleton'
 
@@ -426,7 +427,10 @@ export function BaseCatalogLayout<T>({
       {/* Grid Container */}
       <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-6 md:py-10">
         {loadingInitial ? (
-          <ProductGridSkeleton cols={cols} count={12} />
+          <div className="py-20 flex flex-col items-center justify-center gap-4">
+            <ClipLoader color="#8a4193" size={44} speedMultiplier={0.85} />
+            <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant animate-pulse">Загружаем каталог…</span>
+          </div>
         ) : error ? (
           <div className="py-20 text-center">
             <p className="text-error text-base mb-2 font-medium">Ошибка загрузки</p>
@@ -452,11 +456,11 @@ export function BaseCatalogLayout<T>({
           <>
             <div className={gridClass}>{items.map((item) => renderItem(item))}</div>
 
-            {/* Infinite scroll loader — circle only visible when scrolled to bottom */}
+            {/* Infinite scroll loader — react-spinners default, only when scrolled to bottom */}
             {loadingMore && (
-              <div className="mt-10 flex flex-col items-center gap-3">
-                <div className="w-9 h-9 rounded-full border-[3px] border-surface-dim border-t-primary animate-spin" aria-label="Загрузка" />
-                <span className="text-xs tracking-[0.12em] uppercase font-medium text-on-surface-variant">Загружаем ещё…</span>
+              <div className="mt-10 flex flex-col items-center gap-4 py-6">
+                <PulseLoader color="#ce7ed5" size={10} speedMultiplier={0.9} />
+                <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем ещё…</span>
               </div>
             )}
 
