@@ -36,8 +36,43 @@ export type CatalogResponse = {
   currency: CurrencyCode
 }
 
+export type PaginatedCatalogResponse = CatalogResponse & {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasMore: boolean
+}
+
 export const api = {
-  getCatalog: () => request<CatalogResponse>('/api/catalog'),
+  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit */
+  getCatalogPage: (page = 1, limit = 50) =>
+    request<PaginatedCatalogResponse>(`/api/catalog?page=${page}&limit=${limit}`),
+
+  /** Fetch all products chunk by chunk (safe for large DB). Keeps old signature. */
+  getCatalog: async (): Promise<CatalogResponse> => {
+    const limit = 50
+    let page = 1
+    let allProducts: CatalogProduct[] = []
+    let currency: CurrencyCode = 'RUB'
+
+    while (true) {
+      const chunk = await request<PaginatedCatalogResponse>(
+        `/api/catalog?page=${page}&limit=${limit}`,
+      )
+      if (page === 1) currency = chunk.currency
+      allProducts.push(...chunk.products)
+      const hasMore =
+        typeof chunk.hasMore === 'boolean'
+          ? chunk.hasMore
+          : chunk.products.length === limit && allProducts.length < (chunk.total ?? Infinity)
+      if (!hasMore || chunk.products.length === 0) break
+      page += 1
+      if (page > 500) break // safety guard ~25k products
+    }
+
+    return { products: allProducts, currency }
+  },
 
   createProduct: (body: Omit<CatalogProduct, 'id'>) =>
     request<CatalogProduct>('/api/products', {

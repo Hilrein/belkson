@@ -179,15 +179,40 @@ async function buildApp() {
 
   async function handleCatalog(c: any) {
     await ensureProductColumns()
-    const [products, settings] = await Promise.all([
-      sql`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
+
+    // ── Pagination: chunked loading to avoid Neon 64 MB limit (HTTP 507) ──
+    const pageRaw = c.req.query('page')
+    const limitRaw =
+      c.req.query('limit') ?? c.req.query('pageSize') ?? c.req.query('perPage')
+    let page = pageRaw ? parseInt(String(pageRaw), 10) : 1
+    let limit = limitRaw ? parseInt(String(limitRaw), 10) : 50
+    if (!Number.isFinite(page) || page < 1) page = 1
+    if (!Number.isFinite(limit) || limit < 1) limit = 50
+    limit = Math.min(Math.max(limit, 1), 100)
+    const offset = (page - 1) * limit
+
+    const [countRows, products, settings] = await Promise.all([
+      sql`SELECT COUNT(*)::int AS total FROM products` as Promise<
+        { total: number }[]
+      >,
+      sql`SELECT * FROM products ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<
+        DbProduct[]
+      >,
       sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
         { value: string }[]
       >,
     ])
+    const total = countRows[0]?.total ?? 0
+    const totalPages = total === 0 ? 0 : Math.ceil(total / limit)
+
     return c.json({
       products: products.map(mapProduct),
       currency: settings[0]?.value ?? 'RUB',
+      total,
+      page,
+      limit,
+      totalPages,
+      hasMore: page < totalPages,
     })
   }
 

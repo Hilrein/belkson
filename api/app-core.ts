@@ -177,16 +177,43 @@ app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 async function handleCatalogRequest(c: any) {
   const client = getSql()
   await ensureProductColumns(client)
-  const [products, settings] = await Promise.all([
-    client`SELECT * FROM products ORDER BY id DESC` as Promise<DbProduct[]>,
+
+  // ── Pagination: response never exceeds Neon 64 MB limit (HTTP 507) ──
+  // Default 50 items keeps payload ~5-15 MB even with base64 images.
+  // Max 100 prevents a single request from growing too large.
+  const pageRaw = c.req.query('page')
+  const limitRaw =
+    c.req.query('limit') ?? c.req.query('pageSize') ?? c.req.query('perPage')
+  let page = pageRaw ? parseInt(String(pageRaw), 10) : 1
+  let limit = limitRaw ? parseInt(String(limitRaw), 10) : 50
+  if (!Number.isFinite(page) || page < 1) page = 1
+  if (!Number.isFinite(limit) || limit < 1) limit = 50
+  limit = Math.min(Math.max(limit, 1), 100)
+  const offset = (page - 1) * limit
+
+  const [countRows, products, settings] = await Promise.all([
+    client`SELECT COUNT(*)::int AS total FROM products` as Promise<
+      { total: number }[]
+    >,
+    client`SELECT * FROM products ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<
+      DbProduct[]
+    >,
     client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
       { value: string }[]
     >,
   ])
 
+  const total = countRows[0]?.total ?? 0
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit)
+
   return c.json({
     products: products.map(mapProduct),
     currency: settings[0]?.value ?? 'RUB',
+    total,
+    page,
+    limit,
+    totalPages,
+    hasMore: page < totalPages,
   })
 }
 

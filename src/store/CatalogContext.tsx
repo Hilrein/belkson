@@ -39,18 +39,46 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
+    let firstPageDone = false
     try {
       setError(null)
-      const data = await api.getCatalog()
-      setProducts(data.products)
-      setCurrencyState(data.currency)
+      setLoading(true)
+
+      // Chunked loading — avoids Neon 64 MB HTTP 507 by fetching 50 items at a time
+      // First page hides splash immediately, remaining pages stream in background.
+      const limit = 50
+      let page = 1
+      let all: CatalogProduct[] = []
+
+      while (true) {
+        const chunk = await api.getCatalogPage(page, limit)
+        if (!firstPageDone) {
+          setCurrencyState(chunk.currency)
+        }
+        all = page === 1 ? chunk.products : [...all, ...chunk.products]
+        setProducts(all)
+
+        if (!firstPageDone) {
+          setLoading(false)
+          firstPageDone = true
+        }
+
+        const hasMore =
+          typeof chunk.hasMore === 'boolean'
+            ? chunk.hasMore
+            : chunk.products.length === limit && all.length < (chunk.total ?? Infinity)
+
+        if (!hasMore || chunk.products.length === 0) break
+        page += 1
+        if (page > 500) break // safety: ~25k products
+      }
     } catch (e) {
       const message =
         e instanceof Error ? e.message : 'Не удалось загрузить каталог'
       setError(message)
       setProducts([])
     } finally {
-      setLoading(false)
+      if (!firstPageDone) setLoading(false)
     }
   }, [])
 
