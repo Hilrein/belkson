@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipLoader } from 'react-spinners'
 import { CATEGORIES, SUBCATEGORIES, CURRENCIES, NAV_ITEMS } from './data'
 import type { CurrencyCode, Product, ProductStatus } from './data'
 import { useCatalog } from '../store/CatalogContext'
@@ -231,7 +230,7 @@ function AdminOrdersView({ initialSearch = '' }: { initialSearch?: string }) {
             Заказы покупателей
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Управление поступающими заказами из Telegram и Max.
+            Управление поступающими заказами.
           </p>
         </div>
         <button
@@ -1223,176 +1222,108 @@ function PromoCardLinkSelector({
 }) {
   const parsed = useMemo(() => parseCatalogLink(linkValue), [linkValue])
 
+  const SPECIAL = ['sale', 'new', 'favorite'] as const
+
   const handleToggleCategory = (cat: string) => {
-    const exists = parsed.categories.includes(cat)
-    const nextCats = exists
-      ? parsed.categories.filter((c) => c !== cat)
-      : [...parsed.categories, cat]
-    const newUrl = generateCatalogLink(nextCats, parsed.subcategories, parsed.sizeFrom || undefined, parsed.size || undefined)
-    onLinkChange(newUrl)
-  }
-
-  const handleClearCategories = () => {
-    const newUrl = generateCatalogLink([], parsed.subcategories, parsed.sizeFrom || undefined, parsed.size || undefined)
-    onLinkChange(newUrl)
-  }
-
-  const handleClearSubcategories = () => {
-    const newUrl = generateCatalogLink(parsed.categories, [], parsed.sizeFrom || undefined, parsed.size || undefined)
-    onLinkChange(newUrl)
+    const isSpecial = (SPECIAL as readonly string[]).includes(cat)
+    let nextCats: string[]
+    if (parsed.categories.includes(cat)) {
+      nextCats = parsed.categories.filter((c) => c !== cat)
+    } else if (isSpecial) {
+      nextCats = [cat]
+    } else {
+      nextCats = [...parsed.categories.filter((c) => !(SPECIAL as readonly string[]).includes(c)), cat]
+    }
+    onLinkChange(generateCatalogLink(nextCats, parsed.subcategories, parsed.sizeFrom || undefined, parsed.size || undefined))
   }
 
   const handleToggleSubcategory = (sub: string) => {
-    const exists = parsed.subcategories.includes(sub)
-    const nextSubs = exists
+    const nextSubs = parsed.subcategories.includes(sub)
       ? parsed.subcategories.filter((s) => s !== sub)
       : [...parsed.subcategories, sub]
-    const newUrl = generateCatalogLink(parsed.categories, nextSubs, parsed.sizeFrom || undefined, parsed.size || undefined)
-    onLinkChange(newUrl)
+    onLinkChange(generateCatalogLink(parsed.categories, nextSubs, parsed.sizeFrom || undefined, parsed.size || undefined))
   }
 
   const handleSizeFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.trim()
-    // allow empty to clear
-    const newUrl = generateCatalogLink(parsed.categories, parsed.subcategories, val || undefined, val ? undefined : parsed.size || undefined)
-    onLinkChange(newUrl)
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 3)
+    onLinkChange(generateCatalogLink(parsed.categories, parsed.subcategories, raw || undefined, undefined))
   }
 
-  const handleClearSizeFrom = () => {
-    const newUrl = generateCatalogLink(parsed.categories, parsed.subcategories, undefined, undefined)
-    onLinkChange(newUrl)
-  }
+  const sizeVal = parsed.sizeFrom || parsed.size || ''
 
   return (
-    <div className="space-y-3 pt-3 border-t border-gray-100">
-      {/* Категории — мульти-выбор */}
+    <div className="space-y-4 pt-3 border-t border-gray-100">
       <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs font-medium text-on-surface-variant">
-            Категории каталога — можно выбрать несколько
-          </label>
-          {parsed.categories.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearCategories}
-              className="text-[11px] text-[#8a4193] hover:underline font-medium"
-            >
-              Сбросить ({parsed.categories.length})
-            </button>
-          )}
-        </div>
-        <div className="p-3 bg-surface-container-low/50 rounded-xl border border-gray-200 grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {PROMO_CATEGORY_OPTIONS.filter((opt) => opt.value !== '').map((opt) => {
+        <label className="block text-xs font-medium text-on-surface-variant mb-2">
+          Разделы
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {PROMO_CATEGORY_OPTIONS.filter((o) => o.value !== '').map((opt) => {
             const checked = parsed.categories.includes(opt.value)
             return (
-              <label
+              <button
                 key={opt.value}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs cursor-pointer select-none transition-colors ${
-                  checked ? 'bg-[#8a4193]/10 text-[#8a4193] font-medium border border-[#8a4193]/20' : 'text-on-surface hover:bg-gray-100/70 border border-transparent'
+                type="button"
+                onClick={() => handleToggleCategory(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                  checked ? 'bg-[#8a4193] text-white border-[#8a4193] font-medium' : 'bg-white text-on-surface border-gray-200 hover:border-gray-400'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => handleToggleCategory(opt.value)}
-                  className="rounded border-gray-300 text-[#8a4193] focus:ring-[#8a4193] w-4 h-4 cursor-pointer shrink-0"
-                />
-                <span className="truncate">{opt.label}</span>
-              </label>
+                {opt.label}
+              </button>
             )
           })}
         </div>
-        {parsed.categories.length === 0 && (
-          <p className="text-[11px] text-on-surface-variant/60 mt-1">Не выбрано — будут показаны все разделы</p>
-        )}
-        {parsed.categories.length > 1 && (
-          <p className="text-[11px] text-[#8a4193] mt-1">
-            Ссылка будет: <span className="font-mono font-medium">/catalog?category={parsed.categories.join(',')}</span>
-          </p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-medium text-on-surface-variant">
-              От размера (см) — товары от указанного роста
-            </label>
-            {(parsed.sizeFrom || parsed.size) && (
-              <button
-                type="button"
-                onClick={handleClearSizeFrom}
-                className="text-[11px] text-[#8a4193] hover:underline font-medium"
-              >
-                Сбросить
-              </button>
-            )}
-          </div>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={parsed.sizeFrom || parsed.size || ''}
-            onChange={handleSizeFromChange}
-            placeholder="например 116"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
-          />
-          <p className="text-[11px] text-on-surface-variant/60 mt-1">
-            Пусто — без фильтра по размеру. Пример: 116 покажет товары с размерами 116 см и больше (до 164 см).
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-on-surface-variant mb-1">
-            {linkLabel}
-          </label>
-          <input
-            type="text"
-            value={linkValue}
-            onChange={(e) => onLinkChange(e.target.value)}
-            placeholder="/catalog"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-mono"
-          />
-          <p className="text-[11px] text-on-surface-variant/60 mt-1">Можно править вручную — поддерживает /catalog?category=Мальчики,Девочки&sizeFrom=116</p>
-        </div>
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-xs font-medium text-on-surface-variant">
-            Подкатегории
-          </label>
-          {parsed.subcategories.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearSubcategories}
-              className="text-[11px] text-[#8a4193] hover:underline font-medium"
-            >
-              Сбросить выбор ({parsed.subcategories.length})
-            </button>
-          )}
-        </div>
-        <div className="p-3 bg-surface-container-low/50 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+        <label className="block text-xs font-medium text-on-surface-variant mb-2">
+          Рост от (см)
+        </label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={sizeVal}
+          onChange={handleSizeFromChange}
+          placeholder="любой"
+          className="w-28 px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-on-surface-variant mb-2">
+          Подкатегории
+        </label>
+        <div className="flex flex-wrap gap-1.5">
           {SUBCATEGORIES.map((sub) => {
             const checked = parsed.subcategories.includes(sub)
             return (
-              <label
+              <button
                 key={sub}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs cursor-pointer select-none transition-colors ${
-                  checked ? 'bg-[#8a4193]/10 text-[#8a4193] font-medium' : 'text-on-surface hover:bg-gray-100/70'
+                type="button"
+                onClick={() => handleToggleSubcategory(sub)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                  checked ? 'bg-[#8a4193] text-white border-[#8a4193] font-medium' : 'bg-white text-on-surface border-gray-200 hover:border-gray-400'
                 }`}
               >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() => handleToggleSubcategory(sub)}
-                  className="rounded border-gray-300 text-[#8a4193] focus:ring-[#8a4193] w-4 h-4 cursor-pointer"
-                />
-                <span className="truncate">{sub}</span>
-              </label>
+                {sub}
+              </button>
             )
           })}
         </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-on-surface-variant mb-1">
+          {linkLabel}
+        </label>
+        <input
+          type="text"
+          value={linkValue}
+          onChange={(e) => onLinkChange(e.target.value)}
+          placeholder="/catalog"
+          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-mono"
+        />
       </div>
     </div>
   )
@@ -1857,6 +1788,8 @@ export default function AdminPage() {
     loadMore: catalogLoadMore,
     error,
     refresh,
+    search: catalogSearch,
+    total,
   } = useCatalog()
 
   const {
@@ -2477,15 +2410,18 @@ export default function AdminPage() {
     return { products: matchedProducts, orders: matchedOrders }
   }, [globalSearchQuery, products, orders])
 
-  const visibleProducts = useMemo(() => {
-    const q = productsSearch.trim().toLowerCase()
-    if (!q) return products
-    return products.filter((p) => p.name.toLowerCase().includes(q))
-  }, [products, productsSearch])
+  const visibleProducts = products
 
   const applyGlobalSearch = () => {
     setProductsSearch(globalSearchQuery.trim())
     setGlobalSearchOpen(false)
+    void catalogSearch(globalSearchQuery.trim())
+  }
+
+  const handleResetProductsSearch = () => {
+    setProductsSearch('')
+    setGlobalSearchQuery('')
+    void catalogSearch('')
   }
 
   const applyImageUrl = () => {
@@ -2698,7 +2634,7 @@ export default function AdminPage() {
                 )}
                 {item.id === 'products' && (
                   <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-gray-100 text-gray-700 rounded-full shrink-0 border border-gray-200">
-                    {products.length}
+                    {total}
                   </span>
                 )}
               </button>
@@ -2850,7 +2786,6 @@ export default function AdminPage() {
                   setGlobalSearchOpen(true)
                 }}
                 onFocus={() => setGlobalSearchOpen(true)}
-                onBlur={() => applyGlobalSearch()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     setActiveTab('products')
@@ -3701,7 +3636,7 @@ export default function AdminPage() {
                       Управление товарами
                     </h1>
                     <span className="px-3 py-1 bg-primary/10 text-primary font-bold text-xs rounded-full border border-primary/20 shrink-0">
-                      {visibleProducts.length} {visibleProducts.length === 1 ? 'товар' : visibleProducts.length > 1 && visibleProducts.length < 5 ? 'товара' : 'товаров'}
+                      {total} {total === 1 ? 'товар' : total > 1 && total < 5 ? 'товара' : 'товаров'}
                     </span>
                   </div>
                   <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed max-w-2xl">
@@ -3725,15 +3660,12 @@ export default function AdminPage() {
                       Каталог товаров
                     </h3>
                     <span className="text-xs font-semibold text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-full">
-                      {visibleProducts.length} шт.
+                      {total} шт.
                     </span>
                     {productsSearch.trim() && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setProductsSearch('')
-                          setGlobalSearchQuery('')
-                        }}
+                        onClick={handleResetProductsSearch}
                         className="text-xs font-medium text-[#ce7ed5] hover:text-primary flex items-center gap-1 cursor-pointer"
                       >
                         <Icon name="close" className="text-sm" />
@@ -3794,10 +3726,7 @@ export default function AdminPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => {
-                        setProductsSearch('')
-                        setGlobalSearchQuery('')
-                      }}
+                      onClick={handleResetProductsSearch}
                       className="mt-3 text-xs font-medium text-[#ce7ed5] hover:text-primary cursor-pointer"
                     >
                       Сбросить поиск
@@ -3982,12 +3911,21 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
-                {/* Admin infinite scroll — react-spinners default */}
+                {/* Admin infinite scroll */}
                 {catalogHasMore && (
                   <div className="mt-6 flex flex-col items-center gap-3">
                     {catalogLoadingMore ? (
                       <div className="flex flex-col items-center gap-3 py-4">
-                        <ClipLoader color="#ce7ed5" size={32} speedMultiplier={0.85} />
+                        <div
+                          className="animate-spin"
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            border: '3px solid rgba(206,126,213,0.25)',
+                            borderTopColor: '#ce7ed5',
+                          }}
+                        />
                         <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем ещё…</span>
                       </div>
                     ) : (
@@ -3996,7 +3934,7 @@ export default function AdminPage() {
                         onClick={() => void catalogLoadMore()}
                         className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-semibold tracking-[0.12em] uppercase text-on-surface hover:border-[#ce7ed5] hover:text-[#ce7ed5] transition-colors shadow-sm"
                       >
-                        Загрузить ещё ({products.length} из {products.length + (catalogHasMore ? 50 : 0)}+)
+                        Загрузить ещё ({products.length}/{total})
                       </button>
                     )}
                   </div>

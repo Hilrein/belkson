@@ -45,9 +45,14 @@ export type PaginatedCatalogResponse = CatalogResponse & {
 }
 
 export const api = {
-  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit */
-  getCatalogPage: (page = 1, limit = 50) =>
-    request<PaginatedCatalogResponse>(`/api/catalog?page=${page}&limit=${limit}`),
+  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit. Optional server-side search. */
+  getCatalogPage: (page = 1, limit = 50, q = '') => {
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('limit', String(limit))
+    if (q.trim()) params.set('q', q.trim())
+    return request<PaginatedCatalogResponse>(`/api/catalog?${params.toString()}`)
+  },
 
   /** Fetch all products chunk by chunk (safe for large DB). Keeps old signature. */
   getCatalog: async (): Promise<CatalogResponse> => {

@@ -1,5 +1,4 @@
 import { useState, type ReactNode, type RefObject } from 'react'
-import { ClipLoader, PulseLoader } from 'react-spinners'
 import type { SortOption } from '../../types/shop'
 
 export interface CategoryTabItem {
@@ -452,8 +451,17 @@ export function BaseCatalogLayout<T>({
       <section className="max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-6 md:py-10">
         {loadingInitial ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4">
-            <ClipLoader color="#8a4193" size={44} speedMultiplier={0.85} />
-            <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant animate-pulse">Загружаем каталог…</span>
+            <div
+              className="animate-spin"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                border: '3px solid rgba(138,65,147,0.2)',
+                borderTopColor: '#8a4193',
+              }}
+            />
+            <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем каталог…</span>
           </div>
         ) : error ? (
           <div className="py-20 text-center">
@@ -480,13 +488,24 @@ export function BaseCatalogLayout<T>({
           <>
             <div className={gridClass}>{items.map((item) => renderItem(item))}</div>
 
-            {/* Infinite scroll loader — react-spinners default, only when scrolled to bottom */}
-            {loadingMore && (
-              <div className="mt-10 flex flex-col items-center gap-4 py-6">
-                <PulseLoader color="#ce7ed5" size={10} speedMultiplier={0.9} />
-                <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем ещё…</span>
-              </div>
-            )}
+            {/* Infinite scroll loader — smooth spinner, reserved space prevents layout jump */}
+            <div className="mt-10 flex min-h-[76px] flex-col items-center justify-center gap-4 py-6">
+              {loadingMore && (
+                <>
+                  <div
+                    className="animate-spin"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      border: '3px solid rgba(206,126,213,0.25)',
+                      borderTopColor: '#ce7ed5',
+                    }}
+                  />
+                  <span className="text-xs tracking-[0.14em] uppercase font-semibold text-on-surface-variant">Загружаем ещё…</span>
+                </>
+              )}
+            </div>
 
             {/* Sentinel for Infinite Scroll — triggers next page only when visible */}
             {sentinelRef && <div ref={sentinelRef} className="h-10 w-full" />}
