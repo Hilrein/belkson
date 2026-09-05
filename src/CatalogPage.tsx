@@ -17,6 +17,14 @@ const FILTER_SALE = 'sale'
 const FILTER_NEW = 'new'
 const FILTER_FAVORITE = 'favorite'
 
+/** Extract numeric size (prefer cm value inside parentheses, e.g. "6 лет (116 см)" -> 116). */
+function extractCmValue(str: string): number {
+  const cmMatch = str.match(/(\d+)\s*см/)
+  if (cmMatch) return parseInt(cmMatch[1], 10)
+  const m = str.match(/\d+/)
+  return m ? parseInt(m[0], 10) : NaN
+}
+
 export default function CatalogPage() {
   const { products, format, loading, loadingMore, hasMore, loadMore } = useCatalog()
   const { openAddToCartModal } = useCart()
@@ -95,11 +103,47 @@ export default function CatalogPage() {
   const rawSizeParam = searchParams.get('size')
   const selectedSize = rawSizeParam || 'all'
 
+  const rawSizeFromParam =
+    searchParams.get('sizeFrom') ??
+    searchParams.get('size_from') ??
+    searchParams.get('fromSize') ??
+    searchParams.get('minSize')
+  const sizeFromValue = useMemo(() => {
+    if (!rawSizeFromParam) return null
+    const n = parseInt(String(rawSizeFromParam).trim(), 10)
+    return isNaN(n) ? null : n
+  }, [rawSizeFromParam])
+
   const setSizeFilter = useCallback(
     (value: string) => {
       const next = new URLSearchParams(searchParams)
       if (value === 'all' || !value) next.delete('size')
       else next.set('size', value)
+      // switching exact size clears range filter to avoid confusion
+      if (value && value !== 'all') {
+        next.delete('sizeFrom')
+        next.delete('size_from')
+        next.delete('fromSize')
+        next.delete('minSize')
+      }
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams]
+  )
+
+  const setSizeFromFilter = useCallback(
+    (value: string) => {
+      const next = new URLSearchParams(searchParams)
+      const v = value.trim()
+      if (!v) {
+        next.delete('sizeFrom')
+        next.delete('size_from')
+        next.delete('fromSize')
+        next.delete('minSize')
+      } else {
+        next.set('sizeFrom', v)
+        next.delete('size')
+      }
       setSearchParams(next, { replace: true })
     },
     [searchParams, setSearchParams]
@@ -115,8 +159,8 @@ export default function CatalogPage() {
       }
     }
     const extractNum = (str: string) => {
-      const match = str.match(/\d+/)
-      return match ? parseInt(match[0], 10) : 999
+      const v = extractCmValue(str)
+      return isNaN(v) ? 999 : v
     }
     return Array.from(set).sort((a, b) => extractNum(a) - extractNum(b))
   }, [products])
@@ -130,7 +174,16 @@ export default function CatalogPage() {
     } else if (activeFilter === FILTER_FAVORITE) {
       list = list.filter((p) => p.isFavorite)
     } else if (activeFilter !== FILTER_ALL) {
-      list = list.filter((p) => categoriesMatch(p.category, activeFilter))
+      // support comma-separated multi-category (e.g. "Мальчики,Девочки")
+      const cats = activeFilter
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (cats.length === 1) {
+        list = list.filter((p) => categoriesMatch(p.category, cats[0]))
+      } else if (cats.length > 1) {
+        list = list.filter((p) => cats.some((cat) => categoriesMatch(p.category, cat)))
+      }
     }
 
     if (activeSubcategory !== 'all') {
@@ -140,7 +193,17 @@ export default function CatalogPage() {
       )
     }
 
-    if (selectedSize !== 'all') {
+    // sizeFrom (диапазон "от размера") имеет приоритет над точным размером
+    if (sizeFromValue != null) {
+      list = list.filter(
+        (p) =>
+          p.sizes &&
+          p.sizes.some((s) => {
+            const v = extractCmValue(s)
+            return !isNaN(v) && v >= sizeFromValue
+          }),
+      )
+    } else if (selectedSize !== 'all') {
       list = list.filter((p) =>
         p.sizes && p.sizes.some((s) => s.toLowerCase().trim() === selectedSize.toLowerCase().trim())
       )
@@ -162,11 +225,8 @@ export default function CatalogPage() {
       if (!p.sizes || p.sizes.length === 0) return 999
       let min = 999
       for (const s of p.sizes) {
-        const match = s.match(/\d+/)
-        if (match) {
-          const val = parseInt(match[0], 10)
-          if (val < min) min = val
-        }
+        const val = extractCmValue(s)
+        if (!isNaN(val) && val < min) min = val
       }
       return min
     }
@@ -184,7 +244,7 @@ export default function CatalogPage() {
     }
 
     return list
-  }, [products, activeFilter, activeSubcategory, selectedSize, query, sortBy])
+  }, [products, activeFilter, activeSubcategory, selectedSize, sizeFromValue, query, sortBy])
 
   const navItems = useMemo(() => {
     const fixed: { id: string; label: string }[] = [
@@ -229,6 +289,7 @@ export default function CatalogPage() {
     setFilter(FILTER_ALL)
     setSubcategoryFilter('all')
     setSizeFilter('all')
+    setSizeFromFilter('')
     setSortBy('featured')
   }
 
@@ -262,6 +323,8 @@ export default function CatalogPage() {
         availableSizes={availableSizes}
         selectedSize={selectedSize}
         onSelectSize={setSizeFilter}
+        selectedSizeFrom={rawSizeFromParam ?? null}
+        onSelectSizeFrom={setSizeFromFilter}
         searchQuery={query}
         onSearchChange={onQueryChange}
         sortBy={sortBy}

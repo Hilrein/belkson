@@ -1123,20 +1123,34 @@ function findCategoryValue(rawCat: string): string {
   return matched ? matched.value : rawCat
 }
 
-function parseCatalogLink(url: string): { category: string; subcategories: string[] } {
-  if (!url) return { category: '', subcategories: [] }
+function parseCatalogLink(url: string): {
+  categories: string[]
+  subcategories: string[]
+  sizeFrom: string
+  size: string
+} {
+  if (!url) return { categories: [], subcategories: [], sizeFrom: '', size: '' }
   try {
     const qIndex = url.indexOf('?')
-    if (qIndex === -1) return { category: '', subcategories: [] }
+    if (qIndex === -1) return { categories: [], subcategories: [], sizeFrom: '', size: '' }
     const queryString = url.slice(qIndex + 1)
     const params = new URLSearchParams(queryString)
 
-    let category = params.get('category') || ''
+    let categoryRaw = params.get('category') || ''
     try {
-      if (/%[0-9A-Fa-f]{2}/.test(category)) {
-        category = decodeURIComponent(category)
+      if (/%[0-9A-Fa-f]{2}/.test(categoryRaw)) {
+        categoryRaw = decodeURIComponent(categoryRaw)
       }
     } catch {}
+
+    const categories = categoryRaw
+      ? categoryRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((c) => findCategoryValue(c))
+          .filter(Boolean)
+      : []
 
     let subcategoryRaw = params.get('subcategory') || ''
     try {
@@ -1149,19 +1163,50 @@ function parseCatalogLink(url: string): { category: string; subcategories: strin
       ? subcategoryRaw.split(',').map((s) => s.trim()).filter(Boolean)
       : []
 
-    return { category: findCategoryValue(category), subcategories }
+    let sizeFromRaw =
+      params.get('sizeFrom') ||
+      params.get('size_from') ||
+      params.get('fromSize') ||
+      params.get('minSize') ||
+      ''
+    try {
+      if (/%[0-9A-Fa-f]{2}/.test(sizeFromRaw)) {
+        sizeFromRaw = decodeURIComponent(sizeFromRaw)
+      }
+    } catch {}
+    sizeFromRaw = sizeFromRaw.trim()
+
+    let sizeRaw = params.get('size') || ''
+    try {
+      if (/%[0-9A-Fa-f]{2}/.test(sizeRaw)) {
+        sizeRaw = decodeURIComponent(sizeRaw)
+      }
+    } catch {}
+    sizeRaw = sizeRaw.trim()
+
+    return { categories, subcategories, sizeFrom: sizeFromRaw, size: sizeRaw }
   } catch {
-    return { category: '', subcategories: [] }
+    return { categories: [], subcategories: [], sizeFrom: '', size: '' }
   }
 }
 
-function generateCatalogLink(category: string, subcategories: string[]): string {
+function generateCatalogLink(
+  categories: string[],
+  subcategories: string[],
+  sizeFrom?: string,
+  size?: string,
+): string {
   const params = new URLSearchParams()
-  if (category) {
-    params.set('category', category)
+  if (categories.length > 0) {
+    params.set('category', categories.join(','))
   }
   if (subcategories.length > 0) {
     params.set('subcategory', subcategories.join(','))
+  }
+  if (sizeFrom && sizeFrom.trim()) {
+    params.set('sizeFrom', sizeFrom.trim())
+  } else if (size && size.trim()) {
+    params.set('size', size.trim())
   }
   const qs = params.toString()
   return qs ? `/catalog?${decodeURIComponent(qs)}` : '/catalog'
@@ -1178,14 +1223,22 @@ function PromoCardLinkSelector({
 }) {
   const parsed = useMemo(() => parseCatalogLink(linkValue), [linkValue])
 
-  const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCat = e.target.value
-    const newUrl = generateCatalogLink(newCat, [])
+  const handleToggleCategory = (cat: string) => {
+    const exists = parsed.categories.includes(cat)
+    const nextCats = exists
+      ? parsed.categories.filter((c) => c !== cat)
+      : [...parsed.categories, cat]
+    const newUrl = generateCatalogLink(nextCats, parsed.subcategories, parsed.sizeFrom || undefined, parsed.size || undefined)
+    onLinkChange(newUrl)
+  }
+
+  const handleClearCategories = () => {
+    const newUrl = generateCatalogLink([], parsed.subcategories, parsed.sizeFrom || undefined, parsed.size || undefined)
     onLinkChange(newUrl)
   }
 
   const handleClearSubcategories = () => {
-    const newUrl = generateCatalogLink(parsed.category, [])
+    const newUrl = generateCatalogLink(parsed.categories, [], parsed.sizeFrom || undefined, parsed.size || undefined)
     onLinkChange(newUrl)
   }
 
@@ -1194,28 +1247,99 @@ function PromoCardLinkSelector({
     const nextSubs = exists
       ? parsed.subcategories.filter((s) => s !== sub)
       : [...parsed.subcategories, sub]
-    const newUrl = generateCatalogLink(parsed.category, nextSubs)
+    const newUrl = generateCatalogLink(parsed.categories, nextSubs, parsed.sizeFrom || undefined, parsed.size || undefined)
+    onLinkChange(newUrl)
+  }
+
+  const handleSizeFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.trim()
+    // allow empty to clear
+    const newUrl = generateCatalogLink(parsed.categories, parsed.subcategories, val || undefined, val ? undefined : parsed.size || undefined)
+    onLinkChange(newUrl)
+  }
+
+  const handleClearSizeFrom = () => {
+    const newUrl = generateCatalogLink(parsed.categories, parsed.subcategories, undefined, undefined)
     onLinkChange(newUrl)
   }
 
   return (
     <div className="space-y-3 pt-3 border-t border-gray-100">
+      {/* Категории — мульти-выбор */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="block text-xs font-medium text-on-surface-variant">
+            Категории каталога — можно выбрать несколько
+          </label>
+          {parsed.categories.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearCategories}
+              className="text-[11px] text-[#8a4193] hover:underline font-medium"
+            >
+              Сбросить ({parsed.categories.length})
+            </button>
+          )}
+        </div>
+        <div className="p-3 bg-surface-container-low/50 rounded-xl border border-gray-200 grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {PROMO_CATEGORY_OPTIONS.filter((opt) => opt.value !== '').map((opt) => {
+            const checked = parsed.categories.includes(opt.value)
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs cursor-pointer select-none transition-colors ${
+                  checked ? 'bg-[#8a4193]/10 text-[#8a4193] font-medium border border-[#8a4193]/20' : 'text-on-surface hover:bg-gray-100/70 border border-transparent'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => handleToggleCategory(opt.value)}
+                  className="rounded border-gray-300 text-[#8a4193] focus:ring-[#8a4193] w-4 h-4 cursor-pointer shrink-0"
+                />
+                <span className="truncate">{opt.label}</span>
+              </label>
+            )
+          })}
+        </div>
+        {parsed.categories.length === 0 && (
+          <p className="text-[11px] text-on-surface-variant/60 mt-1">Не выбрано — будут показаны все разделы</p>
+        )}
+        {parsed.categories.length > 1 && (
+          <p className="text-[11px] text-[#8a4193] mt-1">
+            Ссылка будет: <span className="font-mono font-medium">/catalog?category={parsed.categories.join(',')}</span>
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-on-surface-variant mb-1">
-            Категория каталога
-          </label>
-          <select
-            value={parsed.category}
-            onChange={handleCategorySelect}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors cursor-pointer"
-          >
-            {PROMO_CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-medium text-on-surface-variant">
+              От размера (см) — товары от указанного роста
+            </label>
+            {(parsed.sizeFrom || parsed.size) && (
+              <button
+                type="button"
+                onClick={handleClearSizeFrom}
+                className="text-[11px] text-[#8a4193] hover:underline font-medium"
+              >
+                Сбросить
+              </button>
+            )}
+          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={parsed.sizeFrom || parsed.size || ''}
+            onChange={handleSizeFromChange}
+            placeholder="например 116"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+          />
+          <p className="text-[11px] text-on-surface-variant/60 mt-1">
+            Пусто — без фильтра по размеру. Пример: 116 покажет товары с размерами 116 см и больше (до 164 см).
+          </p>
         </div>
 
         <div>
@@ -1227,8 +1351,9 @@ function PromoCardLinkSelector({
             value={linkValue}
             onChange={(e) => onLinkChange(e.target.value)}
             placeholder="/catalog"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-on-surface focus:outline-none focus:border-[#8a4193] transition-colors font-mono"
           />
+          <p className="text-[11px] text-on-surface-variant/60 mt-1">Можно править вручную — поддерживает /catalog?category=Мальчики,Девочки&sizeFrom=116</p>
         </div>
       </div>
 
@@ -5363,32 +5488,24 @@ export default function AdminPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-body-sm font-medium text-on-surface mb-1.5">
-                Текст на кнопке
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                placeholder="Смотреть новинки"
-                value={bannerButtonText}
-                onChange={(e) => setBannerButtonText(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-body-sm font-medium text-on-surface mb-1.5">
-                Ссылка кнопки
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
-                placeholder="/catalog?category=new"
-                value={bannerButtonUrl}
-                onChange={(e) => setBannerButtonUrl(e.target.value)}
-              />
-            </div>
+          <div>
+            <label className="block text-body-sm font-medium text-on-surface mb-1.5">
+              Текст на кнопке
+            </label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 bg-surface border border-gray-200 rounded-md text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary-container"
+              placeholder="Смотреть новинки"
+              value={bannerButtonText}
+              onChange={(e) => setBannerButtonText(e.target.value)}
+            />
           </div>
+
+          <PromoCardLinkSelector
+            linkValue={bannerButtonUrl}
+            onLinkChange={setBannerButtonUrl}
+            linkLabel="Ссылка кнопки"
+          />
 
           <div>
             <label className="block text-body-sm font-medium text-on-surface mb-1.5">

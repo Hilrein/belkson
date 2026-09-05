@@ -32,6 +32,8 @@ export interface BaseCatalogLayoutProps<T> {
   availableSizes?: string[]
   selectedSize?: string
   onSelectSize?: (size: string) => void
+  selectedSizeFrom?: string | null
+  onSelectSizeFrom?: (sizeFrom: string) => void
 
   // Price Filter (optional)
   priceMinRub?: number
@@ -72,6 +74,8 @@ export function BaseCatalogLayout<T>({
   availableSizes = [],
   selectedSize = 'all',
   onSelectSize,
+  selectedSizeFrom = null,
+  onSelectSizeFrom,
   priceMinRub,
   priceMaxRub,
   onPriceChange,
@@ -111,6 +115,7 @@ export function BaseCatalogLayout<T>({
   const hasActiveFilters =
     activeSubcategory !== 'all' ||
     selectedSize !== 'all' ||
+    (selectedSizeFrom != null && String(selectedSizeFrom).trim() !== '') ||
     Boolean(searchQuery.trim()) ||
     (priceMinRub !== undefined && priceMinRub > 0) ||
     (priceMaxRub !== undefined && priceMaxRub > 0)
@@ -149,7 +154,10 @@ export function BaseCatalogLayout<T>({
         >
           <ul className="flex flex-wrap justify-center gap-x-5 sm:gap-x-7 md:gap-x-9 gap-y-3">
             {categoryTabs.map((item) => {
-              const active = item.id === activeCategory
+              const activeCats = activeCategory
+                ? activeCategory.split(',').map((s) => s.trim()).filter(Boolean)
+                : []
+              const active = activeCats.includes(item.id) || item.id === activeCategory
               return (
                 <li key={item.id}>
                   <button
@@ -288,8 +296,25 @@ export function BaseCatalogLayout<T>({
               )}
 
               {/* Size & Price Dropdowns */}
-              {(availableSizes.length > 0 || onPriceChange) && (
+              {(availableSizes.length > 0 || onPriceChange || (selectedSizeFrom != null && String(selectedSizeFrom).trim() !== '')) && (
                 <div className="flex items-center gap-3 pt-2 border-t border-surface-dim/40 flex-wrap">
+                  {/* Active sizeFrom chip */}
+                  {selectedSizeFrom != null && String(selectedSizeFrom).trim() !== '' && (
+                    <div className="inline-flex items-center gap-1.5 py-1 px-3 rounded-xl text-xs font-semibold border bg-primary/10 border-primary text-primary">
+                      <span className="material-symbols-outlined text-[15px]">straighten</span>
+                      <span>От {selectedSizeFrom} см</span>
+                      {onSelectSizeFrom && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectSizeFrom('')}
+                          className="ml-1 w-5 h-5 rounded-full bg-primary text-on-primary flex items-center justify-center text-[10px] leading-none hover:bg-primary/80"
+                          title="Сбросить фильтр по размеру"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {availableSizes.length > 0 && (
                     <div className="relative">
                       <button
