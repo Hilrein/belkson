@@ -45,8 +45,23 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
+  const [newArrivals, setNewArrivals] = useState<CatalogProduct[]>([])
+  const [favorites, setFavorites] = useState<CatalogProduct[]>([])
 
   const LIMIT = 50
+
+  const refreshShowcase = useCallback(async () => {
+    try {
+      const [newRes, favRes] = await Promise.all([
+        api.getCatalogPage(1, 50, '', { isNew: true }),
+        api.getCatalogPage(1, 50, '', { isFavorite: true }),
+      ])
+      setNewArrivals(newRes.products)
+      setFavorites(favRes.products)
+    } catch (e) {
+      console.warn('Failed to load showcase:', e)
+    }
+  }, [])
 
   const refresh = useCallback(async () => {
     try {
@@ -93,7 +108,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refresh()
-  }, [refresh])
+    void refreshShowcase()
+  }, [refresh, refreshShowcase])
 
   const setCurrency = useCallback(async (next: CurrencyCode) => {
     const res = await api.setCurrency(next)
@@ -103,6 +119,10 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const addProduct = useCallback(async (input: Omit<CatalogProduct, 'id'>) => {
     const created = await api.createProduct(input)
     setProducts((prev) => [created, ...prev])
+    setTotal((prev) => prev + 1)
+    // showcase may have new item
+    if (created.isNew) setNewArrivals((prev) => [created, ...prev])
+    if (created.isFavorite) setFavorites((prev) => [created, ...prev])
     return created
   }, [])
 
@@ -112,19 +132,52 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...patch } : p)),
       )
+      // optimistic showcase
+      if (patch.isNew !== undefined || patch.isFavorite !== undefined || patch.status !== undefined) {
+        // проще перезагрузить витрину, чем гадать
+        void refreshShowcase()
+      } else {
+        // точечно обновим если только флаг
+        setNewArrivals((prev) => {
+          if (patch.isNew === true) {
+            const existing = prev.find((p) => p.id === id)
+            if (!existing) {
+              const prod = products.find((p) => p.id === id)
+              if (prod) return [{ ...prod, ...patch } as CatalogProduct, ...prev]
+            }
+          }
+          if (patch.isNew === false) return prev.filter((p) => p.id !== id)
+          return prev.map((p) => (p.id === id ? { ...p, ...patch } as CatalogProduct : p))
+        })
+        setFavorites((prev) => {
+          if (patch.isFavorite === true) {
+            const existing = prev.find((p) => p.id === id)
+            if (!existing) {
+              const prod = products.find((p) => p.id === id)
+              if (prod) return [{ ...prod, ...patch } as CatalogProduct, ...prev]
+            }
+          }
+          if (patch.isFavorite === false) return prev.filter((p) => p.id !== id)
+          return prev.map((p) => (p.id === id ? { ...p, ...patch } as CatalogProduct : p))
+        })
+      }
       try {
         await api.updateProduct(id, patch)
       } catch (err) {
         void refresh()
+        void refreshShowcase()
         throw err
       }
     },
-    [refresh],
+    [refresh, refreshShowcase, products],
   )
 
   const deleteProduct = useCallback(async (id: number) => {
     await api.deleteProduct(id)
     setProducts((prev) => prev.filter((p) => p.id !== id))
+    setNewArrivals((prev) => prev.filter((p) => p.id !== id))
+    setFavorites((prev) => prev.filter((p) => p.id !== id))
+    setTotal((prev) => Math.max(0, prev - 1))
   }, [])
 
   const format = useCallback(
@@ -132,20 +185,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     [currency],
   )
 
-  // Only explicitly tagged products — no "fill with any items" fallback
-  // (that made «Новинки» also appear under «Любимчики» when favorites were empty).
-  const newArrivals = useMemo(
-    () =>
-      products.filter((p) => p.isNew && p.status !== 'Нет в наличии'),
-    [products],
-  )
-
-  const favorites = useMemo(
-    () =>
-      products.filter((p) => p.isFavorite && p.status !== 'Нет в наличии'),
-    [products],
-  )
-
+  // showcase — уже все отмеченные со всей БД, сортированы id DESC (свежие сверху), статус <> 'Нет в наличии' уже на сервере
   const inStock = useMemo(
     () => products.filter((p) => p.status !== 'Нет в наличии'),
     [products],

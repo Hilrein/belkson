@@ -195,10 +195,62 @@ async function handleCatalogRequest(c: any) {
   const qRaw = c.req.query('q') ?? c.req.query('search') ?? c.req.query('query')
   const q = qRaw ? String(qRaw).trim() : ''
 
+  // ── Showcase filters: ?isNew=true / ?isFavorite=true (для Новинки/Любимчики без загрузки всего каталога) ──
+  const isNewRaw = c.req.query('isNew') ?? c.req.query('is_new') ?? c.req.query('new')
+  const isFavRaw = c.req.query('isFavorite') ?? c.req.query('is_favorite') ?? c.req.query('favorite')
+  const isNew = isNewRaw === 'true' || isNewRaw === '1'
+  const isFav = isFavRaw === 'true' || isFavRaw === '1'
+
   let countRows: { total: number }[]
   let products: DbProduct[]
   let settings: { value: string }[]
-  if (q) {
+  if (isNew || isFav) {
+    const like = q ? `%${q}%` : null
+    if (isNew && isFav) {
+      if (q) {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      } else {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      }
+    } else if (isNew) {
+      if (q) {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_new = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      } else {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_new = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      }
+    } else {
+      // isFav only
+      if (q) {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      } else {
+        ;[countRows, products, settings] = await Promise.all([
+          client`SELECT COUNT(*)::int AS total FROM products WHERE is_favorite = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
+          client`SELECT * FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+          client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+        ])
+      }
+    }
+  } else if (q) {
     const like = `%${q}%`
     ;[countRows, products, settings] = await Promise.all([
       client`SELECT COUNT(*)::int AS total FROM products WHERE (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<

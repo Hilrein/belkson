@@ -45,13 +45,40 @@ export type PaginatedCatalogResponse = CatalogResponse & {
 }
 
 export const api = {
-  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit. Optional server-side search. */
-  getCatalogPage: (page = 1, limit = 50, q = '') => {
+  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit. Optional server-side search + showcase filters. */
+  getCatalogPage: (page = 1, limit = 50, q = '', opts?: { isNew?: boolean; isFavorite?: boolean }) => {
     const params = new URLSearchParams()
     params.set('page', String(page))
     params.set('limit', String(limit))
     if (q.trim()) params.set('q', q.trim())
+    if (opts?.isNew) params.set('isNew', 'true')
+    if (opts?.isFavorite) params.set('isFavorite', 'true')
     return request<PaginatedCatalogResponse>(`/api/catalog?${params.toString()}`)
+  },
+
+  /** Fetch all products matching showcase filter (Новинки/Любимчики) — loads all pages, but each page is small (index scan). */
+  getShowcase: async (filter: 'new' | 'favorite', limitPerPage = 100): Promise<CatalogResponse & { total: number }> => {
+    const isNew = filter === 'new'
+    const isFavorite = filter === 'favorite'
+    let page = 1
+    let allProducts: CatalogProduct[] = []
+    let total = 0
+    let currency: CurrencyCode = 'RUB'
+    while (true) {
+      const chunk = await request<PaginatedCatalogResponse>(
+        `/api/catalog?page=${page}&limit=${limitPerPage}${isNew ? '&isNew=true' : ''}${isFavorite ? '&isFavorite=true' : ''}`,
+      )
+      if (page === 1) {
+        currency = chunk.currency
+        total = chunk.total
+      }
+      allProducts.push(...chunk.products)
+      if (!chunk.hasMore || chunk.products.length === 0) break
+      // safety: если новинок очень много (сотни), грузим всё равно, но не более 10 страниц (~1000)
+      page += 1
+      if (page > 10) break
+    }
+    return { products: allProducts, currency, total }
   },
 
   /** Fetch all products chunk by chunk (safe for large DB). Keeps old signature. */

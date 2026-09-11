@@ -34,6 +34,10 @@ ON CONFLICT (key) DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_products_is_new ON products (is_new);
 CREATE INDEX IF NOT EXISTS idx_products_is_favorite ON products (is_favorite);
 
+-- Showcase (Новинки/Любимчики) — частичные индексы для быстрых витринных запросов
+CREATE INDEX IF NOT EXISTS idx_products_is_new_active ON products (id DESC) WHERE is_new = true AND status <> 'Нет в наличии';
+CREATE INDEX IF NOT EXISTS idx_products_is_favorite_active ON products (id DESC) WHERE is_favorite = true AND status <> 'Нет в наличии';
+
 -- Cached external Next catalogue. This is intentionally separate from the
 -- manually managed `products` catalogue above.
 CREATE TABLE IF NOT EXISTS next_catalog_products (
