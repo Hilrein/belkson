@@ -195,22 +195,29 @@ async function handleCatalogRequest(c: any) {
   const qRaw = c.req.query('q') ?? c.req.query('search') ?? c.req.query('query')
   const q = qRaw ? String(qRaw).trim() : ''
 
-  const like = `%${q}%`
-  const searchCond = q
-    ? client`(name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})`
-    : client`TRUE`
-
-  const [countRows, products, settings] = await Promise.all([
-    client`SELECT COUNT(*)::int AS total FROM products WHERE ${searchCond}` as Promise<
-      { total: number }[]
-    >,
-    client`SELECT * FROM products WHERE ${searchCond} ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<
-      DbProduct[]
-    >,
-    client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
-      { value: string }[]
-    >,
-  ])
+  let countRows: { total: number }[]
+  let products: DbProduct[]
+  let settings: { value: string }[]
+  if (q) {
+    const like = `%${q}%`
+    ;[countRows, products, settings] = await Promise.all([
+      client`SELECT COUNT(*)::int AS total FROM products WHERE (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<
+        { total: number }[]
+      >,
+      client`SELECT * FROM products WHERE (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<
+        DbProduct[]
+      >,
+      client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<
+        { value: string }[]
+      >,
+    ])
+  } else {
+    ;[countRows, products, settings] = await Promise.all([
+      client`SELECT COUNT(*)::int AS total FROM products` as Promise<{ total: number }[]>,
+      client`SELECT * FROM products ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
+      client`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+    ])
+  }
 
   const total = countRows[0]?.total ?? 0
   const totalPages = total === 0 ? 0 : Math.ceil(total / limit)

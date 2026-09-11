@@ -24,6 +24,7 @@ import {
 } from '../store/PromoBlockContext'
 import { defaultProductImage } from '../store/catalog'
 import { fileToCompressedDataUrl, isLikelyImageUrl } from '../lib/imageUpload'
+import { api } from '../lib/api'
 
 type SlideMode = 'add' | 'edit'
 
@@ -665,7 +666,7 @@ function AdminContactsSettingsView() {
             Контакты (страница «Контакты»)
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Добавление, редактирование и удаление способов связи на странице «Контакты». Все данные сохраняются в базе данных Neon.
+            Добавление, редактирование и удаление способов связи на странице «Контакты».
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -860,7 +861,7 @@ function AdminAboutSettingsView() {
             Страница «О нас»
           </h1>
           <p className="text-sm text-on-surface-variant">
-            Управление блоками информации, ценностями бренда и текстом страницы «О нас». Данные сохраняются напрямую в базе данных Neon.
+            Управление блоками информации, ценностями бренда и текстом страницы «О нас».
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -1788,7 +1789,6 @@ export default function AdminPage() {
     loadMore: catalogLoadMore,
     error,
     refresh,
-    search: catalogSearch,
     total,
   } = useCatalog()
 
@@ -2410,18 +2410,76 @@ export default function AdminPage() {
     return { products: matchedProducts, orders: matchedOrders }
   }, [globalSearchQuery, products, orders])
 
-  const visibleProducts = products
+  // Локальный серверный поиск по всем товарам — не трогает глобальный CatalogContext
+  const [adminSearchResults, setAdminSearchResults] = useState<Product[] | null>(null)
+  const [adminSearchTotal, setAdminSearchTotal] = useState(0)
+  const [adminSearchHasMore, setAdminSearchHasMore] = useState(false)
+  const [adminSearchPage, setAdminSearchPage] = useState(1)
+  const [adminSearching, setAdminSearching] = useState(false)
+
+  const isProductsSearching = productsSearch.trim().length > 0
+  const visibleProducts = isProductsSearching ? (adminSearchResults ?? []) : products
+
+  useEffect(() => {
+    const q = productsSearch.trim()
+    if (!q) {
+      setAdminSearchResults(null)
+      setAdminSearchTotal(0)
+      setAdminSearchHasMore(false)
+      setAdminSearchPage(1)
+      setAdminSearching(false)
+      return
+    }
+    let cancelled = false
+    setAdminSearching(true)
+    api
+      .getCatalogPage(1, 50, q)
+      .then((chunk) => {
+        if (cancelled) return
+        setAdminSearchResults(chunk.products as unknown as Product[])
+        setAdminSearchTotal(chunk.total)
+        setAdminSearchHasMore(Boolean(chunk.hasMore))
+        setAdminSearchPage(1)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAdminSearchResults([])
+          setAdminSearchTotal(0)
+          setAdminSearchHasMore(false)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAdminSearching(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [productsSearch])
+
+  const handleAdminSearchLoadMore = useCallback(async () => {
+    const q = productsSearch.trim()
+    if (!q || adminSearching || !adminSearchHasMore) return
+    setAdminSearching(true)
+    try {
+      const nextPage = adminSearchPage + 1
+      const chunk = await api.getCatalogPage(nextPage, 50, q)
+      setAdminSearchResults((prev) => [...(prev ?? []), ...(chunk.products as unknown as Product[])])
+      setAdminSearchTotal(chunk.total)
+      setAdminSearchHasMore(Boolean(chunk.hasMore))
+      setAdminSearchPage(nextPage)
+    } finally {
+      setAdminSearching(false)
+    }
+  }, [productsSearch, adminSearching, adminSearchHasMore, adminSearchPage])
 
   const applyGlobalSearch = () => {
     setProductsSearch(globalSearchQuery.trim())
     setGlobalSearchOpen(false)
-    void catalogSearch(globalSearchQuery.trim())
   }
 
   const handleResetProductsSearch = () => {
     setProductsSearch('')
     setGlobalSearchQuery('')
-    void catalogSearch('')
   }
 
   const applyImageUrl = () => {
@@ -3660,8 +3718,11 @@ export default function AdminPage() {
                       Каталог товаров
                     </h3>
                     <span className="text-xs font-semibold text-on-surface-variant bg-surface-variant px-2 py-0.5 rounded-full">
-                      {total} шт.
+                      {isProductsSearching ? adminSearchTotal : total} шт.
                     </span>
+                    {adminSearching && isProductsSearching && (
+                      <span className="text-xs text-on-surface-variant">Поиск…</span>
+                    )}
                     {productsSearch.trim() && (
                       <button
                         type="button"
@@ -3912,9 +3973,9 @@ export default function AdminPage() {
                   </table>
                 </div>
                 {/* Admin infinite scroll */}
-                {catalogHasMore && (
+                {(isProductsSearching ? adminSearchHasMore : catalogHasMore) && (
                   <div className="mt-6 flex flex-col items-center gap-3">
-                    {catalogLoadingMore ? (
+                    {(isProductsSearching ? adminSearching : catalogLoadingMore) ? (
                       <div className="flex flex-col items-center gap-3 py-4">
                         <div
                           className="animate-spin"
@@ -3931,10 +3992,10 @@ export default function AdminPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => void catalogLoadMore()}
+                        onClick={() => void (isProductsSearching ? handleAdminSearchLoadMore() : catalogLoadMore())}
                         className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-xs font-semibold tracking-[0.12em] uppercase text-on-surface hover:border-[#ce7ed5] hover:text-[#ce7ed5] transition-colors shadow-sm"
                       >
-                        Загрузить ещё ({products.length}/{total})
+                        Загрузить ещё ({isProductsSearching ? adminSearchResults?.length ?? 0 : products.length}/{isProductsSearching ? adminSearchTotal : total})
                       </button>
                     )}
                   </div>

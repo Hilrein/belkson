@@ -24,8 +24,6 @@ type CatalogContextValue = {
   error: string | null
   refresh: () => Promise<void>
   loadMore: () => Promise<void>
-  search: (q: string) => Promise<void>
-  searchQuery: string
   setCurrency: (c: CurrencyCode) => Promise<void>
   format: (priceRub: number) => string
   addProduct: (input: Omit<CatalogProduct, 'id'>) => Promise<CatalogProduct>
@@ -47,7 +45,6 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
 
   const LIMIT = 50
 
@@ -58,13 +55,12 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setHasMore(false)
 
       // Load first page only — remaining pages load on scroll (avoids 507 + lazy)
-      const chunk = await api.getCatalogPage(1, LIMIT, '')
+      const chunk = await api.getCatalogPage(1, LIMIT)
       setCurrencyState(chunk.currency)
       setProducts(chunk.products)
       setTotal(chunk.total ?? chunk.products.length)
       setHasMore(Boolean(chunk.hasMore))
       setPage(1)
-      setSearchQuery('')
     } catch (e) {
       const message =
         e instanceof Error ? e.message : 'Не удалось загрузить каталог'
@@ -81,7 +77,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     try {
       setLoadingMore(true)
       const nextPage = page + 1
-      const chunk = await api.getCatalogPage(nextPage, LIMIT, searchQuery)
+      const chunk = await api.getCatalogPage(nextPage, LIMIT)
       setProducts((prev) => [...prev, ...chunk.products])
       setTotal(chunk.total ?? total)
       setHasMore(Boolean(chunk.hasMore))
@@ -93,29 +89,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoadingMore(false)
     }
-  }, [loadingMore, loading, hasMore, page, total, searchQuery])
-
-  /** Server-side search across ALL products (not just loaded page). Empty q resets to full catalog. */
-  const search = useCallback(async (q: string) => {
-    try {
-      setError(null)
-      setLoading(true)
-      setHasMore(false)
-      const chunk = await api.getCatalogPage(1, LIMIT, q)
-      setCurrencyState(chunk.currency)
-      setProducts(chunk.products)
-      setTotal(chunk.total ?? chunk.products.length)
-      setHasMore(Boolean(chunk.hasMore))
-      setPage(1)
-      setSearchQuery(q.trim())
-    } catch (e) {
-      const message =
-        e instanceof Error ? e.message : 'Не удалось выполнить поиск'
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  }, [loadingMore, loading, hasMore, page, total])
 
   useEffect(() => {
     void refresh()
@@ -188,8 +162,6 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       error,
       refresh,
       loadMore,
-      search,
-      searchQuery,
       setCurrency,
       format,
       addProduct,
@@ -209,8 +181,6 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       error,
       refresh,
       loadMore,
-      search,
-      searchQuery,
       setCurrency,
       format,
       addProduct,
