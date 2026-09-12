@@ -11,7 +11,7 @@ import type { CatalogProduct } from './store/catalog'
  * Home page content only — chrome (navbar/footer/cart) lives in StorefrontLayout.
  */
 export default function HomePage() {
-  const { newArrivals, favorites, format, refreshShowcase } = useCatalog()
+  const { newArrivals, favorites, format, refreshShowcase, showcaseLoading } = useCatalog()
   const { openAddToCartModal } = useCart()
   const { variants } = usePurchaseTerms()
   const { banners: allBanners } = useHeroBanners()
@@ -222,7 +222,12 @@ export default function HomePage() {
       </div>
       </div>
       <div className="overflow-x-auto hide-scroll flex items-stretch gap-6 pb-6 snap-x snap-mandatory" id="new-arrivals-container" ref={newArrivalsRef} style={{ scrollBehavior: 'smooth' }}>
-      {newArrivals.length === 0 ? (
+      {showcaseLoading ? (
+        <div className="py-8 flex items-center gap-2 text-on-surface-variant text-sm">
+          <div className="h-5 w-5 rounded-full border-2 border-[#8a4193]/20 border-t-[#8a4193] animate-spin" />
+          Загрузка…
+        </div>
+      ) : newArrivals.length === 0 ? (
         <p className="text-on-surface-variant py-8">Пока нет новинок.</p>
       ) : (
         newArrivals.map((product) => (
@@ -291,7 +296,12 @@ export default function HomePage() {
       </Link>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {favorites.length === 0 ? (
+      {showcaseLoading ? (
+        <div className="col-span-full py-8 flex items-center gap-2 text-on-surface-variant text-sm">
+          <div className="h-5 w-5 rounded-full border-2 border-[#8a4193]/20 border-t-[#8a4193] animate-spin" />
+          Загрузка…
+        </div>
+      ) : favorites.length === 0 ? (
         <p className="text-on-surface-variant col-span-full py-4">Пока нет любимчиков.</p>
       ) : (
         favorites.map((product) => (

@@ -25,6 +25,7 @@ type CatalogContextValue = {
   refresh: () => Promise<void>
   loadMore: () => Promise<void>
   refreshShowcase: () => Promise<void>
+  showcaseLoading: boolean
   setCurrency: (c: CurrencyCode) => Promise<void>
   format: (priceRub: number) => string
   addProduct: (input: Omit<CatalogProduct, 'id'>) => Promise<CatalogProduct>
@@ -48,11 +49,13 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [newArrivals, setNewArrivals] = useState<CatalogProduct[]>([])
   const [favorites, setFavorites] = useState<CatalogProduct[]>([])
+  const [showcaseLoading, setShowcaseLoading] = useState(true)
 
   const LIMIT = 50
 
   const refreshShowcase = useCallback(async () => {
     try {
+      setShowcaseLoading(true)
       const [newRes, favRes] = await Promise.all([
         api.getCatalogPage(1, 50, '', { isNew: true }),
         api.getCatalogPage(1, 50, '', { isFavorite: true }),
@@ -61,6 +64,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setFavorites(favRes.products)
     } catch (e) {
       console.warn('Failed to load showcase:', e)
+    } finally {
+      setShowcaseLoading(false)
     }
   }, [])
 
@@ -203,6 +208,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       refresh,
       loadMore,
       refreshShowcase,
+      showcaseLoading,
       setCurrency,
       format,
       addProduct,
@@ -223,6 +229,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       refresh,
       loadMore,
       refreshShowcase,
+      showcaseLoading,
       setCurrency,
       format,
       addProduct,
