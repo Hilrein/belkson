@@ -89,7 +89,16 @@ export function HeroBannersProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
-    if (!res.ok) throw new Error('Failed to create hero banner')
+    if (!res.ok) {
+      let detail = ''
+      try {
+        const body = (await res.json()) as { error?: string }
+        if (body?.error) detail = `: ${body.error}`
+      } catch {}
+      const msg = `Failed to create hero banner${detail} (HTTP ${res.status} ${res.statusText})`
+      console.error(msg, { data, detail })
+      throw new Error(msg)
+    }
     await refresh()
   }
 
@@ -99,7 +108,16 @@ export function HeroBannersProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     })
-    if (!res.ok) throw new Error('Failed to update hero banner')
+    if (!res.ok) {
+      let detail = ''
+      try {
+        const body = (await res.json()) as { error?: string }
+        if (body?.error) detail = `: ${body.error}`
+      } catch {}
+      const msg = `Failed to update hero banner${detail} (HTTP ${res.status} ${res.statusText})`
+      console.error(msg, { id, data, detail })
+      throw new Error(msg)
+    }
     await refresh()
   }
 
@@ -107,7 +125,16 @@ export function HeroBannersProvider({ children }: { children: ReactNode }) {
     const res = await fetch(`/api/hero-banners/${id}`, {
       method: 'DELETE',
     })
-    if (!res.ok) throw new Error('Failed to delete hero banner')
+    if (!res.ok) {
+      let detail = ''
+      try {
+        const body = (await res.json()) as { error?: string }
+        if (body?.error) detail = `: ${body.error}`
+      } catch {}
+      const msg = `Failed to delete hero banner${detail} (HTTP ${res.status})`
+      console.error(msg, { id, detail })
+      throw new Error(msg)
+    }
     await refresh()
   }
 

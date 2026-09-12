@@ -11,11 +11,15 @@ import type { CatalogProduct } from './store/catalog'
  * Home page content only — chrome (navbar/footer/cart) lives in StorefrontLayout.
  */
 export default function HomePage() {
-  const { newArrivals, favorites, format } = useCatalog()
+  const { newArrivals, favorites, format, refreshShowcase } = useCatalog()
   const { openAddToCartModal } = useCart()
   const { variants } = usePurchaseTerms()
   const { banners: allBanners } = useHeroBanners()
   const { data: promoData } = usePromoBlock()
+
+  useEffect(() => {
+    void refreshShowcase()
+  }, [refreshShowcase])
 
   const activeBanners = allBanners.filter((b) => b.isActive)
   const heroSlideCount = activeBanners.length > 0 ? activeBanners.length : 1

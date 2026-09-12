@@ -1899,14 +1899,18 @@ export default function AdminPage() {
         sortOrder: Math.round(Number(bannerSortOrder) || 0),
         isActive: bannerIsActive,
       }
+      console.log('[Banner] Сохранение', { mode: bannerDrawerMode, id: editingBannerId, payload })
       if (bannerDrawerMode === 'add') {
         await addBanner(payload)
       } else if (editingBannerId != null) {
         await updateBanner(editingBannerId, payload)
       }
+      console.log('[Banner] Успешно сохранён')
       closeBannerDrawer()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Ошибка сохранения баннера')
+      const msg = err instanceof Error ? err.message : 'Ошибка сохранения баннера'
+      console.error('[Banner] Ошибка сохранения:', err, { bannerButtonUrl, editingBannerId })
+      alert(msg)
     } finally {
       setBannerSaving(false)
     }

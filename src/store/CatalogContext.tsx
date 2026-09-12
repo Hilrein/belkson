@@ -24,6 +24,7 @@ type CatalogContextValue = {
   error: string | null
   refresh: () => Promise<void>
   loadMore: () => Promise<void>
+  refreshShowcase: () => Promise<void>
   setCurrency: (c: CurrencyCode) => Promise<void>
   format: (priceRub: number) => string
   addProduct: (input: Omit<CatalogProduct, 'id'>) => Promise<CatalogProduct>
@@ -108,8 +109,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refresh()
-    void refreshShowcase()
-  }, [refresh, refreshShowcase])
+  }, [refresh])
 
   const setCurrency = useCallback(async (next: CurrencyCode) => {
     const res = await api.setCurrency(next)
@@ -202,6 +202,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       error,
       refresh,
       loadMore,
+      refreshShowcase,
       setCurrency,
       format,
       addProduct,
@@ -221,6 +222,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       error,
       refresh,
       loadMore,
+      refreshShowcase,
       setCurrency,
       format,
       addProduct,

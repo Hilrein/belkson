@@ -167,6 +167,18 @@ async function buildApp() {
     }
   }
 
+  let showcaseIndexesEnsured = false
+  async function ensureShowcaseIndexes() {
+    if (showcaseIndexesEnsured) return
+    try {
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_is_new_active ON products (id DESC) WHERE is_new = true AND status <> 'Нет в наличии'`
+      await sql`CREATE INDEX IF NOT EXISTS idx_products_is_favorite_active ON products (id DESC) WHERE is_favorite = true AND status <> 'Нет в наличии'`
+      showcaseIndexesEnsured = true
+    } catch (e) {
+      console.warn('ensureShowcaseIndexes error:', e)
+    }
+  }
+
   function normalizeSizes(raw: unknown): string[] {
     const list = parseStringArray(raw)
     return [...new Set(list)].slice(0, 50)
@@ -200,6 +212,8 @@ async function buildApp() {
     const isFavRaw = c.req.query('isFavorite') ?? c.req.query('is_favorite') ?? c.req.query('favorite')
     const isNew = isNewRaw === 'true' || isNewRaw === '1'
     const isFav = isFavRaw === 'true' || isFavRaw === '1'
+
+    if (isNew || isFav) await ensureShowcaseIndexes()
 
     let countRows: { total: number }[]
     let products: DbProduct[]
@@ -1507,6 +1521,162 @@ async function buildApp() {
     const rows = (await sql`SELECT * FROM about_settings ORDER BY sort_order ASC, updated_at ASC`) as DbAboutSettingRow[]
     return c.json({ items: rows.map(mapAboutSetting) })
   }
+
+  /* ─── Hero Banners DB & API ────────────────────────────────────── */
+
+  type DbHeroBanner = {
+    id: number
+    badge: string
+    title: string
+    subtitle: string
+    image: string
+    button_text: string
+    button_url: string
+    sort_order: number
+    is_active: boolean
+    created_at: string
+    updated_at: string
+  }
+
+  function mapHeroBanner(r: DbHeroBanner) {
+    return {
+      id: r.id,
+      badge: r.badge,
+      title: r.title,
+      subtitle: r.subtitle,
+      image: r.image,
+      buttonText: r.button_text,
+      buttonUrl: r.button_url,
+      sortOrder: Number(r.sort_order ?? 0),
+      isActive: Boolean(r.is_active),
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }
+  }
+
+  async function ensureHeroBannersTable() {
+    const existing = (await sql`SELECT to_regclass('hero_banners') AS cls`) as { cls: string | null }[]
+    if (!existing[0]?.cls) {
+      await sql`
+        CREATE TABLE IF NOT EXISTS hero_banners (
+          id SERIAL PRIMARY KEY,
+          badge TEXT NOT NULL DEFAULT '',
+          title TEXT NOT NULL,
+          subtitle TEXT NOT NULL DEFAULT '',
+          image TEXT NOT NULL,
+          button_text TEXT NOT NULL DEFAULT 'В каталог',
+          button_url TEXT NOT NULL DEFAULT '/catalog',
+          sort_order INT NOT NULL DEFAULT 0,
+          is_active BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `
+      await sql`
+        INSERT INTO hero_banners (badge, title, subtitle, image, button_text, button_url, sort_order, is_active)
+        VALUES
+          ('Коллекция 2026', 'Весенняя нежность', 'Мягкая одежда для малышей: прогулки, игры и каждый день.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap', 'Смотреть новинки', '/catalog?category=new', 1, true),
+          ('Премиум трикотаж', 'Создано для комфорта', 'Нежные ткани и удобная посадка для активного дня ребёнка.', 'https://lh3.googleusercontent.com/aida-public/AB6AXuB8XYOqM6k1V0yN9OxYE3KD3vUisD4kg3HENS3WhujMMEi1vweZXTfbqxf_gMVmXS3BxO3xhuNShDRdDGpgd_dC2YWaMLWhh9DaJoQymdWpGNX-7E3zC5JpTWwLPoqWwsZD46MK841lM3bvdLReNjLgKBzZOZDuQj6x8yCoihcD7f3TOr6gE1i-HO9NlZA9-TQfrglWzkecr7PxoNuovqPLQCtN8W5d1rQk7XGWDqLQwJiargBAigg616CwuYyRyCXzdpUihQVawbcF', 'В каталог', '/catalog', 2, true)
+      `
+      return
+    }
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS badge TEXT NOT NULL DEFAULT ''`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT ''`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS subtitle TEXT NOT NULL DEFAULT ''`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT ''`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS button_text TEXT NOT NULL DEFAULT 'В каталог'`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS button_url TEXT NOT NULL DEFAULT '/catalog'`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS sort_order INT NOT NULL DEFAULT 0`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+    await sql`ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+  }
+
+  async function handleGetHeroBanners(c: any) {
+    await ensureHeroBannersTable()
+    const rows = (await sql`SELECT * FROM hero_banners ORDER BY sort_order ASC, id ASC`) as DbHeroBanner[]
+    return c.json(rows.map(mapHeroBanner))
+  }
+
+  async function handleCreateHeroBanner(c: any) {
+    try {
+      const body = await c.req.json()
+      await ensureHeroBannersTable()
+      const badge = String(body.badge ?? '').trim()
+      const title = String(body.title ?? '').trim() || 'Новый баннер'
+      const subtitle = String(body.subtitle ?? '').trim()
+      const image = String(body.image ?? '').trim() || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAinqGQ_I7Pc4wChF5iNq9qjd8AVRzRQEk3BYcM3j9nxcvoMh4k403DisASeSApeAI0QNjlG6-OiUwzvtVf3SQsFauj2OZ5ZMJ1u-56QRGwrXQuvkVoYvjejd5RTIYtx2XiUKomHcOOXWMRZ3gXtCMSavcQ6Vf-OOhHqXBCitAhtplDxW3Q8He1TPLiOaOGVSsuci5neHsxrJqzbGM-v2qYmktOgg9l4Z8M9p9vYaDXSodfkgfoHkk8kKumfWXEfoz1dogFUQASIMap'
+      const buttonText = String(body.buttonText ?? '').trim() || 'В каталог'
+      const buttonUrl = String(body.buttonUrl ?? '').trim() || '/catalog'
+      const sortOrder = Math.round(Number(body.sortOrder) || 0)
+      const isActive = body.isActive !== undefined ? Boolean(body.isActive) : true
+      const rows = (await sql`
+        INSERT INTO hero_banners (badge, title, subtitle, image, button_text, button_url, sort_order, is_active)
+        VALUES (${badge}, ${title}, ${subtitle}, ${image}, ${buttonText}, ${buttonUrl}, ${sortOrder}, ${isActive})
+        RETURNING *
+      `) as DbHeroBanner[]
+      return c.json(mapHeroBanner(rows[0]), 201)
+    } catch (err) {
+      console.error('handleCreateHeroBanner error:', err)
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  }
+
+  async function handleUpdateHeroBanner(c: any) {
+    try {
+      const id = Number(c.req.param('id'))
+      if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+      const body = await c.req.json()
+      await ensureHeroBannersTable()
+      const existing = (await sql`SELECT * FROM hero_banners WHERE id = ${id} LIMIT 1`) as DbHeroBanner[]
+      if (!existing[0]) return c.json({ error: 'Not found' }, 404)
+      const cur = existing[0]
+      const badge = body.badge !== undefined ? String(body.badge).trim() : cur.badge
+      const title = body.title !== undefined ? String(body.title).trim() : cur.title
+      const subtitle = body.subtitle !== undefined ? String(body.subtitle).trim() : cur.subtitle
+      const image = body.image !== undefined ? String(body.image).trim() : cur.image
+      const buttonText = body.buttonText !== undefined ? String(body.buttonText).trim() : cur.button_text
+      const buttonUrl = body.buttonUrl !== undefined ? String(body.buttonUrl).trim() : cur.button_url
+      const sortOrder = body.sortOrder !== undefined ? Math.round(Number(body.sortOrder)) : Number(cur.sort_order)
+      const isActive = body.isActive !== undefined ? Boolean(body.isActive) : Boolean(cur.is_active)
+      const rows = (await sql`
+        UPDATE hero_banners SET
+          badge = ${badge},
+          title = ${title},
+          subtitle = ${subtitle},
+          image = ${image},
+          button_text = ${buttonText},
+          button_url = ${buttonUrl},
+          sort_order = ${sortOrder},
+          is_active = ${isActive},
+          updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING *
+      `) as DbHeroBanner[]
+      return c.json(mapHeroBanner(rows[0]))
+    } catch (err) {
+      console.error('handleUpdateHeroBanner error:', err)
+      return c.json({ error: err instanceof Error ? err.message : String(err) }, 500)
+    }
+  }
+
+  async function handleDeleteHeroBanner(c: any) {
+    await ensureHeroBannersTable()
+    const id = Number(c.req.param('id'))
+    if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400)
+    const rows = (await sql`DELETE FROM hero_banners WHERE id = ${id} RETURNING id`) as { id: number }[]
+    if (!rows[0]) return c.json({ error: 'Not found' }, 404)
+    return c.json({ ok: true, id })
+  }
+
+  app.get('/hero-banners', handleGetHeroBanners)
+  app.get('/api/hero-banners', handleGetHeroBanners)
+  app.post('/hero-banners', handleCreateHeroBanner)
+  app.post('/api/hero-banners', handleCreateHeroBanner)
+  app.put('/hero-banners/:id', handleUpdateHeroBanner)
+  app.put('/api/hero-banners/:id', handleUpdateHeroBanner)
+  app.delete('/hero-banners/:id', handleDeleteHeroBanner)
+  app.delete('/api/hero-banners/:id', handleDeleteHeroBanner)
 
   /* ─── Admin Auth ─────────────────────────────────────────────────── */
 
