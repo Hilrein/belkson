@@ -2,8 +2,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -14,6 +14,16 @@ import {
 } from './catalog'
 import { api } from '../lib/api'
 
+export type CatalogFilters = {
+  category?: string
+  subcategory?: string
+  q?: string
+  isNew?: boolean
+  isFavorite?: boolean
+  isSale?: boolean
+  includeOutOfStock?: boolean
+}
+
 type CatalogContextValue = {
   products: CatalogProduct[]
   currency: CurrencyCode
@@ -22,7 +32,7 @@ type CatalogContextValue = {
   hasMore: boolean
   total: number
   error: string | null
-  refresh: () => Promise<void>
+  refresh: (filters?: CatalogFilters) => Promise<void>
   loadMore: () => Promise<void>
   refreshShowcase: () => Promise<void>
   showcaseLoading: boolean
@@ -41,7 +51,7 @@ const CatalogContext = createContext<CatalogContextValue | null>(null)
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<CatalogProduct[]>([])
   const [currency, setCurrencyState] = useState<CurrencyCode>('RUB')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
@@ -50,18 +60,20 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const [newArrivals, setNewArrivals] = useState<CatalogProduct[]>([])
   const [favorites, setFavorites] = useState<CatalogProduct[]>([])
   const [showcaseLoading, setShowcaseLoading] = useState(true)
+  const activeFiltersRef = useRef<CatalogFilters | undefined>(undefined)
 
-  const LIMIT = 50
+  const LIMIT = 20
 
   const refreshShowcase = useCallback(async () => {
     try {
       setShowcaseLoading(true)
       const [newRes, favRes] = await Promise.all([
-        api.getCatalogPage(1, 50, '', { isNew: true }),
-        api.getCatalogPage(1, 50, '', { isFavorite: true }),
+        api.getShowcase('new', 50),
+        api.getShowcase('favorite', 50),
       ])
       setNewArrivals(newRes.products)
       setFavorites(favRes.products)
+      if (newRes.currency) setCurrencyState(newRes.currency)
     } catch (e) {
       console.warn('Failed to load showcase:', e)
     } finally {
@@ -69,14 +81,21 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (filters?: CatalogFilters) => {
+    activeFiltersRef.current = filters
     try {
       setError(null)
       setLoading(true)
       setHasMore(false)
 
-      // Load first page only — remaining pages load on scroll (avoids 507 + lazy)
-      const chunk = await api.getCatalogPage(1, LIMIT)
+      const chunk = await api.getCatalogPage(1, LIMIT, filters?.q ?? '', {
+        category: filters?.category,
+        subcategory: filters?.subcategory,
+        isNew: filters?.isNew,
+        isFavorite: filters?.isFavorite,
+        isSale: filters?.isSale,
+        includeOutOfStock: filters?.includeOutOfStock,
+      })
       setCurrencyState(chunk.currency)
       setProducts(chunk.products)
       setTotal(chunk.total ?? chunk.products.length)
@@ -95,10 +114,18 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
 
   const loadMore = useCallback(async () => {
     if (loadingMore || loading || !hasMore) return
+    const filters = activeFiltersRef.current
     try {
       setLoadingMore(true)
       const nextPage = page + 1
-      const chunk = await api.getCatalogPage(nextPage, LIMIT)
+      const chunk = await api.getCatalogPage(nextPage, LIMIT, filters?.q ?? '', {
+        category: filters?.category,
+        subcategory: filters?.subcategory,
+        isNew: filters?.isNew,
+        isFavorite: filters?.isFavorite,
+        isSale: filters?.isSale,
+        includeOutOfStock: filters?.includeOutOfStock,
+      })
       setProducts((prev) => [...prev, ...chunk.products])
       setTotal(chunk.total ?? total)
       setHasMore(Boolean(chunk.hasMore))
@@ -111,10 +138,6 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setLoadingMore(false)
     }
   }, [loadingMore, loading, hasMore, page, total])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
 
   const setCurrency = useCallback(async (next: CurrencyCode) => {
     const res = await api.setCurrency(next)

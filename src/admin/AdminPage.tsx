@@ -1817,7 +1817,14 @@ export default function AdminPage() {
   } = useHeroBanners()
 
   const { variants: storeVariants, updateVariants } = usePurchaseTerms()
-  const { orders, newOrdersCount } = useOrders()
+  const { orders, newOrdersCount, fetchOrders } = useOrders()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void refresh({ includeOutOfStock: true })
+      void fetchOrders()
+    }
+  }, [isAuthenticated, refresh, fetchOrders])
 
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'hero-banners' | 'promo-block' | 'contacts' | 'about' | 'messengers' | 'official-stores' | 'purchase-terms' | 'discounts'>('orders')
 

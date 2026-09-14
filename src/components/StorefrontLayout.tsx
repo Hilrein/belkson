@@ -27,7 +27,7 @@ const PROMO_SRC =
  * All shop pages render as children via React Router <Outlet />.
  */
 export default function StorefrontLayout() {
-  const { format, loading } = useCatalog()
+  const { format } = useCatalog()
   const { stores: officialStores } = useOfficialStores()
   const activeOfficialStores = officialStores.filter((s) => s.isActive)
   const {
@@ -129,15 +129,12 @@ export default function StorefrontLayout() {
   }, [nextNeed])
 
   useEffect(() => {
-    if (loading) {
-      setSplashVisible(true)
-      setSplashFading(false)
-      return
-    }
-    setSplashFading(true)
-    const t = window.setTimeout(() => setSplashVisible(false), 450)
+    const t = window.setTimeout(() => {
+      setSplashFading(true)
+      setTimeout(() => setSplashVisible(false), 450)
+    }, 250)
     return () => window.clearTimeout(t)
-  }, [loading])
+  }, [])
 
   // Close drawers on route change
   useEffect(() => {

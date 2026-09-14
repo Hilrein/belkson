@@ -150,7 +150,9 @@ async function buildApp() {
   app.get('/health', (c) => c.json({ ok: true, status: 'ok' }))
   app.get('/api/health', (c) => c.json({ ok: true, status: 'ok' }))
 
+  let productColumnsEnsured = false
   async function ensureProductColumns() {
+    if (productColumnsEnsured) return
     try {
       await sql`
         ALTER TABLE products
@@ -162,6 +164,7 @@ async function buildApp() {
           ADD COLUMN IF NOT EXISTS is_sale BOOLEAN NOT NULL DEFAULT FALSE,
           ADD COLUMN IF NOT EXISTS sale_price_rub NUMERIC(10, 2)
       `
+      productColumnsEnsured = true
     } catch (e) {
       console.warn('ensure product columns error:', e)
     }
@@ -192,95 +195,125 @@ async function buildApp() {
   async function handleCatalog(c: any) {
     await ensureProductColumns()
 
-    // ── Pagination: chunked loading to avoid Neon 64 MB limit (HTTP 507) ──
+    // ── Pagination: default 20 items per chunk ──
     const pageRaw = c.req.query('page')
     const limitRaw =
       c.req.query('limit') ?? c.req.query('pageSize') ?? c.req.query('perPage')
     let page = pageRaw ? parseInt(String(pageRaw), 10) : 1
-    let limit = limitRaw ? parseInt(String(limitRaw), 10) : 50
+    let limit = limitRaw ? parseInt(String(limitRaw), 10) : 20
     if (!Number.isFinite(page) || page < 1) page = 1
-    if (!Number.isFinite(limit) || limit < 1) limit = 50
+    if (!Number.isFinite(limit) || limit < 1) limit = 20
     limit = Math.min(Math.max(limit, 1), 100)
     const offset = (page - 1) * limit
 
-    // ── Search: server-side filtering across ALL products (q matches name/sku/brand/category/subcategory/color) ──
+    // ── Search & Filter parameters ──
     const qRaw = c.req.query('q') ?? c.req.query('search') ?? c.req.query('query')
     const q = qRaw ? String(qRaw).trim() : ''
 
-    // ── Showcase filters: ?isNew=true / ?isFavorite=true (для Новинки/Любимчики без загрузки всего каталога) ──
+    const categoryRaw = c.req.query('category') ?? c.req.query('cat')
+    const category = categoryRaw ? String(categoryRaw).trim() : ''
+
+    const subcategoryRaw = c.req.query('subcategory') ?? c.req.query('subcat')
+    const subcategory = subcategoryRaw ? String(subcategoryRaw).trim() : ''
+
     const isNewRaw = c.req.query('isNew') ?? c.req.query('is_new') ?? c.req.query('new')
     const isFavRaw = c.req.query('isFavorite') ?? c.req.query('is_favorite') ?? c.req.query('favorite')
-    const isNew = isNewRaw === 'true' || isNewRaw === '1'
-    const isFav = isFavRaw === 'true' || isFavRaw === '1'
+    const isSaleRaw = c.req.query('isSale') ?? c.req.query('is_sale') ?? c.req.query('sale')
+
+    let isNew = isNewRaw === 'true' || isNewRaw === '1'
+    let isFav = isFavRaw === 'true' || isFavRaw === '1'
+    let isSale = isSaleRaw === 'true' || isSaleRaw === '1'
+
+    if (category.toLowerCase() === 'sale') {
+      isSale = true
+    } else if (category.toLowerCase() === 'new' || category.toLowerCase() === 'новинки') {
+      isNew = true
+    } else if (category.toLowerCase() === 'favorite' || category.toLowerCase() === 'любимчики') {
+      isFav = true
+    }
+
+    const includeOutOfStock =
+      c.req.query('includeOutOfStock') === 'true' || c.req.query('all') === 'true'
 
     if (isNew || isFav) await ensureShowcaseIndexes()
 
-    let countRows: { total: number }[]
-    let products: DbProduct[]
-    let settings: { value: string }[]
-    if (isNew || isFav) {
-      const like = q ? `%${q}%` : null
-      if (isNew && isFav) {
-        if (q) {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        } else {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_new = true AND is_favorite = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        }
-      } else if (isNew) {
-        if (q) {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_new = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        } else {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_new = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_new = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        }
-      } else {
-        if (q) {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' AND (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        } else {
-          ;[countRows, products, settings] = await Promise.all([
-            sql`SELECT COUNT(*)::int AS total FROM products WHERE is_favorite = true AND status <> 'Нет в наличии'` as Promise<{ total: number }[]>,
-            sql`SELECT * FROM products WHERE is_favorite = true AND status <> 'Нет в наличии' ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-            sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-          ])
-        }
-      }
-    } else if (q) {
-      const like = `%${q}%`
-      ;[countRows, products, settings] = await Promise.all([
-        sql`SELECT COUNT(*)::int AS total FROM products WHERE (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like})` as Promise<
-          { total: number }[]
-        >,
-        sql`SELECT * FROM products WHERE (name ILIKE ${like} OR sku ILIKE ${like} OR brand ILIKE ${like} OR category ILIKE ${like} OR COALESCE(subcategory, '') ILIKE ${like} OR color ILIKE ${like}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<
-          DbProduct[]
-        >,
-        sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-      ])
-    } else {
-      ;[countRows, products, settings] = await Promise.all([
-        sql`SELECT COUNT(*)::int AS total FROM products` as Promise<{ total: number }[]>,
-        sql`SELECT * FROM products ORDER BY id DESC LIMIT ${limit} OFFSET ${offset}` as Promise<DbProduct[]>,
-        sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
-      ])
+    const whereClauses: string[] = []
+    const params: any[] = []
+
+    if (!includeOutOfStock) {
+      whereClauses.push(`status <> 'Нет в наличии'`)
     }
+
+    if (isNew) {
+      whereClauses.push(`is_new = true`)
+    }
+    if (isFav) {
+      whereClauses.push(`is_favorite = true`)
+    }
+    if (isSale) {
+      whereClauses.push(`is_sale = true`)
+    }
+
+    if (
+      category &&
+      category.toLowerCase() !== 'all' &&
+      category.toLowerCase() !== 'sale' &&
+      category.toLowerCase() !== 'new' &&
+      category.toLowerCase() !== 'favorite'
+    ) {
+      const cats = category.split(',').map((s) => s.trim()).filter(Boolean)
+      if (cats.length === 1) {
+        params.push(cats[0])
+        whereClauses.push(`category ILIKE $${params.length}`)
+      } else if (cats.length > 1) {
+        const placeholders = cats.map((cat) => {
+          params.push(cat)
+          return `$${params.length}`
+        })
+        whereClauses.push(`category IN (${placeholders.join(', ')})`)
+      }
+    }
+
+    if (subcategory && subcategory.toLowerCase() !== 'all') {
+      const subcats = subcategory.split(',').map((s) => s.trim()).filter(Boolean)
+      if (subcats.length === 1) {
+        params.push(`%${subcats[0]}%`)
+        whereClauses.push(`subcategory ILIKE $${params.length}`)
+      } else if (subcats.length > 1) {
+        const subClauses = subcats.map((sub) => {
+          params.push(`%${sub}%`)
+          return `subcategory ILIKE $${params.length}`
+        })
+        whereClauses.push(`(${subClauses.join(' OR ')})`)
+      }
+    }
+
+    if (q) {
+      params.push(`%${q}%`)
+      const pIdx = `$${params.length}`
+      whereClauses.push(
+        `(name ILIKE ${pIdx} OR sku ILIKE ${pIdx} OR brand ILIKE ${pIdx} OR category ILIKE ${pIdx} OR COALESCE(subcategory, '') ILIKE ${pIdx} OR color ILIKE ${pIdx})`
+      )
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''
+    const countSql = `SELECT COUNT(*)::int AS total FROM products ${whereSql}`
+
+    const countParams = [...params]
+
+    params.push(limit)
+    const limitIdx = `$${params.length}`
+    params.push(offset)
+    const offsetIdx = `$${params.length}`
+
+    const selectSql = `SELECT * FROM products ${whereSql} ORDER BY id DESC LIMIT ${limitIdx} OFFSET ${offsetIdx}`
+
+    const [countRows, products, settings] = await Promise.all([
+      sql.query(countSql, countParams) as Promise<{ total: number }[]>,
+      sql.query(selectSql, params) as Promise<DbProduct[]>,
+      sql`SELECT value FROM site_settings WHERE key = 'currency' LIMIT 1` as Promise<{ value: string }[]>,
+    ])
+
     const total = countRows[0]?.total ?? 0
     const totalPages = total === 0 ? 0 : Math.ceil(total / limit)
 

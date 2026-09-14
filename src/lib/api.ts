@@ -45,14 +45,30 @@ export type PaginatedCatalogResponse = CatalogResponse & {
 }
 
 export const api = {
-  /** Fetch single page — useful for chunked loading to avoid Neon 64 MB limit. Optional server-side search + showcase filters. */
-  getCatalogPage: (page = 1, limit = 50, q = '', opts?: { isNew?: boolean; isFavorite?: boolean }) => {
+  /** Fetch single page — default 20 items per page with server-side filters */
+  getCatalogPage: (
+    page = 1,
+    limit = 20,
+    q = '',
+    opts?: {
+      category?: string
+      subcategory?: string
+      isNew?: boolean
+      isFavorite?: boolean
+      isSale?: boolean
+      includeOutOfStock?: boolean
+    },
+  ) => {
     const params = new URLSearchParams()
     params.set('page', String(page))
     params.set('limit', String(limit))
     if (q.trim()) params.set('q', q.trim())
+    if (opts?.category) params.set('category', opts.category.trim())
+    if (opts?.subcategory) params.set('subcategory', opts.subcategory.trim())
     if (opts?.isNew) params.set('isNew', 'true')
     if (opts?.isFavorite) params.set('isFavorite', 'true')
+    if (opts?.isSale) params.set('isSale', 'true')
+    if (opts?.includeOutOfStock) params.set('includeOutOfStock', 'true')
     return request<PaginatedCatalogResponse>(`/api/catalog?${params.toString()}`)
   },
 

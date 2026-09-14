@@ -26,7 +26,16 @@ function extractCmValue(str: string): number {
 }
 
 export default function CatalogPage() {
-  const { products, format, loading, loadingMore, hasMore, loadMore } = useCatalog()
+  const {
+    products,
+    format,
+    loading,
+    loadingMore,
+    hasMore,
+    loadMore,
+    refresh,
+    total,
+  } = useCatalog()
   const { openAddToCartModal } = useCart()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
@@ -67,6 +76,30 @@ export default function CatalogPage() {
     const q = searchParams.get('q') ?? ''
     setQuery(q)
   }, [searchParams])
+
+  useEffect(() => {
+    const isSale = activeFilter === FILTER_SALE
+    const isNew = activeFilter === FILTER_NEW
+    const isFavorite = activeFilter === FILTER_FAVORITE
+    const category =
+      !isSale && !isNew && !isFavorite && activeFilter !== FILTER_ALL
+        ? activeFilter
+        : undefined
+    const subcategory = activeSubcategory !== 'all' ? activeSubcategory : undefined
+
+    const timer = setTimeout(() => {
+      void refresh({
+        category,
+        subcategory,
+        q: query,
+        isSale,
+        isNew,
+        isFavorite,
+      })
+    }, 150)
+
+    return () => clearTimeout(timer)
+  }, [activeFilter, activeSubcategory, query, refresh])
 
   const setFilter = useCallback(
     (value: string) => {
@@ -330,7 +363,7 @@ export default function CatalogPage() {
         sortBy={sortBy}
         onSortChange={setSortBy}
         items={filtered}
-        totalCount={filtered.length}
+        totalCount={total || filtered.length}
         loadingInitial={loading && products.length === 0}
         loadingMore={loadingMore}
         sentinelRef={sentinelRef}

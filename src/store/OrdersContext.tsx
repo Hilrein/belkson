@@ -65,6 +65,10 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    // Only auto-fetch and poll orders on /admin routes to avoid loading all orders on storefront
+    const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+    if (!isAdmin) return
+
     fetchOrders()
     // Auto-refresh orders every 20 seconds for live admin updates
     const interval = setInterval(() => {
