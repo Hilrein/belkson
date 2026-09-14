@@ -4,16 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "vite",
     "dev:api": "tsx server/dev.ts",
     "db:seed": "tsx server/seed.ts",
     "db:recompress": "tsx server/recompress.ts",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "preview": "vite preview", 
-  "build:worker": "opennextjs-cloudflare build",
-  "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.9",
