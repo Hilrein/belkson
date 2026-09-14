@@ -63,14 +63,17 @@ jobs:
           npm run build
           cp dist/index.html dist/404.html
 
-      - name: Deploy to Cloudflare
+      - name: Deploy to Cloudflare & Upload Secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          npx wrangler deploy
           if [ -n "$DATABASE_URL" ]; then
-            npx wrangler deploy --var DATABASE_URL:"$DATABASE_URL"
-          else
-            npx wrangler deploy
+            echo "$DATABASE_URL" | npx wrangler secret put DATABASE_URL
+          fi
+          if [ -n "$CRON_SECRET" ]; then
+            echo "$CRON_SECRET" | npx wrangler secret put CRON_SECRET
           fi
