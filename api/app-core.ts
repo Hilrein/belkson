@@ -31,11 +31,11 @@ type DbProduct = {
 
 let sql: NeonQueryFunction<false, false> | null = null
 
-function resolveDatabaseUrl(): string {
-  const raw = process.env.DATABASE_URL?.trim()
+function resolveDatabaseUrl(customUrl?: string): string {
+  const raw = (customUrl || process.env.DATABASE_URL)?.trim()
   if (!raw) {
     throw new Error(
-      'DATABASE_URL is not set. Add it to .env (local) or Vercel Project → Settings → Environment Variables.',
+      'DATABASE_URL is not set. Add it to .env (local) or Cloudflare Worker Secrets / Environment Variables.',
     )
   }
   const sslmode = process.env.sslmode?.trim()
@@ -48,8 +48,9 @@ function resolveDatabaseUrl(): string {
   return raw
 }
 
-function getSql() {
-  if (!sql) sql = neon(resolveDatabaseUrl())
+function getSql(customUrl?: string) {
+  const url = resolveDatabaseUrl(customUrl)
+  if (!sql) sql = neon(url)
   return sql
 }
 
