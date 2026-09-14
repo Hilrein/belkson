@@ -21,13 +21,56 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Create .env file from GitHub Secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
+          VITE_TELEGRAM_USERNAME: ${{ secrets.VITE_TELEGRAM_USERNAME || vars.VITE_TELEGRAM_USERNAME }}
+          VITE_MAX_URL: ${{ secrets.VITE_MAX_URL || vars.VITE_MAX_URL }}
+          VITE_VK_USERNAME: ${{ secrets.VITE_VK_USERNAME || vars.VITE_VK_USERNAME }}
+          VITE_VK_GROUP_ID: ${{ secrets.VITE_VK_GROUP_ID || vars.VITE_VK_GROUP_ID }}
+          VITE_INSTAGRAM_USERNAME: ${{ secrets.VITE_INSTAGRAM_USERNAME || vars.VITE_INSTAGRAM_USERNAME }}
+          VITE_SHOW_PRODUCT: ${{ secrets.VITE_SHOW_PRODUCT || vars.VITE_SHOW_PRODUCT }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const keys = [
+              "DATABASE_URL",
+              "CRON_SECRET",
+              "VITE_API_URL",
+              "VITE_TELEGRAM_USERNAME",
+              "VITE_MAX_URL",
+              "VITE_VK_USERNAME",
+              "VITE_VK_GROUP_ID",
+              "VITE_INSTAGRAM_USERNAME",
+              "VITE_SHOW_PRODUCT"
+            ];
+            const lines = [];
+            for (const key of keys) {
+              if (process.env[key]) {
+                lines.push(`${key}=${process.env[key]}`);
+              }
+            }
+            fs.writeFileSync(".env", lines.join("\n") + "\n");
+          '
+
       - name: Build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL }}
         run: |
           npm run build
           cp dist/index.html dist/404.html
 
       - name: Deploy to Cloudflare
-        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            npx wrangler deploy --var DATABASE_URL:"$DATABASE_URL"
+          else
+            npx wrangler deploy
+          fi
