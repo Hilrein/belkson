@@ -9,6 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Build & Deploy
+    defaults:
+      run:
+        working-directory: ./Belkson
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
