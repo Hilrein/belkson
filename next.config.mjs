@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // твои настройки, если они были в next.config.ts
+  // твои настройки Next.js, если они есть
 };
 
-module.exports = nextConfig;
+export default nextConfig;
