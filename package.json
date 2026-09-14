@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "next dev",
     "dev:api": "tsx server/dev.ts",
     "db:seed": "tsx server/seed.ts",
     "db:recompress": "tsx server/recompress.ts",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "preview": "vite preview", 
   "build:worker": "opennextjs-cloudflare build",
   "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
