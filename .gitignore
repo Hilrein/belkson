@@ -25,3 +25,7 @@ dist-ssr
 
 .env
 .env.local
+
+.agents
+.grok
+.open-next
